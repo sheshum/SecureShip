@@ -1,0 +1,61 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "react",
+    "jsx-a11y",
+    "unicorn",
+    "oxc",
+    "import"
+  ],
+  "options": {
+    // Enables type-aware TypeScript checks powered by oxlint-tsgolint
+    "typeAware": true
+  },
+  // Grouping rules into categories allows you to catch broad issues automatically
+  "categories": {
+    "correctness": "error", // High-signal bugs/errors
+    "suspicious": "warn", // Potential bugs or bad practices
+    "perf": "warn" // Performance optimizations
+  },
+  // 5. Fine-Tuned Override Rules
+  "rules": {
+    /* --- React Specific Rules --- */
+    // Turn off legacy rule: React 17+ uses the automatic JSX runtime (no import React required)
+    "react/react-in-jsx-scope": "off",
+    // Automatically enforces JSX tags are closed properly
+    "react/self-closing-comp": [
+      "error",
+      {
+        "html": false
+      }
+    ],
+    // Catches missing 'key' props in lists
+    "react/jsx-key": "error",
+    // Native React Compiler Rule (Experimental Nursery)
+    // Runs React Compiler's analysis in lint-only mode to catch "Rules of React" violations
+    // (e.g., calling hooks conditionally, reading refs during render, mutating state directly)
+    "react/react-compiler": "error",
+    /* --- TypeScript Specific Rules --- */
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unused-vars": "error",
+    // Turn off standard ESLint no-unused-vars as the TS equivalent handles it better
+    "no-unused-vars": "off",
+    /* --- Type-Aware Rules (Requires oxlint-tsgolint) --- */
+    "typescript/no-floating-promises": "error",
+    "typescript/await-thenable": "error",
+    /* --- General Quality & Import Rules --- */
+    // Catch expensive or slow ESM dependency cycles
+    "import/no-cycle": "error"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**"
+  ]
+}
