@@ -12,6 +12,7 @@ from fastapi import Depends
 from app.core.config import Settings
 from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
+from app.repositories.shipments import ShipmentRepository
 from app.services.chat import ChatService
 
 
@@ -28,7 +29,12 @@ def get_llm_client(settings: Annotated[Settings, Depends(get_settings)]) -> LLMC
     )
 
 
+def get_shipment_repository() -> ShipmentRepository:
+    return ShipmentRepository()
+
+
 def get_chat_service(
     llm_client: Annotated[LLMClient, Depends(get_llm_client)],
+    shipment_repository: Annotated[ShipmentRepository, Depends(get_shipment_repository)],
 ) -> ChatService:
-    return ChatService(llm_client)
+    return ChatService(llm_client, shipment_repository)

@@ -1,9 +1,11 @@
 """Chat endpoint: HTTP/SSE transport only — business logic lives in ChatService.
 
 SSE wire format (one JSON object per `data:` line):
-  {"type": "delta", "content": "..."}   streamed response fragment
-  {"type": "error", "message": "..."}   stream aborted
-  {"type": "done"}                      stream finished normally
+    {"type": "token", "content": "..."}     streamed response fragment
+    {"type": "tool_call", ...}                tool invocation notice
+    {"type": "tool_result", ...}              tool result payload
+    {"type": "error", "message": "..."}     stream aborted
+    {"type": "done"}                          stream finished normally
 """
 
 import json
@@ -36,12 +38,11 @@ async def _event_stream(
     service: ChatService, messages: list[LLMMessage]
 ) -> AsyncIterator[str]:
     try:
-        async for delta in service.stream_reply(messages):
-            yield _sse_event({"type": "delta", "content": delta})
+        async for event in service.agent_stream(messages):
+            yield _sse_event(event)
     except LLMError as exc:
         yield _sse_event({"type": "error", "message": str(exc)})
         return
-    yield _sse_event({"type": "done"})
 
 
 @router.post("")

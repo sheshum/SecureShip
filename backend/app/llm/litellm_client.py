@@ -2,10 +2,11 @@
 
 import logging
 from collections.abc import AsyncIterator, Sequence
+from typing import Any
 
 import litellm
 
-from app.llm.base import LLMClient, LLMError, LLMMessage
+from app.llm.base import LLMClient, LLMCompletion, LLMError, LLMMessage, ToolCall
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,42 @@ class LiteLLMClient(LLMClient):
         self._api_base = api_base
         self._api_key = api_key
 
+    async def plan_chat_turn(
+        self,
+        messages: Sequence[LLMMessage],
+        tools: Sequence[dict[str, Any]] | None = None,
+    ) -> LLMCompletion:
+        try:
+            response = await litellm.acompletion(
+                model=self._model,
+                messages=self._serialize_messages(messages),
+                api_base=self._api_base,
+                api_key=self._api_key,
+                tools=list(tools) if tools else None,
+                tool_choice="auto" if tools else None,
+                stream=False,
+            )
+            choice = response.choices[0]
+            message = choice.message
+            tool_calls = tuple(
+                ToolCall(
+                    id=self._tool_call_id(tool_call),
+                    name=self._tool_call_name(tool_call),
+                    arguments=self._tool_call_arguments(tool_call),
+                )
+                for tool_call in (getattr(message, "tool_calls", None) or [])
+            )
+            content = getattr(message, "content", "") or ""
+            return LLMCompletion(content=str(content), tool_calls=tool_calls)
+        except Exception as exc:
+            logger.exception("LLM completion failed (model=%s)", self._model)
+            raise LLMError("The language model is currently unavailable.") from exc
+
     async def stream_chat(self, messages: Sequence[LLMMessage]) -> AsyncIterator[str]:
         try:
             stream = await litellm.acompletion(
                 model=self._model,
-                messages=[{"role": m.role, "content": m.content} for m in messages],
+                messages=self._serialize_messages(messages),
                 api_base=self._api_base,
                 api_key=self._api_key,
                 stream=True,
@@ -37,3 +69,47 @@ class LiteLLMClient(LLMClient):
         except Exception as exc:
             logger.exception("LLM completion failed (model=%s)", self._model)
             raise LLMError("The language model is currently unavailable.") from exc
+
+    @staticmethod
+    def _serialize_messages(messages: Sequence[LLMMessage]) -> list[dict[str, Any]]:
+        serialized_messages: list[dict[str, Any]] = []
+        for message in messages:
+            payload: dict[str, Any] = {"role": message.role, "content": message.content}
+            if message.tool_call_id:
+                payload["tool_call_id"] = message.tool_call_id
+            if message.tool_calls:
+                payload["tool_calls"] = [
+                    {
+                        "id": tool_call.id,
+                        "type": "function",
+                        "function": {
+                            "name": tool_call.name,
+                            "arguments": tool_call.arguments,
+                        },
+                    }
+                    for tool_call in message.tool_calls
+                ]
+            serialized_messages.append(payload)
+        return serialized_messages
+
+    @staticmethod
+    def _tool_call_id(tool_call: Any) -> str:
+        if isinstance(tool_call, dict):
+            return str(tool_call.get("id", ""))
+        return str(getattr(tool_call, "id", ""))
+
+    @staticmethod
+    def _tool_call_name(tool_call: Any) -> str:
+        if isinstance(tool_call, dict):
+            function = tool_call.get("function", {})
+            return str(function.get("name", ""))
+        function = getattr(tool_call, "function", None)
+        return str(getattr(function, "name", ""))
+
+    @staticmethod
+    def _tool_call_arguments(tool_call: Any) -> str:
+        if isinstance(tool_call, dict):
+            function = tool_call.get("function", {})
+            return str(function.get("arguments", ""))
+        function = getattr(tool_call, "function", None)
+        return str(getattr(function, "arguments", ""))
