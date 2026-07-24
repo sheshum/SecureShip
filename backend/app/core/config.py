@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # OLLAMA_HOST is accepted as an alias so the existing docker-compose keeps working.
     llm_api_base: str | None = Field(
         default="http://localhost:11434",
-        validation_alias=AliasChoices("LLM_API_BASE", "OLLAMA_HOST"),
+        validation_alias=AliasChoices("LLM_API_BASE"),
     )
     llm_api_key: str | None = Field(
         default=None,

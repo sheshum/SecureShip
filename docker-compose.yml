@@ -13,8 +13,9 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://user:pass@postgres:5432/secureship
-      OLLAMA_HOST: http://host.docker.internal:11434
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/secureship
+      LLM_API_BASE: ${LLM_API_BASE}
+      LLM_MODEL: ${LLM_MODEL}
     depends_on:
       - postgres
 
@@ -22,8 +23,8 @@ services:
     image: docker.io/library/postgres:16
     environment:
       POSTGRES_DB: secureship
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
