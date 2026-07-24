@@ -33,7 +33,7 @@ export function ChatPage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:px-6 sm:py-8">
+    <main className="min-h-screen bg-[url('/secure-ship-background.jpeg')] bg-cover bg-fixed bg-center px-4 py-6 sm:px-6 sm:py-8">
       <div className="mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-5xl">
         <section
           className={[
