@@ -16,9 +16,14 @@ FROM base AS runtime
 COPY --from=deps /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:${PATH}"
 
+COPY alembic.ini ./
+COPY alembic ./alembic
 COPY main.py ./
 COPY app ./app
+COPY entrypoint.sh ./entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uv", "run", "fastapi", "dev", "main.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]

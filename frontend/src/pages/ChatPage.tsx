@@ -1,35 +1,99 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ChatInput } from '../components/ChatInput'
 import { ChatMessageList, type ChatMessage } from '../components/ChatMessageList'
+import { useChatStream } from '../features/chat/useChatStream'
+import type { ChatRequest } from '../api/generated/schemas'
 
-const echoResponse = (message: string) => `You asked: ${message}`
+function toChatRequest(messages: ChatMessage[]): ChatRequest {
+  return {
+    messages: messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  }
+}
 
 export function ChatPage() {
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const nextMessageIdRef = useRef(1)
+  const { isStreaming, error, send, cancel } = useChatStream()
   const hasMessages = messages.length > 0
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmedMessage = draft.trim()
 
-    if (!trimmedMessage) {
+    if (!trimmedMessage || isStreaming) {
       return
     }
+
+    const userMessageId = nextMessageIdRef.current++
+    const assistantMessageId = nextMessageIdRef.current++
+    const requestMessages = [
+      ...messages,
+      {
+        id: userMessageId,
+        role: 'user' as const,
+        content: trimmedMessage,
+      },
+    ]
 
     setMessages((currentMessages) => [
       ...currentMessages,
       {
-        id: currentMessages.length * 2 + 1,
+        id: userMessageId,
         role: 'user',
         content: trimmedMessage,
       },
       {
-        id: currentMessages.length * 2 + 2,
+        id: assistantMessageId,
         role: 'assistant',
-        content: echoResponse(trimmedMessage),
+        content: '',
       },
     ])
     setDraft('')
+
+    const request = toChatRequest(requestMessages)
+
+    void send(request, {
+      onToken: (token) => {
+        setMessages((currentMessages) =>
+          currentMessages.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: `${message.content}${token}` }
+              : message,
+          ),
+        )
+      },
+      onError: (message) => {
+        setMessages((currentMessages) =>
+          currentMessages.map((chatMessage) =>
+            chatMessage.id === assistantMessageId
+              ? { ...chatMessage, content: message }
+              : chatMessage,
+          ),
+        )
+      },
+    })
+  }
+
+  const handleChange = (value: string) => {
+    if (!isStreaming) {
+      setDraft(value)
+    }
+  }
+
+  const handleCancel = () => {
+    cancel()
+    setMessages((currentMessages) => {
+      const lastMessage = currentMessages.at(-1)
+
+      if (!lastMessage || lastMessage.role !== 'assistant' || lastMessage.content.trim().length > 0) {
+        return currentMessages
+      }
+
+      return currentMessages.slice(0, -1)
+    })
   }
 
   return (
@@ -43,16 +107,29 @@ export function ChatPage() {
         >
           {hasMessages ? (
             <>
-              <ChatMessageList messages={messages} />
+              <ChatMessageList messages={messages} isStreaming={isStreaming} />
               <div className="mt-6 w-full">
-                <ChatInput value={draft} onChange={setDraft} onSubmit={handleSubmit} />
+                <ChatInput
+                  value={draft}
+                  onChange={handleChange}
+                  onSubmit={handleSubmit}
+                  onCancel={handleCancel}
+                  isStreaming={isStreaming}
+                />
               </div>
             </>
           ) : (
             <div className="mx-auto w-full max-w-3xl">
-              <ChatInput value={draft} onChange={setDraft} onSubmit={handleSubmit} />
+              <ChatInput
+                value={draft}
+                onChange={handleChange}
+                onSubmit={handleSubmit}
+                onCancel={handleCancel}
+                isStreaming={isStreaming}
+              />
             </div>
           )}
+          {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
         </section>
       </div>
     </main>
