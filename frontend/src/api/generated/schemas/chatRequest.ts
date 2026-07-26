@@ -8,6 +8,7 @@
 import type { ChatMessageIn } from './chatMessageIn';
 
 export interface ChatRequest {
+  session_id: string;
   /**
      * @minItems 1
      * @maxItems 100
