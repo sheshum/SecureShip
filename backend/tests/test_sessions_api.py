@@ -143,6 +143,40 @@ class SessionsApiTests(unittest.TestCase):
         listed = self.client.get("/api/sessions").json()["sessions"]
         self.assertEqual(listed, [])
 
+    def test_get_session_returns_transcript(self) -> None:
+        created = self.client.post("/api/sessions").json()["session"]
+        session_id = UUID(created["id"])
+        self.repository.append_events(
+            session_id,
+            [
+                {
+                    "id": "evt_1",
+                    "type": "message",
+                    "role": "user",
+                    "content": "Track TRK123",
+                },
+                {
+                    "id": "evt_2",
+                    "type": "message",
+                    "role": "assistant",
+                    "content": "Shipment is in transit.",
+                },
+            ],
+        )
+
+        response = self.client.get(f"/api/sessions/{session_id}")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        self.assertEqual(payload["session"]["id"], str(session_id))
+        self.assertEqual(payload["transcript"]["version"], 1)
+        self.assertEqual(len(payload["transcript"]["events"]), 2)
+        self.assertEqual(payload["transcript"]["events"][0]["role"], "user")
+
+    def test_get_session_404_when_missing(self) -> None:
+        response = self.client.get(f"/api/sessions/{uuid4()}")
+        self.assertEqual(response.status_code, 404)
+
 
 class ChatPersistenceTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -162,6 +196,25 @@ class ChatPersistenceTests(unittest.TestCase):
             },
         )
         self.assertEqual(response.status_code, 422)
+
+    def test_chat_creates_session_when_session_id_is_null(self) -> None:
+        response = self.client.post(
+            "/api/chat",
+            json={
+                "session_id": None,
+                "messages": [{"role": "user", "content": "hello"}],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('"type": "session"', response.text)
+        self.assertEqual(len(self.repository.sessions), 1)
+
+        created_session = next(iter(self.repository.sessions.values()))
+        events = created_session.transcript["events"]
+        self.assertEqual(events[0]["type"], "message")
+        self.assertEqual(events[0]["role"], "user")
+        self.assertEqual(events[0]["content"], "hello")
 
     def test_chat_persists_user_tool_and_assistant_events(self) -> None:
         llm_client = FakeLLMClient(

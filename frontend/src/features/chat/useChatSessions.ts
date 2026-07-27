@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { type SessionItem } from '../../api/generated/schemas'
+import { resolveApiUrl } from '../../api/url'
 import {
   getListSessionsApiSessionsGetQueryKey,
   useCreateSessionApiSessionsPost,
@@ -16,6 +17,18 @@ import { type ChatMessage } from '../../components/ChatMessageList'
 
 type UseChatSessionsOptions = {
   isStreaming: boolean
+}
+
+type SessionTranscriptEvent = {
+  type: string
+  role?: string | null
+  content?: string | null
+}
+
+type SessionDetailResponse = {
+  transcript?: {
+    events?: SessionTranscriptEvent[]
+  }
 }
 
 const isChatSessionsDebugEnabled = import.meta.env.DEV
@@ -69,8 +82,10 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   const queryClient = useQueryClient()
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [messagesBySession, setMessagesBySession] = useState<Record<string, ChatMessage[]>>({})
+  const [emptySessionMessages, setEmptySessionMessages] = useState<ChatMessage[]>([])
   const [sessionError, setSessionError] = useState<string | null>(null)
-  const autoCreateAttemptedRef = useRef(false)
+  const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null)
+  const hydratedSessionIdsRef = useRef<Set<string>>(new Set())
 
   const {
     data: sessionsResponse,
@@ -83,8 +98,21 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   const createSessionMutation = useCreateSessionApiSessionsPost()
   const deleteSessionMutation = useDeleteSessionApiSessionsSessionIdDelete()
 
-  const sessions = useMemo(() => unwrapSessionList(sessionsResponse)?.sessions ?? [], [sessionsResponse])
-  const selectedMessages = selectedSessionId ? (messagesBySession[selectedSessionId] ?? []) : []
+  const allSessions = useMemo(() => unwrapSessionList(sessionsResponse)?.sessions ?? [], [sessionsResponse])
+  const sessions = useMemo(
+    () =>
+      allSessions.filter((session) => {
+        if (session.message_count > 0) {
+          return true
+        }
+
+        return (messagesBySession[session.id]?.length ?? 0) > 0
+      }),
+    [allSessions, messagesBySession],
+  )
+  const selectedMessages = selectedSessionId
+    ? (messagesBySession[selectedSessionId] ?? [])
+    : emptySessionMessages
 
   useEffect(() => {
     logChatSessionsDebug('sessions query state changed', {
@@ -92,12 +120,14 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
       sessionsFetchStatus,
       isLoadingSessions,
       isRefetchingSessions,
-      sessionCount: sessions.length,
+      totalSessionCount: allSessions.length,
+      visibleSessionCount: sessions.length,
       selectedSessionId,
       hasError: Boolean(sessionsError),
       errorMessage: sessionsError instanceof Error ? sessionsError.message : null,
     })
   }, [
+    allSessions.length,
     isLoadingSessions,
     isRefetchingSessions,
     selectedSessionId,
@@ -111,7 +141,12 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     await queryClient.invalidateQueries({ queryKey: getListSessionsApiSessionsGetQueryKey() })
   }, [queryClient])
 
-  const applySessionMessages = useCallback((sessionId: string, updater: (current: ChatMessage[]) => ChatMessage[]) => {
+  const applySessionMessages = useCallback((sessionId: string | null, updater: (current: ChatMessage[]) => ChatMessage[]) => {
+    if (!sessionId) {
+      setEmptySessionMessages((currentMessages) => updater(currentMessages))
+      return
+    }
+
     setMessagesBySession((currentBySession) => {
       const currentMessages = currentBySession[sessionId] ?? []
       return {
@@ -121,12 +156,89 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     })
   }, [])
 
+  const mapTranscriptToMessages = useCallback((events: SessionTranscriptEvent[] | undefined): ChatMessage[] => {
+    if (!events || events.length === 0) {
+      return []
+    }
+
+    let nextId = 1
+    const messages: ChatMessage[] = []
+
+    for (const event of events) {
+      if (event.type !== 'message') {
+        continue
+      }
+
+      if (event.role !== 'user' && event.role !== 'assistant') {
+        continue
+      }
+
+      const content = (event.content ?? '').trim()
+      if (!content) {
+        continue
+      }
+
+      messages.push({
+        id: nextId,
+        role: event.role,
+        content,
+      })
+      nextId += 1
+    }
+
+    return messages
+  }, [])
+
+  const loadSessionHistory = useCallback(
+    async (sessionId: string): Promise<boolean> => {
+      if (hydratedSessionIdsRef.current.has(sessionId)) {
+        return true
+      }
+
+      try {
+        setLoadingSessionId(sessionId)
+        const response = await fetch(resolveApiUrl(`/api/sessions/${sessionId}`), {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(text || `HTTP ${response.status}`)
+        }
+
+        const payload = (await response.json()) as SessionDetailResponse
+        const hydratedMessages = mapTranscriptToMessages(payload.transcript?.events)
+        hydratedSessionIdsRef.current.add(sessionId)
+        setMessagesBySession((currentBySession) => ({
+          ...currentBySession,
+          [sessionId]: hydratedMessages,
+        }))
+        return true
+      } catch (error) {
+        console.error('Failed to load session transcript', error)
+        setSessionError('Unable to load chat history for this session. Please try again.')
+        return false
+      } finally {
+        setLoadingSessionId((currentSessionId) => (currentSessionId === sessionId ? null : currentSessionId))
+      }
+    },
+    [mapTranscriptToMessages],
+  )
+
   const ensureSession = useCallback(async (): Promise<string | null> => {
     if (selectedSessionId) {
       logChatSessionsDebug('ensureSession reused selected session', { selectedSessionId })
       return selectedSessionId
     }
 
+    logChatSessionsDebug('ensureSession returning frontend-only empty session')
+    return null
+  }, [selectedSessionId])
+
+  const createBackendSession = useCallback(async (): Promise<string | null> => {
     logChatSessionsDebug('ensureSession creating new session', {
       selectedSessionId,
       isCreatePending: createSessionMutation.isPending,
@@ -163,6 +275,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     }
 
     setSelectedSessionId(createdSessionId)
+    hydratedSessionIdsRef.current.add(createdSessionId)
     setMessagesBySession((currentBySession) => {
       if (currentBySession[createdSessionId]) {
         return currentBySession
@@ -182,14 +295,39 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     return createdSessionId
   }, [createSessionMutation, invalidateSessions, selectedSessionId])
 
+  const bindEmptySessionToCreatedSession = useCallback(
+    (sessionId: string) => {
+      hydratedSessionIdsRef.current.add(sessionId)
+      setEmptySessionMessages((currentEmptyMessages) => {
+        setMessagesBySession((currentBySession) => {
+          if (currentBySession[sessionId]) {
+            return currentBySession
+          }
+
+          return {
+            ...currentBySession,
+            [sessionId]: currentEmptyMessages,
+          }
+        })
+
+        return []
+      })
+      setSelectedSessionId(sessionId)
+      setSessionError(null)
+      void invalidateSessions().catch((error) => {
+        console.error('Failed to refresh sessions after first chat turn', error)
+      })
+    },
+    [invalidateSessions],
+  )
+
   useEffect(() => {
     logChatSessionsDebug('auto-selection effect tick', {
       isLoadingSessions,
       isCreatePending: createSessionMutation.isPending,
-      sessionCount: sessions.length,
+      sessionCount: allSessions.length,
       selectedSessionId,
       isRefetchingSessions,
-      autoCreateAttempted: autoCreateAttemptedRef.current,
     })
 
     if (isLoadingSessions || createSessionMutation.isPending) {
@@ -197,52 +335,67 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
       return
     }
 
-    if (sessions.length === 0) {
-      if (autoCreateAttemptedRef.current) {
-        logChatSessionsDebug('auto-create already attempted; waiting for next state change')
-        return
+    if (allSessions.length === 0) {
+      if (selectedSessionId !== null) {
+        setSelectedSessionId(null)
       }
-
-      autoCreateAttemptedRef.current = true
-      logChatSessionsDebug('no sessions found; auto-creating first session')
-      void ensureSession()
       return
     }
-
-    autoCreateAttemptedRef.current = false
 
     if (!selectedSessionId) {
-      logChatSessionsDebug('selecting first available session', { nextSessionId: sessions[0].id })
-      setSelectedSessionId(sessions[0].id)
+      logChatSessionsDebug('selecting first available session', { nextSessionId: allSessions[0].id })
+      setSelectedSessionId(allSessions[0].id)
       return
     }
 
-    const selectedSessionStillPresent = sessions.some((session) => session.id === selectedSessionId)
+    const selectedSessionStillPresent = allSessions.some((session) => session.id === selectedSessionId)
     if (!selectedSessionStillPresent && !isRefetchingSessions) {
       logChatSessionsDebug('selected session missing after refetch; falling back to first session', {
         previousSessionId: selectedSessionId,
-        nextSessionId: sessions[0].id,
+        nextSessionId: allSessions[0].id,
       })
-      setSelectedSessionId(sessions[0].id)
+      setSelectedSessionId(allSessions[0].id)
     }
   }, [
+    allSessions,
     createSessionMutation.isPending,
-    ensureSession,
     isLoadingSessions,
     isRefetchingSessions,
     selectedSessionId,
-    sessions,
   ])
 
+  useEffect(() => {
+    if (!selectedSessionId || isStreaming) {
+      return
+    }
+
+    if (hydratedSessionIdsRef.current.has(selectedSessionId)) {
+      return
+    }
+
+    let isCancelled = false
+
+    void loadSessionHistory(selectedSessionId).then((loaded) => {
+      if (isCancelled || !loaded) {
+        return
+      }
+
+      setSessionError(null)
+    })
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isStreaming, loadSessionHistory, selectedSessionId])
+
   const createNewSession = useCallback(async () => {
-    if (isStreaming) {
+    if (isStreaming || allSessions.length === 0) {
       return null
     }
 
     setSessionError(null)
-    setSelectedSessionId(null)
-    return ensureSession()
-  }, [ensureSession, isStreaming])
+    return createBackendSession()
+  }, [allSessions.length, createBackendSession, isStreaming])
 
   const deleteSelectedSession = useCallback(async () => {
     if (!selectedSessionId || isStreaming) {
@@ -253,23 +406,20 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
 
     try {
       await deleteSessionMutation.mutateAsync({ sessionId: deletingSessionId })
+      hydratedSessionIdsRef.current.delete(deletingSessionId)
       setMessagesBySession((currentBySession) => {
         const { [deletingSessionId]: _removed, ...remaining } = currentBySession
         return remaining
       })
 
-      const remainingSessions = sessions.filter((session) => session.id !== deletingSessionId)
+      const remainingSessions = allSessions.filter((session) => session.id !== deletingSessionId)
       setSelectedSessionId(remainingSessions.length > 0 ? remainingSessions[0].id : null)
       setSessionError(null)
       await invalidateSessions()
-
-      if (remainingSessions.length === 0) {
-        await ensureSession()
-      }
     } catch {
       setSessionError('Unable to delete this session. Please try again.')
     }
-  }, [deleteSessionMutation, ensureSession, invalidateSessions, isStreaming, selectedSessionId, sessions])
+  }, [allSessions, deleteSessionMutation, invalidateSessions, isStreaming, selectedSessionId])
 
   const selectSession = useCallback(
     (sessionId: string) => {
@@ -281,7 +431,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   )
 
   const addPendingTurn = useCallback(
-    (sessionId: string, userMessage: ChatMessage, assistantMessage: ChatMessage) => {
+    (sessionId: string | null, userMessage: ChatMessage, assistantMessage: ChatMessage) => {
       applySessionMessages(sessionId, (currentMessages) => [...currentMessages, userMessage, assistantMessage])
       setSessionError(null)
     },
@@ -289,7 +439,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   )
 
   const appendAssistantToken = useCallback(
-    (sessionId: string, assistantMessageId: number, token: string) => {
+    (sessionId: string | null, assistantMessageId: number, token: string) => {
       applySessionMessages(sessionId, (currentMessages) =>
         currentMessages.map((message) =>
           message.id === assistantMessageId ? { ...message, content: `${message.content}${token}` } : message,
@@ -300,7 +450,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   )
 
   const setAssistantError = useCallback(
-    (sessionId: string, assistantMessageId: number, message: string) => {
+    (sessionId: string | null, assistantMessageId: number, message: string) => {
       applySessionMessages(sessionId, (currentMessages) =>
         currentMessages.map((chatMessage) =>
           chatMessage.id === assistantMessageId ? { ...chatMessage, content: message } : chatMessage,
@@ -311,10 +461,6 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   )
 
   const removeTrailingEmptyAssistant = useCallback(() => {
-    if (!selectedSessionId) {
-      return
-    }
-
     applySessionMessages(selectedSessionId, (currentMessages) => {
       const lastMessage = currentMessages.at(-1)
 
@@ -331,12 +477,16 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   }, [])
 
   const hasMessages = selectedMessages.length > 0
+  const isLoadingSelectedSession = Boolean(selectedSessionId) && loadingSessionId === selectedSessionId
+  const hasPersistedSessions = allSessions.length > 0
 
   return {
     sessions,
     selectedSessionId,
     selectedMessages,
     hasMessages,
+    hasPersistedSessions,
+    isLoadingSelectedSession,
     sessionError,
     isLoadingSessions,
     isRefetchingSessions,
@@ -349,6 +499,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     addPendingTurn,
     appendAssistantToken,
     setAssistantError,
+    bindEmptySessionToCreatedSession,
     removeTrailingEmptyAssistant,
     invalidateSessions,
     clearSessionError,

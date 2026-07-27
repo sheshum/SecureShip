@@ -29,6 +29,7 @@ import type {
   HTTPValidationError,
   SessionCreateResponse,
   SessionDeleteResponse,
+  SessionDetailResponse,
   SessionListResponse
 } from './schemas';
 
@@ -475,6 +476,126 @@ export const useCreateSessionApiSessionsPost = <TError = unknown,
       > => {
       return useMutation(getCreateSessionApiSessionsPostMutationOptions(options), queryClient);
     }
+
+export type getSessionApiSessionsSessionIdGetResponse200 = {
+  data: SessionDetailResponse
+  status: 200
+}
+
+export type getSessionApiSessionsSessionIdGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getSessionApiSessionsSessionIdGetResponseSuccess = (getSessionApiSessionsSessionIdGetResponse200) & {
+  headers: Headers;
+};
+export type getSessionApiSessionsSessionIdGetResponseError = (getSessionApiSessionsSessionIdGetResponse422) & {
+  headers: Headers;
+};
+
+export type getSessionApiSessionsSessionIdGetResponse = (getSessionApiSessionsSessionIdGetResponseSuccess | getSessionApiSessionsSessionIdGetResponseError)
+
+export const getGetSessionApiSessionsSessionIdGetUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/sessions/${sessionId}`
+}
+
+/**
+ * @summary Get Session
+ */
+export const getSessionApiSessionsSessionIdGet = async (sessionId: string, options?: RequestInit): Promise<getSessionApiSessionsSessionIdGetResponse> => {
+
+  return customFetcher<getSessionApiSessionsSessionIdGetResponse>(getGetSessionApiSessionsSessionIdGetUrl(sessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSessionApiSessionsSessionIdGetQueryKey = (sessionId: string,) => {
+    return [
+    `/api/sessions/${sessionId}`
+    ] as const;
+    }
+
+
+export const getGetSessionApiSessionsSessionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSessionApiSessionsSessionIdGetQueryKey(sessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>> = ({ signal }) => getSessionApiSessionsSessionIdGet(sessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSessionApiSessionsSessionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>>
+export type GetSessionApiSessionsSessionIdGetQueryError = HTTPValidationError
+
+
+export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
+ sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Session
+ */
+
+export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSessionApiSessionsSessionIdGetQueryOptions(sessionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export type deleteSessionApiSessionsSessionIdDeleteResponse200 = {
   data: SessionDeleteResponse

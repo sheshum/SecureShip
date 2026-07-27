@@ -1,8 +1,8 @@
 import type { ChatRequest } from './generated/schemas'
-
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+import { resolveApiUrl } from './url'
 
 export type ChatSseEvent =
+  | { type: 'session'; session_id: string }
   | { type: 'token'; content: string }
   | { type: 'tool_call'; [key: string]: unknown }
   | { type: 'tool_result'; [key: string]: unknown }
@@ -11,6 +11,7 @@ export type ChatSseEvent =
 
 export type ChatStreamHandlers = {
   onEvent?: (event: ChatSseEvent) => void
+  onSession?: (sessionId: string) => void
   onToken?: (content: string) => void
   onToolCall?: (event: Extract<ChatSseEvent, { type: 'tool_call' }>) => void
   onToolResult?: (event: Extract<ChatSseEvent, { type: 'tool_result' }>) => void
@@ -32,6 +33,9 @@ function dispatchEvent(event: ChatSseEvent, handlers: ChatStreamHandlers) {
   handlers.onEvent?.(event)
 
   switch (event.type) {
+    case 'session':
+      handlers.onSession?.(event.session_id)
+      break
     case 'token':
       handlers.onToken?.(event.content)
       break
@@ -55,7 +59,7 @@ export async function streamChat(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(`${apiBaseUrl}/api/chat`, {
+  const response = await fetch(resolveApiUrl('/api/chat'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

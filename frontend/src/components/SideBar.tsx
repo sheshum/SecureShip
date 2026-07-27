@@ -4,6 +4,7 @@ import { SessionsComponent } from './SessionsComponent'
 type SideBarProps = {
   sessions: ChatSession[]
   selectedSessionId: string | null
+  hasPersistedSessions: boolean
   isStreaming: boolean
   isLoadingSessions: boolean
   isCreatingSession: boolean
@@ -16,6 +17,7 @@ type SideBarProps = {
 export function SideBar({
   sessions,
   selectedSessionId,
+  hasPersistedSessions,
   isStreaming,
   isLoadingSessions,
   isCreatingSession,
@@ -31,7 +33,7 @@ export function SideBar({
         <button
           type="button"
           onClick={onCreateSession}
-          disabled={isStreaming || isCreatingSession}
+          disabled={isStreaming || isCreatingSession || !hasPersistedSessions}
           className="rounded-full border border-sky-300 bg-sky-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
         >
           New
@@ -51,7 +53,7 @@ export function SideBar({
         <button
           type="button"
           onClick={onDeleteSession}
-          disabled={!selectedSessionId || isStreaming || isDeletingSession}
+          disabled={!selectedSessionId || !hasPersistedSessions || isStreaming || isDeletingSession}
           className="w-full rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
         >
           Delete selected session

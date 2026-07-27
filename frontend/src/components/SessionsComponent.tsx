@@ -17,8 +17,10 @@ export function SessionsComponent({
   isCreating,
   onSelect,
 }: SessionsComponentProps) {
+  const isPreparing = isLoading || isCreating
+
   return (
-    <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+    <div className="flex-1 space-y-2 overflow-y-auto pr-1" role="list" aria-label="Chat sessions">
       {sessions.map((session) => {
         const isActive = session.id === selectedSessionId
 
@@ -26,8 +28,13 @@ export function SessionsComponent({
           <button
             key={session.id}
             type="button"
-            onClick={() => onSelect(session.id)}
+            onClick={() => {
+              if (!isActive) {
+                onSelect(session.id)
+              }
+            }}
             disabled={isStreaming}
+            aria-current={isActive ? 'true' : undefined}
             className={[
               'w-full rounded-2xl border px-3 py-2.5 text-left transition',
               isActive
@@ -36,13 +43,17 @@ export function SessionsComponent({
             ].join(' ')}
           >
             <p className="truncate text-sm font-semibold text-slate-900">{session.title}</p>
-            <p className="mt-1 text-xs text-slate-500">{session.message_count} messages</p>
             <p className="mt-1 text-xs text-slate-500">{formatSessionTimestamp(session.started_at)}</p>
           </button>
         )
       })}
 
-      {isLoading || isCreating ? <p className="px-2 py-4 text-xs text-slate-500">Preparing your sessions...</p> : null}
+      {isPreparing ? <p className="px-2 py-4 text-xs text-slate-500">Preparing your sessions...</p> : null}
+      {!isPreparing && sessions.length === 0 ? (
+        <p className="px-2 py-4 text-xs text-slate-500">
+          New chats appear here after your first message in that chat.
+        </p>
+      ) : null}
     </div>
   )
 }

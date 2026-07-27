@@ -54,9 +54,14 @@ async def chat(
         ChatSessionRepository, Depends(get_chat_session_repository)
     ],
 ) -> StreamingResponse:
-    chat_session = session_repository.get_session(request.session_id)
-    if chat_session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session_id = request.session_id
+    if session_id is None:
+        chat_session = session_repository.create_session(now=datetime.now(UTC))
+        session_id = chat_session.id
+    else:
+        chat_session = session_repository.get_session(session_id)
+        if chat_session is None:
+            raise HTTPException(status_code=404, detail="Session not found")
 
     user_message = request.messages[-1]
     user_event = {
@@ -67,7 +72,7 @@ async def chat(
         "created_at": _utc_now_iso(),
         "meta": {"source": "ui"},
     }
-    session_repository.append_events(request.session_id, [user_event])
+    session_repository.append_events(session_id, [user_event])
 
     messages = [LLMMessage(role=m.role, content=m.content) for m in request.messages]
 
@@ -76,6 +81,8 @@ async def chat(
         turn_id = f"turn_{uuid4().hex}"
 
         try:
+            yield _sse_event({"type": "session", "session_id": str(session_id)})
+
             async for event in service.agent_stream(messages):
                 event_type = event.get("type")
 
@@ -94,7 +101,7 @@ async def chat(
                     else:
                         tool_event["tool"] = event.get("tool")
                         tool_event["result"] = event.get("result")
-                    session_repository.append_events(request.session_id, [tool_event])
+                    session_repository.append_events(session_id, [tool_event])
                 elif event_type == "done":
                     assistant_content = "".join(assistant_chunks).strip()
                     if assistant_content:
@@ -106,9 +113,7 @@ async def chat(
                             "created_at": _utc_now_iso(),
                             "meta": {"turn_id": turn_id, "finish_reason": "done"},
                         }
-                        session_repository.append_events(
-                            request.session_id, [assistant_event]
-                        )
+                        session_repository.append_events(session_id, [assistant_event])
 
                 yield _sse_event(event)
 

@@ -10,10 +10,13 @@ from app.dependencies import get_chat_session_repository
 from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.sessions import (
+    SessionDetailResponse,
     SessionCreateResponse,
     SessionDeleteResponse,
     SessionItem,
     SessionListResponse,
+    SessionTranscript,
+    SessionTranscriptEvent,
 )
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -33,6 +36,21 @@ def create_session(
 ) -> SessionCreateResponse:
     session = repository.create_session(now=datetime.now(UTC))
     return SessionCreateResponse(session=_to_session_item(session))
+
+
+@router.get("/{session_id}", response_model=SessionDetailResponse)
+def get_session(
+    session_id: UUID,
+    repository: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> SessionDetailResponse:
+    session = repository.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return SessionDetailResponse(
+        session=_to_session_item(session),
+        transcript=_to_session_transcript(session.transcript),
+    )
 
 
 @router.delete("/{session_id}", response_model=SessionDeleteResponse)
@@ -95,3 +113,34 @@ def _count_message_events(transcript: dict[str, Any]) -> int:
         if event.get("type") == "message":
             count += 1
     return count
+
+
+def _to_session_transcript(transcript: dict[str, Any] | None) -> SessionTranscript:
+    normalized = _normalize_transcript(transcript)
+    events: list[SessionTranscriptEvent] = []
+
+    for event in normalized["events"]:
+        if not isinstance(event, dict):
+            continue
+
+        events.append(
+            SessionTranscriptEvent(
+                id=event.get("id") if isinstance(event.get("id"), str) else None,
+                type=str(event.get("type") or "unknown"),
+                role=event.get("role") if isinstance(event.get("role"), str) else None,
+                content=event.get("content") if isinstance(event.get("content"), str) else None,
+                created_at=(
+                    event.get("created_at") if isinstance(event.get("created_at"), str) else None
+                ),
+                meta=event.get("meta") if isinstance(event.get("meta"), dict) else None,
+                tool=event.get("tool") if isinstance(event.get("tool"), str) else None,
+                args=event.get("args") if isinstance(event.get("args"), dict) else None,
+                result=event.get("result") if isinstance(event.get("result"), dict) else None,
+            )
+        )
+
+    return SessionTranscript(
+        version=int(normalized.get("version") or 1),
+        title=normalized.get("title") if isinstance(normalized.get("title"), str) else None,
+        events=events,
+    )

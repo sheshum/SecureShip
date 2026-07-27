@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type ChatMessage } from '../components/ChatMessageList'
 import { ChatPanel } from '../components/ChatPanel'
 import { SideBar } from '../components/SideBar'
@@ -6,7 +6,7 @@ import { useChatStream } from '../features/chat/useChatStream'
 import { useChatSessions } from '../features/chat/useChatSessions'
 import type { ChatRequest } from '../api/generated/schemas'
 
-function toChatRequest(sessionId: string, messages: ChatMessage[]): ChatRequest {
+function toChatRequest(sessionId: string | null, messages: ChatMessage[]): ChatRequest {
   return {
     session_id: sessionId,
     messages: messages.map((message) => ({
@@ -24,6 +24,7 @@ export function ChatPage() {
     sessions,
     selectedSessionId,
     selectedMessages,
+    isLoadingSelectedSession,
     sessionError,
     isLoadingSessions,
     isRefetchingSessions,
@@ -39,7 +40,16 @@ export function ChatPage() {
     removeTrailingEmptyAssistant,
     invalidateSessions,
     clearSessionError,
+    bindEmptySessionToCreatedSession,
+    hasPersistedSessions,
   } = useChatSessions({ isStreaming })
+
+  useEffect(() => {
+    const highestMessageId = selectedMessages.reduce((maxId, message) => Math.max(maxId, message.id), 0)
+    if (highestMessageId >= nextMessageIdRef.current) {
+      nextMessageIdRef.current = highestMessageId + 1
+    }
+  }, [selectedMessages])
 
   const handleSubmit = async () => {
     const trimmedMessage = draft.trim()
@@ -49,9 +59,6 @@ export function ChatPage() {
     }
 
     const currentSessionId = await ensureSession()
-    if (!currentSessionId) {
-      return
-    }
 
     const userMessageId = nextMessageIdRef.current++
     const assistantMessageId = nextMessageIdRef.current++
@@ -80,16 +87,23 @@ export function ChatPage() {
     setDraft('')
     clearSessionError()
 
-    await invalidateSessions()
-
     const request = toChatRequest(currentSessionId, requestMessages)
+    let streamSessionId: string | null = currentSessionId
 
     void send(request, {
+      onSession: (sessionId) => {
+        if (streamSessionId === null) {
+          bindEmptySessionToCreatedSession(sessionId)
+        }
+
+        streamSessionId = sessionId
+        void invalidateSessions()
+      },
       onToken: (token) => {
-        appendAssistantToken(currentSessionId, assistantMessageId, token)
+        appendAssistantToken(streamSessionId, assistantMessageId, token)
       },
       onError: (message) => {
-        setAssistantError(currentSessionId, assistantMessageId, message)
+        setAssistantError(streamSessionId, assistantMessageId, message)
       },
       onDone: () => {
         void invalidateSessions()
@@ -130,6 +144,7 @@ export function ChatPage() {
           isLoadingSessions={isLoadingSessions}
           isCreatingSession={isCreatingSession}
           isDeletingSession={isDeletingSession}
+          hasPersistedSessions={hasPersistedSessions}
           onCreateSession={() => {
             void handleCreateSession()
           }}
@@ -143,6 +158,7 @@ export function ChatPage() {
           messages={selectedMessages}
           draft={draft}
           isStreaming={isStreaming}
+          isLoadingHistory={isLoadingSelectedSession}
           errorMessage={activeError}
           isRefreshingSessions={isRefetchingSessions}
           onDraftChange={handleChange}

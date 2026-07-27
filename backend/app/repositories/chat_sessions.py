@@ -99,10 +99,12 @@ class ChatSessionRepository:
         if not isinstance(events, list):
             events = []
 
+        # Return a detached list so callers can append safely without mutating
+        # the ORM-loaded JSON object in-place (which may not be tracked).
         return {
             "version": transcript.get("version", 1),
             "title": transcript.get("title"),
-            "events": events,
+            "events": list(events),
         }
 
     @staticmethod
