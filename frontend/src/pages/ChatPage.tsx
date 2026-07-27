@@ -18,6 +18,7 @@ function toChatRequest(sessionId: string | null, messages: ChatMessage[]): ChatR
 
 export function ChatPage() {
   const [draft, setDraft] = useState('')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const nextMessageIdRef = useRef(1)
   const { isStreaming, error, send, cancel } = useChatStream()
   const {
@@ -133,10 +134,32 @@ export function ChatPage() {
   }
 
   const activeError = sessionError ?? error
+  const activeSessionTitle = sessions.find((session) => session.id === selectedSessionId)?.title ?? null
+
+  const handleSelectSession = (sessionId: string) => {
+    selectSession(sessionId)
+    setIsSidebarOpen(false)
+  }
 
   return (
-    <main className="min-h-screen bg-[url('/secure-ship-background.jpeg')] bg-cover bg-fixed bg-center px-4 py-5 sm:px-6 sm:py-8">
-      <div className="mx-auto flex min-h-[calc(100svh-2.5rem)] w-full max-w-6xl gap-4 rounded-[2rem] border border-white/50 bg-slate-100/55 p-3 shadow-[0_30px_90px_rgba(15,23,42,0.28)] backdrop-blur-2xl sm:gap-5 sm:p-5">
+    <main className="relative min-h-screen overflow-hidden bg-[url('/secure-ship-background.jpeg')] bg-cover bg-fixed bg-center px-2 py-3 sm:px-4 sm:py-4">
+      <div className="pointer-events-none absolute inset-0 bg-slate-950/38" aria-hidden="true" />
+
+      <div className="relative mx-auto flex min-h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col gap-4 rounded-[2rem] border border-white/35 bg-slate-100/72 p-3 shadow-[0_30px_90px_rgba(15,23,42,0.34)] backdrop-blur-2xl sm:min-h-[calc(100svh-2rem)] sm:gap-5 sm:p-5 lg:flex-row">
+        <div className="flex items-center justify-between rounded-2xl border border-white/65 bg-white/80 px-3 py-2.5 shadow-sm lg:hidden">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 transition hover:border-sky-300 hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            aria-haspopup="dialog"
+            aria-expanded={isSidebarOpen}
+            aria-controls="mobile-sessions-drawer"
+          >
+            Sessions
+          </button>
+          <p className="max-w-[60%] truncate text-sm font-semibold text-slate-800">{activeSessionTitle ?? 'New chat'}</p>
+        </div>
+
         <SideBar
           sessions={sessions}
           selectedSessionId={selectedSessionId}
@@ -151,11 +174,13 @@ export function ChatPage() {
           onDeleteSession={() => {
             void handleDeleteSession()
           }}
-          onSelectSession={selectSession}
+          onSelectSession={handleSelectSession}
+          className="hidden lg:flex"
         />
 
         <ChatPanel
           messages={selectedMessages}
+          sessionTitle={activeSessionTitle}
           draft={draft}
           isStreaming={isStreaming}
           isLoadingHistory={isLoadingSelectedSession}
@@ -166,6 +191,38 @@ export function ChatPage() {
           onCancel={handleCancel}
         />
       </div>
+
+      {isSidebarOpen ? (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" id="mobile-sessions-drawer">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-950/45"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close sessions panel"
+          />
+          <div className="absolute inset-y-3 left-3 w-[min(88vw,360px)]">
+            <SideBar
+              sessions={sessions}
+              selectedSessionId={selectedSessionId}
+              isStreaming={isStreaming}
+              isLoadingSessions={isLoadingSessions}
+              isCreatingSession={isCreatingSession}
+              isDeletingSession={isDeletingSession}
+              hasPersistedSessions={hasPersistedSessions}
+              onCreateSession={() => {
+                void handleCreateSession()
+                setIsSidebarOpen(false)
+              }}
+              onDeleteSession={() => {
+                void handleDeleteSession()
+              }}
+              onSelectSession={handleSelectSession}
+              className="h-full"
+              onRequestClose={() => setIsSidebarOpen(false)}
+            />
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }

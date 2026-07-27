@@ -1,12 +1,15 @@
+import type { RefObject } from 'react'
+
 type ChatInputProps = {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
   onCancel: () => void
   isStreaming: boolean
+  inputRef?: RefObject<HTMLInputElement | null>
 }
 
-export function ChatInput({ value, onChange, onSubmit, onCancel, isStreaming }: ChatInputProps) {
+export function ChatInput({ value, onChange, onSubmit, onCancel, isStreaming, inputRef }: ChatInputProps) {
   const canSend = value.trim().length > 0
 
   const handleSubmit = () => {
@@ -25,12 +28,17 @@ export function ChatInput({ value, onChange, onSubmit, onCancel, isStreaming }: 
       <label className="sr-only" htmlFor="chat-message">
         Ask about your shipment
       </label>
-      <div className="flex items-center rounded-full border border-slate-200 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur">
+      <p id="chat-message-hint" className="sr-only">
+        Press Shift plus Enter to send your message.
+      </p>
+      <div className="flex items-center rounded-full border border-slate-200 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2">
         <input
+          ref={inputRef}
           id="chat-message"
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
+          aria-describedby="chat-message-hint"
           onKeyDown={(event) => {
             if (event.key === 'Enter' && event.shiftKey) {
               event.preventDefault()
@@ -44,13 +52,14 @@ export function ChatInput({ value, onChange, onSubmit, onCancel, isStreaming }: 
           }}
           placeholder="Ask about your shipment details"
           disabled={isStreaming}
+          autoComplete="off"
           className="h-12 flex-1 rounded-full border-none bg-transparent px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
         />
         {isStreaming ? (
           <button
             type="button"
             onClick={onCancel}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50"
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
             aria-label="Stop generating"
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor" aria-hidden="true">
@@ -62,7 +71,7 @@ export function ChatInput({ value, onChange, onSubmit, onCancel, isStreaming }: 
             type="button"
             onClick={handleSubmit}
             disabled={!canSend}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-sky-300 bg-sky-500 text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
+            className="flex h-12 w-12 items-center justify-center rounded-full border border-sky-300 bg-sky-500 text-white shadow-sm transition hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-200 disabled:text-slate-500"
             aria-label="Send message"
           >
             <svg viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor" aria-hidden="true">

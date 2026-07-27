@@ -86,6 +86,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null)
   const hydratedSessionIdsRef = useRef<Set<string>>(new Set())
+  const pendingDeletedSessionIdsRef = useRef<Set<string>>(new Set())
 
   const {
     data: sessionsResponse,
@@ -102,6 +103,10 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   const sessions = useMemo(
     () =>
       allSessions.filter((session) => {
+        if (pendingDeletedSessionIdsRef.current.has(session.id)) {
+          return false
+        }
+
         if (session.message_count > 0) {
           return true
         }
@@ -322,10 +327,13 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
   )
 
   useEffect(() => {
+    const availableSessions = allSessions.filter((session) => !pendingDeletedSessionIdsRef.current.has(session.id))
+
     logChatSessionsDebug('auto-selection effect tick', {
       isLoadingSessions,
       isCreatePending: createSessionMutation.isPending,
       sessionCount: allSessions.length,
+      availableSessionCount: availableSessions.length,
       selectedSessionId,
       isRefetchingSessions,
     })
@@ -335,7 +343,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
       return
     }
 
-    if (allSessions.length === 0) {
+    if (availableSessions.length === 0) {
       if (selectedSessionId !== null) {
         setSelectedSessionId(null)
       }
@@ -343,18 +351,18 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     }
 
     if (!selectedSessionId) {
-      logChatSessionsDebug('selecting first available session', { nextSessionId: allSessions[0].id })
-      setSelectedSessionId(allSessions[0].id)
+      logChatSessionsDebug('selecting first available session', { nextSessionId: availableSessions[0].id })
+      setSelectedSessionId(availableSessions[0].id)
       return
     }
 
-    const selectedSessionStillPresent = allSessions.some((session) => session.id === selectedSessionId)
+    const selectedSessionStillPresent = availableSessions.some((session) => session.id === selectedSessionId)
     if (!selectedSessionStillPresent && !isRefetchingSessions) {
       logChatSessionsDebug('selected session missing after refetch; falling back to first session', {
         previousSessionId: selectedSessionId,
-        nextSessionId: allSessions[0].id,
+        nextSessionId: availableSessions[0].id,
       })
-      setSelectedSessionId(allSessions[0].id)
+      setSelectedSessionId(availableSessions[0].id)
     }
   }, [
     allSessions,
@@ -369,24 +377,40 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
       return
     }
 
+    if (pendingDeletedSessionIdsRef.current.has(selectedSessionId)) {
+      return
+    }
+
     if (hydratedSessionIdsRef.current.has(selectedSessionId)) {
+      return
+    }
+
+    const selectedSession = allSessions.find((session) => session.id === selectedSessionId)
+    const hasLocalMessages = (messagesBySession[selectedSessionId]?.length ?? 0) > 0
+
+    // Empty sessions do not have history to hydrate; mark as hydrated to avoid pointless fetches.
+    if (selectedSession?.message_count === 0 && !hasLocalMessages) {
+      hydratedSessionIdsRef.current.add(selectedSessionId)
       return
     }
 
     let isCancelled = false
 
-    void loadSessionHistory(selectedSessionId).then((loaded) => {
-      if (isCancelled || !loaded) {
-        return
-      }
+    if (selectedSession) {
+      console.log(`Loading chat history for session "${selectedSession.title}" (${selectedSession.id})...`)
+      void loadSessionHistory(selectedSessionId).then((loaded) => {
+        if (isCancelled || !loaded) {
+          return
+        }
 
-      setSessionError(null)
-    })
+        setSessionError(null)
+      })
+    }
 
     return () => {
       isCancelled = true
     }
-  }, [isStreaming, loadSessionHistory, selectedSessionId])
+  }, [allSessions, isStreaming, loadSessionHistory, messagesBySession, selectedSessionId])
 
   const createNewSession = useCallback(async () => {
     if (isStreaming || allSessions.length === 0) {
@@ -406,13 +430,17 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
 
     try {
       await deleteSessionMutation.mutateAsync({ sessionId: deletingSessionId })
+      pendingDeletedSessionIdsRef.current.add(deletingSessionId)
       hydratedSessionIdsRef.current.delete(deletingSessionId)
       setMessagesBySession((currentBySession) => {
         const { [deletingSessionId]: _removed, ...remaining } = currentBySession
         return remaining
       })
 
-      const remainingSessions = allSessions.filter((session) => session.id !== deletingSessionId)
+      const remainingSessions = allSessions.filter(
+        (session) =>
+          session.id !== deletingSessionId && !pendingDeletedSessionIdsRef.current.has(session.id),
+      )
       setSelectedSessionId(remainingSessions.length > 0 ? remainingSessions[0].id : null)
       setSessionError(null)
       await invalidateSessions()
