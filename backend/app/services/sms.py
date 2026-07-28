@@ -22,7 +22,7 @@ class ConsoleSmsProvider:
     def send_sms(self, phone_number: str, message: str) -> SmsSendResult:
         masked_number = mask_phone_number(phone_number)
         # Never log plaintext OTP to stdout/stderr or durable logs.
-        self._output(f"[secure-ship][sms][console] otp dispatched to {masked_number}")
+        self._output(f"[secure-ship][sms][console] otp dispatched to {masked_number} message: {message}")
         return SmsSendResult(ok=True, provider="console", masked_phone_number=masked_number)
 
 

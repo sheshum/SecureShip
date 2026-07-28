@@ -1,15 +1,18 @@
 import { useRef } from 'react'
+import { AuthRequiredMessage, type IdentityInput } from './AuthRequiredMessage'
 import { ChatInput } from './ChatInput'
 import { ChatMessageList, type ChatMessage } from './ChatMessageList'
 
 type ChatPanelProps = {
   messages: ChatMessage[]
-  sessionTitle: string | null
   draft: string
   isStreaming: boolean
-  isLoadingHistory: boolean
+  isInitializingSession: boolean
   errorMessage: string | null
-  isRefreshingSessions: boolean
+  authRequiredMessage: string | null
+  authRequiredInfoMessage: string | null
+  isStartingVerification: boolean
+  onAuthenticate: (input: IdentityInput) => Promise<void> | void
   onDraftChange: (value: string) => void
   onSubmit: () => void
   onCancel: () => void
@@ -17,19 +20,21 @@ type ChatPanelProps = {
 
 export function ChatPanel({
   messages,
-  sessionTitle,
   draft,
   isStreaming,
-  isLoadingHistory,
+  isInitializingSession,
   errorMessage,
-  isRefreshingSessions,
+  authRequiredMessage,
+  authRequiredInfoMessage,
+  isStartingVerification,
+  onAuthenticate,
   onDraftChange,
   onSubmit,
   onCancel,
 }: ChatPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const hasMessages = messages.length > 0
-  const shouldShowHistorySkeleton = isLoadingHistory && !hasMessages
+  const shouldShowHistorySkeleton = isInitializingSession && !hasMessages
   const starterPrompts = [
     'Where is my shipment right now?',
     'When will my package be delivered?',
@@ -42,23 +47,16 @@ export function ChatPanel({
       <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conversation</p>
-          <h2 className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">
-            {sessionTitle ?? 'New chat'}
-          </h2>
+          <h2 className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">Support chat</h2>
         </div>
 
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         <div className="mb-3 space-y-2" aria-live="polite">
-          {isLoadingHistory ? (
+          {isInitializingSession ? (
             <p className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
-              Loading previous messages...
-            </p>
-          ) : null}
-          {isRefreshingSessions ? (
-            <p className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-800">
-              Refreshing sessions list...
+              Starting a new secure support session...
             </p>
           ) : null}
         </div>
@@ -105,6 +103,18 @@ export function ChatPanel({
             </div>
           </div>
         )}
+
+        {authRequiredMessage ? (
+          <div className="mt-4">
+            <AuthRequiredMessage
+              message={authRequiredMessage}
+              ctaLabel="Authenticate"
+              isSubmitting={isStartingVerification}
+              infoMessage={authRequiredInfoMessage}
+              onSubmit={onAuthenticate}
+            />
+          </div>
+        ) : null}
 
         <div className="mt-5 border-t border-slate-200/80 pt-4 sm:pt-5">
           <ChatInput

@@ -3,6 +3,16 @@ import { resolveApiUrl } from './url'
 
 export type ChatSseEvent =
   | { type: 'session'; session_id: string }
+  | { type: 'auth_state'; state: string; auth_expires_at?: string }
+  | {
+      type: 'auth_required'
+      message: string
+      cta?: {
+        label?: string
+        action?: string
+      }
+    }
+  | { type: 'show_code_modal'; open: boolean }
   | { type: 'token'; content: string }
   | { type: 'tool_call'; [key: string]: unknown }
   | { type: 'tool_result'; [key: string]: unknown }
@@ -12,6 +22,9 @@ export type ChatSseEvent =
 export type ChatStreamHandlers = {
   onEvent?: (event: ChatSseEvent) => void
   onSession?: (sessionId: string) => void
+  onAuthState?: (event: Extract<ChatSseEvent, { type: 'auth_state' }>) => void
+  onAuthRequired?: (event: Extract<ChatSseEvent, { type: 'auth_required' }>) => void
+  onShowCodeModal?: (event: Extract<ChatSseEvent, { type: 'show_code_modal' }>) => void
   onToken?: (content: string) => void
   onToolCall?: (event: Extract<ChatSseEvent, { type: 'tool_call' }>) => void
   onToolResult?: (event: Extract<ChatSseEvent, { type: 'tool_result' }>) => void
@@ -35,6 +48,15 @@ function dispatchEvent(event: ChatSseEvent, handlers: ChatStreamHandlers) {
   switch (event.type) {
     case 'session':
       handlers.onSession?.(event.session_id)
+      break
+    case 'auth_state':
+      handlers.onAuthState?.(event)
+      break
+    case 'auth_required':
+      handlers.onAuthRequired?.(event)
+      break
+    case 'show_code_modal':
+      handlers.onShowCodeModal?.(event)
       break
     case 'token':
       handlers.onToken?.(event.content)

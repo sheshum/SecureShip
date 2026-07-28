@@ -150,61 +150,19 @@ class SessionsApiTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.app.dependency_overrides.clear()
 
-    def test_create_and_list_sessions_newest_first(self) -> None:
-        first = self.client.post("/api/sessions")
-        second = self.client.post("/api/sessions")
-
-        self.assertEqual(first.status_code, 200)
-        self.assertEqual(second.status_code, 200)
-
-        listed = self.client.get("/api/sessions")
-        self.assertEqual(listed.status_code, 200)
-        payload = listed.json()
-
-        self.assertEqual(len(payload["sessions"]), 2)
-        self.assertEqual(payload["sessions"][0]["id"], second.json()["session"]["id"])
-        self.assertEqual(payload["sessions"][1]["id"], first.json()["session"]["id"])
-
-    def test_delete_removes_session_from_list(self) -> None:
+    def test_create_session_returns_support_chat_title(self) -> None:
         created = self.client.post("/api/sessions").json()["session"]
+        self.assertEqual(created["title"], "Support chat")
+        self.assertEqual(created["state"], "anonymous")
 
-        deleted = self.client.delete(f"/api/sessions/{created['id']}")
-        self.assertEqual(deleted.status_code, 200)
-        self.assertEqual(deleted.json()["session"]["state"], "anonymous")
-        self.assertIsNotNone(deleted.json()["session"]["ended_at"])
+    def test_list_sessions_is_not_supported(self) -> None:
+        response = self.client.get("/api/sessions")
+        self.assertEqual(response.status_code, 405)
 
-        listed = self.client.get("/api/sessions").json()["sessions"]
-        self.assertEqual(listed, [])
-
-    def test_get_session_returns_transcript(self) -> None:
+    def test_delete_session_is_not_supported(self) -> None:
         created = self.client.post("/api/sessions").json()["session"]
-        session_id = UUID(created["id"])
-        self.repository.append_events(
-            session_id,
-            [
-                {
-                    "id": "evt_1",
-                    "type": "message",
-                    "role": "user",
-                    "content": "Track TRK123",
-                },
-                {
-                    "id": "evt_2",
-                    "type": "message",
-                    "role": "assistant",
-                    "content": "Shipment is in transit.",
-                },
-            ],
-        )
-
-        response = self.client.get(f"/api/sessions/{session_id}")
-        self.assertEqual(response.status_code, 200)
-
-        payload = response.json()
-        self.assertEqual(payload["session"]["id"], str(session_id))
-        self.assertEqual(payload["transcript"]["version"], 1)
-        self.assertEqual(len(payload["transcript"]["events"]), 2)
-        self.assertEqual(payload["transcript"]["events"][0]["role"], "user")
+        response = self.client.delete(f"/api/sessions/{created['id']}")
+        self.assertEqual(response.status_code, 404)
 
     def test_get_session_404_when_missing(self) -> None:
         response = self.client.get(f"/api/sessions/{uuid4()}")
