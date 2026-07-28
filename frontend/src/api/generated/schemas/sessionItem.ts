@@ -5,10 +5,11 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { SessionItemState } from './sessionItemState';
 
 export interface SessionItem {
   id: string;
-  state: string;
+  state: SessionItemState;
   started_at: string;
   ended_at: string | null;
   title: string;

@@ -30,7 +30,11 @@ import type {
   SessionCreateResponse,
   SessionDeleteResponse,
   SessionDetailResponse,
-  SessionListResponse
+  SessionListResponse,
+  StartVerificationRequest,
+  StartVerificationResponse,
+  VerifyCodeRequest,
+  VerifyCodeResponse
 } from './schemas';
 
 import { customFetcher } from './fetcher';
@@ -775,5 +779,185 @@ export const useChatApiChatPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getChatApiChatPostMutationOptions(options), queryClient);
+    }
+
+export type startVerificationApiAuthStartVerificationPostResponse200 = {
+  data: StartVerificationResponse
+  status: 200
+}
+
+export type startVerificationApiAuthStartVerificationPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type startVerificationApiAuthStartVerificationPostResponseSuccess = (startVerificationApiAuthStartVerificationPostResponse200) & {
+  headers: Headers;
+};
+export type startVerificationApiAuthStartVerificationPostResponseError = (startVerificationApiAuthStartVerificationPostResponse422) & {
+  headers: Headers;
+};
+
+export type startVerificationApiAuthStartVerificationPostResponse = (startVerificationApiAuthStartVerificationPostResponseSuccess | startVerificationApiAuthStartVerificationPostResponseError)
+
+export const getStartVerificationApiAuthStartVerificationPostUrl = () => {
+
+
+
+
+  return `/api/auth/start-verification`
+}
+
+/**
+ * @summary Start Verification
+ */
+export const startVerificationApiAuthStartVerificationPost = async (startVerificationRequest: StartVerificationRequest, options?: RequestInit): Promise<startVerificationApiAuthStartVerificationPostResponse> => {
+
+  return customFetcher<startVerificationApiAuthStartVerificationPostResponse>(getStartVerificationApiAuthStartVerificationPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(startVerificationRequest)
+  }
+);}
+
+
+
+
+
+export const getStartVerificationApiAuthStartVerificationPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>, TError,{data: StartVerificationRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>, TError,{data: StartVerificationRequest}, TContext> => {
+
+const mutationKey = ['startVerificationApiAuthStartVerificationPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>, {data: StartVerificationRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  startVerificationApiAuthStartVerificationPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartVerificationApiAuthStartVerificationPostMutationResult = NonNullable<Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>>
+    export type StartVerificationApiAuthStartVerificationPostMutationBody = StartVerificationRequest
+    export type StartVerificationApiAuthStartVerificationPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Start Verification
+ */
+export const useStartVerificationApiAuthStartVerificationPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>, TError,{data: StartVerificationRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startVerificationApiAuthStartVerificationPost>>,
+        TError,
+        {data: StartVerificationRequest},
+        TContext
+      > => {
+      return useMutation(getStartVerificationApiAuthStartVerificationPostMutationOptions(options), queryClient);
+    }
+
+export type verifyCodeApiVerifyCodePostResponse200 = {
+  data: VerifyCodeResponse
+  status: 200
+}
+
+export type verifyCodeApiVerifyCodePostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type verifyCodeApiVerifyCodePostResponseSuccess = (verifyCodeApiVerifyCodePostResponse200) & {
+  headers: Headers;
+};
+export type verifyCodeApiVerifyCodePostResponseError = (verifyCodeApiVerifyCodePostResponse422) & {
+  headers: Headers;
+};
+
+export type verifyCodeApiVerifyCodePostResponse = (verifyCodeApiVerifyCodePostResponseSuccess | verifyCodeApiVerifyCodePostResponseError)
+
+export const getVerifyCodeApiVerifyCodePostUrl = () => {
+
+
+
+
+  return `/api/verify-code`
+}
+
+/**
+ * @summary Verify Code
+ */
+export const verifyCodeApiVerifyCodePost = async (verifyCodeRequest: VerifyCodeRequest, options?: RequestInit): Promise<verifyCodeApiVerifyCodePostResponse> => {
+
+  return customFetcher<verifyCodeApiVerifyCodePostResponse>(getVerifyCodeApiVerifyCodePostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(verifyCodeRequest)
+  }
+);}
+
+
+
+
+
+export const getVerifyCodeApiVerifyCodePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext> => {
+
+const mutationKey = ['verifyCodeApiVerifyCodePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>, {data: VerifyCodeRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  verifyCodeApiVerifyCodePost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyCodeApiVerifyCodePostMutationResult = NonNullable<Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>>
+    export type VerifyCodeApiVerifyCodePostMutationBody = VerifyCodeRequest
+    export type VerifyCodeApiVerifyCodePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Verify Code
+ */
+export const useVerifyCodeApiVerifyCodePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof verifyCodeApiVerifyCodePost>>,
+        TError,
+        {data: VerifyCodeRequest},
+        TContext
+      > => {
+      return useMutation(getVerifyCodeApiVerifyCodePostMutationOptions(options), queryClient);
     }
 
