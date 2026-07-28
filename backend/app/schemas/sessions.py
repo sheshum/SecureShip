@@ -4,14 +4,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-
 class SessionItem(BaseModel):
     id: UUID
     state: str
     started_at: datetime
     ended_at: datetime | None
-    title: str
-    message_count: int
 
 
 class SessionListResponse(BaseModel):

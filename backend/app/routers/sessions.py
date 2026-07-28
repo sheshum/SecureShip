@@ -73,7 +73,6 @@ def _to_session_item(session: ChatSession) -> SessionItem:
         started_at=session.started_at,
         ended_at=session.ended_at,
         title=title,
-        message_count=_count_message_events(transcript),
     )
 
 
@@ -105,14 +104,6 @@ def _derive_title(transcript: dict[str, Any]) -> str:
             return f"{content[:57]}..."
 
     return "New chat"
-
-
-def _count_message_events(transcript: dict[str, Any]) -> int:
-    count = 0
-    for event in transcript.get("events", []):
-        if event.get("type") == "message":
-            count += 1
-    return count
 
 
 def _to_session_transcript(transcript: dict[str, Any] | None) -> SessionTranscript:
