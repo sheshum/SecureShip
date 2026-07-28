@@ -1,14 +1,24 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel
 
+ChatSessionState = Literal[
+    "anonymous",
+    "collecting_identity",
+    "code_sent",
+    "awaiting_code",
+    "verified",
+    "escalated_to_human",
+]
+
 class SessionItem(BaseModel):
     id: UUID
-    state: str
+    state: ChatSessionState
     started_at: datetime
     ended_at: datetime | None
+    title: str
 
 
 class SessionListResponse(BaseModel):

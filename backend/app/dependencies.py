@@ -5,6 +5,7 @@ nowhere else, so swapping providers never touches business logic or routes.
 """
 
 from functools import lru_cache
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi import Depends
@@ -14,6 +15,7 @@ from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.shipments import ShipmentRepository
+from app.services.auth_session import AuthSessionStore, InMemoryAuthSessionStore
 from app.services.chat import ChatService
 
 
@@ -36,6 +38,16 @@ def get_shipment_repository() -> ShipmentRepository:
 
 def get_chat_session_repository() -> ChatSessionRepository:
     return ChatSessionRepository()
+
+
+@lru_cache
+def get_auth_session_store() -> AuthSessionStore:
+    settings = get_settings()
+    return InMemoryAuthSessionStore(
+        auth_ttl=timedelta(seconds=settings.auth_session_ttl_seconds),
+        otp_ttl=timedelta(seconds=settings.otp_ttl_seconds),
+        otp_resend_cooldown=timedelta(seconds=settings.otp_resend_cooldown_seconds),
+    )
 
 
 def get_chat_service(

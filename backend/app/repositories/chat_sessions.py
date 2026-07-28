@@ -16,18 +16,16 @@ class ChatSessionRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
 
-    def list_sessions(self, *, include_deleted: bool = False) -> list[ChatSession]:
+    def list_sessions(self) -> list[ChatSession]:
         with self._session_factory() as session:
             query = select(ChatSession)
-            if not include_deleted:
-                query = query.where(ChatSession.state != "deleted")
             query = query.order_by(ChatSession.started_at.desc())
             return session.scalars(query).all()
 
     def create_session(self, now: datetime) -> ChatSession:
         with self._session_factory() as session:
             chat_session = ChatSession(
-                state="active",
+                state="anonymous",
                 started_at=now,
                 ended_at=None,
                 transcript={"version": 1, "title": None, "events": []},
@@ -37,25 +35,28 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
-    def get_session(self, session_id: UUID, *, include_deleted: bool = False) -> ChatSession | None:
+    def get_session(self, session_id: UUID) -> ChatSession | None:
         with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
-            if not include_deleted and chat_session.state == "deleted":
-                return None
-            return chat_session
+            return session.get(ChatSession, session_id)
 
-    def soft_delete_session(self, session_id: UUID, now: datetime) -> ChatSession | None:
+    def delete_session(self, session_id: UUID, now: datetime) -> ChatSession | None:
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
             if chat_session is None:
                 return None
-            chat_session.state = "deleted"
-            chat_session.ended_at = now
-            session.commit()
             session.refresh(chat_session)
-            return chat_session
+            chat_session.ended_at = now
+            snapshot = ChatSession(
+                id=chat_session.id,
+                customer_id=chat_session.customer_id,
+                state=chat_session.state,
+                started_at=chat_session.started_at,
+                ended_at=chat_session.ended_at,
+                transcript=chat_session.transcript,
+            )
+            session.delete(chat_session)
+            session.commit()
+            return snapshot
 
     def append_events(self, session_id: UUID, events: list[dict[str, Any]]) -> ChatSession | None:
         if not events:
@@ -63,7 +64,7 @@ class ChatSessionRepository:
 
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
-            if chat_session is None or chat_session.state == "deleted":
+            if chat_session is None:
                 return None
 
             transcript = self._normalize_transcript(chat_session.transcript)
@@ -79,7 +80,7 @@ class ChatSessionRepository:
     def set_title_if_missing(self, session_id: UUID, title: str) -> ChatSession | None:
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
-            if chat_session is None or chat_session.state == "deleted":
+            if chat_session is None:
                 return None
 
             transcript = self._normalize_transcript(chat_session.transcript)

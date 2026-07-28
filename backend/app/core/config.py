@@ -30,3 +30,29 @@ class Settings(BaseSettings):
         default=["http://localhost:3000", "http://localhost:5173"],
         validation_alias=AliasChoices("CORS_ORIGINS"),
     )
+
+    auth_session_ttl_seconds: int = Field(
+        default=1800,
+        ge=1,
+        validation_alias=AliasChoices("AUTH_SESSION_TTL_SECONDS"),
+    )
+    otp_ttl_seconds: int = Field(
+        default=300,
+        ge=1,
+        validation_alias=AliasChoices("OTP_TTL_SECONDS"),
+    )
+    otp_max_attempts: int = Field(
+        default=5,
+        ge=1,
+        validation_alias=AliasChoices("OTP_MAX_ATTEMPTS"),
+    )
+    otp_resend_cooldown_seconds: int = Field(
+        default=45,
+        ge=1,
+        validation_alias=AliasChoices("OTP_RESEND_COOLDOWN_SECONDS"),
+    )
+    auth_session_cleanup_interval_seconds: int = Field(
+        default=60,
+        ge=1,
+        validation_alias=AliasChoices("AUTH_SESSION_CLEANUP_INTERVAL_SECONDS"),
+    )

@@ -107,13 +107,9 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
           return false
         }
 
-        if (session.message_count > 0) {
-          return true
-        }
-
-        return (messagesBySession[session.id]?.length ?? 0) > 0
+        return true
       }),
-    [allSessions, messagesBySession],
+    [allSessions],
   )
   const selectedMessages = selectedSessionId
     ? (messagesBySession[selectedSessionId] ?? [])
@@ -386,13 +382,6 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     }
 
     const selectedSession = allSessions.find((session) => session.id === selectedSessionId)
-    const hasLocalMessages = (messagesBySession[selectedSessionId]?.length ?? 0) > 0
-
-    // Empty sessions do not have history to hydrate; mark as hydrated to avoid pointless fetches.
-    if (selectedSession?.message_count === 0 && !hasLocalMessages) {
-      hydratedSessionIdsRef.current.add(selectedSessionId)
-      return
-    }
 
     let isCancelled = false
 
@@ -410,7 +399,7 @@ export function useChatSessions({ isStreaming }: UseChatSessionsOptions) {
     return () => {
       isCancelled = true
     }
-  }, [allSessions, isStreaming, loadSessionHistory, messagesBySession, selectedSessionId])
+  }, [allSessions, isStreaming, loadSessionHistory, selectedSessionId])
 
   const createNewSession = useCallback(async () => {
     if (isStreaming || allSessions.length === 0) {

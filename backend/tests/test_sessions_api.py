@@ -30,10 +30,8 @@ class FakeChatSessionRepository:
         self.sessions: dict[UUID, FakeChatSession] = {}
         self._tick = 0
 
-    def list_sessions(self, *, include_deleted: bool = False) -> list[FakeChatSession]:
+    def list_sessions(self) -> list[FakeChatSession]:
         sessions = list(self.sessions.values())
-        if not include_deleted:
-            sessions = [session for session in sessions if session.state != "deleted"]
         sessions.sort(key=lambda item: item.started_at, reverse=True)
         return sessions
 
@@ -42,7 +40,7 @@ class FakeChatSessionRepository:
         started_at = now + timedelta(seconds=self._tick)
         session = FakeChatSession(
             id=uuid4(),
-            state="active",
+            state="anonymous",
             started_at=started_at,
             ended_at=None,
             transcript={"version": 1, "title": None, "events": []},
@@ -50,21 +48,22 @@ class FakeChatSessionRepository:
         self.sessions[session.id] = session
         return session
 
-    def get_session(self, session_id: UUID, *, include_deleted: bool = False) -> FakeChatSession | None:
-        session = self.sessions.get(session_id)
-        if session is None:
-            return None
-        if not include_deleted and session.state == "deleted":
-            return None
-        return session
+    def get_session(self, session_id: UUID) -> FakeChatSession | None:
+        return self.sessions.get(session_id)
 
-    def soft_delete_session(self, session_id: UUID, now: datetime) -> FakeChatSession | None:
+    def delete_session(self, session_id: UUID, now: datetime) -> FakeChatSession | None:
         session = self.sessions.get(session_id)
         if session is None:
             return None
-        session.state = "deleted"
-        session.ended_at = now
-        return session
+        deleted_snapshot = FakeChatSession(
+            id=session.id,
+            state=session.state,
+            started_at=session.started_at,
+            ended_at=now,
+            transcript=session.transcript,
+        )
+        del self.sessions[session_id]
+        return deleted_snapshot
 
     def append_events(self, session_id: UUID, events: list[dict]) -> FakeChatSession | None:
         session = self.get_session(session_id)
@@ -133,12 +132,13 @@ class SessionsApiTests(unittest.TestCase):
         self.assertEqual(payload["sessions"][0]["id"], second.json()["session"]["id"])
         self.assertEqual(payload["sessions"][1]["id"], first.json()["session"]["id"])
 
-    def test_soft_delete_excludes_session_from_list(self) -> None:
+    def test_delete_removes_session_from_list(self) -> None:
         created = self.client.post("/api/sessions").json()["session"]
 
         deleted = self.client.delete(f"/api/sessions/{created['id']}")
         self.assertEqual(deleted.status_code, 200)
-        self.assertEqual(deleted.json()["session"]["state"], "deleted")
+        self.assertEqual(deleted.json()["session"]["state"], "anonymous")
+        self.assertIsNotNone(deleted.json()["session"]["ended_at"])
 
         listed = self.client.get("/api/sessions").json()["sessions"]
         self.assertEqual(listed, [])

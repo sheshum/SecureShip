@@ -58,7 +58,7 @@ def delete_session(
     session_id: UUID,
     repository: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
 ) -> SessionDeleteResponse:
-    session = repository.soft_delete_session(session_id, now=datetime.now(UTC))
+    session = repository.delete_session(session_id, now=datetime.now(UTC))
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     return SessionDeleteResponse(session=_to_session_item(session))
@@ -104,8 +104,6 @@ def _derive_title(transcript: dict[str, Any]) -> str:
             return f"{content[:57]}..."
 
     return "New chat"
-
-
 def _to_session_transcript(transcript: dict[str, Any] | None) -> SessionTranscript:
     normalized = _normalize_transcript(transcript)
     events: list[SessionTranscriptEvent] = []

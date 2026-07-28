@@ -12,5 +12,4 @@ export interface SessionItem {
   started_at: string;
   ended_at: string | null;
   title: string;
-  message_count: number;
 }
