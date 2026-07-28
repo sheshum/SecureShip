@@ -9,9 +9,14 @@ from uuid import UUID, uuid4
 
 from fastapi.testclient import TestClient
 
-from app.dependencies import get_chat_service, get_chat_session_repository
+from app.dependencies import (
+    get_auth_session_store,
+    get_chat_service,
+    get_chat_session_repository,
+)
 from app.llm.base import LLMCompletion, LLMMessage, ToolCall
 from app.repositories.shipments import ShipmentRepository
+from app.services.auth_session import InMemoryAuthSessionStore
 from app.services.chat import ChatService
 from main import create_app
 
@@ -22,6 +27,7 @@ class FakeChatSession:
     state: str
     started_at: datetime
     ended_at: datetime | None
+    customer_id: UUID | None
     transcript: dict
 
 
@@ -43,6 +49,7 @@ class FakeChatSessionRepository:
             state="anonymous",
             started_at=started_at,
             ended_at=None,
+            customer_id=None,
             transcript={"version": 1, "title": None, "events": []},
         )
         self.sessions[session.id] = session
@@ -60,10 +67,25 @@ class FakeChatSessionRepository:
             state=session.state,
             started_at=session.started_at,
             ended_at=now,
+            customer_id=session.customer_id,
             transcript=session.transcript,
         )
         del self.sessions[session_id]
         return deleted_snapshot
+
+    def update_auth_state(
+        self,
+        session_id: UUID,
+        *,
+        state: str,
+        customer_id: UUID | None,
+    ) -> FakeChatSession | None:
+        session = self.sessions.get(session_id)
+        if session is None:
+            return None
+        session.state = state
+        session.customer_id = customer_id
+        return session
 
     def append_events(self, session_id: UUID, events: list[dict]) -> FakeChatSession | None:
         session = self.get_session(session_id)
@@ -101,10 +123,21 @@ class FakeShipmentRepository(ShipmentRepository):
     def __init__(self) -> None:
         pass
 
-    def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:
+    def get_shipment_by_tracking_number_for_customer(self, tracking_number: str, customer_id) -> dict | None:
         if tracking_number != "TRK123":
             return None
-        return {"tracking_number": "TRK123", "status": "in_transit"}
+        return {
+            "tracking_number": "TRK123",
+            "status": "in_transit",
+            "customer_id": str(customer_id),
+        }
+
+    def get_shipments_for_customer(self, customer_id) -> dict:
+        return {
+            "found": True,
+            "customer": {"id": str(customer_id)},
+            "shipments": [{"tracking_number": "TRK123"}],
+        }
 
 
 class SessionsApiTests(unittest.TestCase):
@@ -181,8 +214,14 @@ class SessionsApiTests(unittest.TestCase):
 class ChatPersistenceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repository = FakeChatSessionRepository()
+        self.auth_store = InMemoryAuthSessionStore(
+            auth_ttl=timedelta(minutes=30),
+            otp_ttl=timedelta(minutes=5),
+            otp_resend_cooldown=timedelta(seconds=45),
+        )
         self.app = create_app()
         self.app.dependency_overrides[get_chat_session_repository] = lambda: self.repository
+        self.app.dependency_overrides[get_auth_session_store] = lambda: self.auth_store
         self.client = TestClient(self.app)
 
     def tearDown(self) -> None:
@@ -208,6 +247,7 @@ class ChatPersistenceTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('"type": "session"', response.text)
+        self.assertIn('"type": "auth_required"', response.text)
         self.assertEqual(len(self.repository.sessions), 1)
 
         created_session = next(iter(self.repository.sessions.values()))
@@ -215,6 +255,42 @@ class ChatPersistenceTests(unittest.TestCase):
         self.assertEqual(events[0]["type"], "message")
         self.assertEqual(events[0]["role"], "user")
         self.assertEqual(events[0]["content"], "hello")
+
+    def test_chat_with_existing_session_missing_auth_emits_auth_required(self) -> None:
+        session = self.repository.create_session(now=datetime.now(UTC))
+
+        response = self.client.post(
+            "/api/chat",
+            json={
+                "session_id": str(session.id),
+                "messages": [{"role": "user", "content": "Track my package"}],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('"type": "auth_state"', response.text)
+        self.assertIn('"state": "collecting_identity"', response.text)
+        self.assertIn('"type": "auth_required"', response.text)
+        self.assertEqual(self.repository.sessions[session.id].state, "collecting_identity")
+
+    def test_chat_with_expired_auth_unbinds_customer_and_regates(self) -> None:
+        session = self.repository.create_session(now=datetime.now(UTC))
+        session.state = "verified"
+        session.customer_id = uuid4()
+        self.auth_store.mark_verified(session.id, session.customer_id, now=datetime.now(UTC) - timedelta(hours=1))
+
+        response = self.client.post(
+            "/api/chat",
+            json={
+                "session_id": str(session.id),
+                "messages": [{"role": "user", "content": "Any updates?"}],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('"type": "auth_required"', response.text)
+        self.assertEqual(self.repository.sessions[session.id].state, "collecting_identity")
+        self.assertIsNone(self.repository.sessions[session.id].customer_id)
 
     def test_chat_persists_user_tool_and_assistant_events(self) -> None:
         llm_client = FakeLLMClient(
@@ -237,6 +313,8 @@ class ChatPersistenceTests(unittest.TestCase):
         self.app.dependency_overrides[get_chat_service] = lambda: chat_service
 
         session = self.repository.create_session(now=datetime.now(UTC))
+        verified_customer_id = uuid4()
+        self.auth_store.mark_verified(session.id, verified_customer_id, now=datetime.now(UTC))
 
         response = self.client.post(
             "/api/chat",

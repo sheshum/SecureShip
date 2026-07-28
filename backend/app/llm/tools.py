@@ -3,11 +3,21 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
 from app.llm.base import ToolCall
 from app.repositories.shipments import ShipmentRepository
+
+
+@dataclass(frozen=True, slots=True)
+class AuthContext:
+    customer_id: UUID | None
+
+    @property
+    def is_verified(self) -> bool:
+        return self.customer_id is not None
 
 SHIPMENT_TOOLS: list[dict[str, Any]] = [
     {
@@ -31,17 +41,11 @@ SHIPMENT_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "get_shipment_by_user",
-            "description": "Fetch all shipments for a customer/user identifier extracted from the request.",
+            "name": "get_my_shipments",
+            "description": "Fetch all shipments for the verified customer in the active chat session.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "user_id": {
-                        "type": "string",
-                        "description": "The customer identifier extracted from the user's message.",
-                    }
-                },
-                "required": ["user_id"],
+                "properties": {},
                 "additionalProperties": False,
             },
         },
@@ -52,8 +56,19 @@ SHIPMENT_TOOLS: list[dict[str, Any]] = [
 def execute_tool_call(
     tool_call: ToolCall,
     shipment_repository: ShipmentRepository,
+    auth_context: AuthContext,
 ) -> dict[str, Any]:
-    arguments = json.loads(tool_call.arguments or "{}")
+    try:
+        arguments = json.loads(tool_call.arguments or "{}")
+    except json.JSONDecodeError:
+        arguments = {}
+
+    if not auth_context.is_verified or auth_context.customer_id is None:
+        return {
+            "ok": False,
+            "error": "auth_required",
+            "message": "Authentication is required before shipment tools can be used.",
+        }
 
     if tool_call.name == "get_shipment_status":
         tracking_number = str(arguments.get("tracking_number", "")).strip()
@@ -62,7 +77,10 @@ def execute_tool_call(
                 "ok": False,
                 "error": "tracking_number is required",
             }
-        shipment = shipment_repository.get_shipment_by_tracking_number(tracking_number)
+        shipment = shipment_repository.get_shipment_by_tracking_number_for_customer(
+            tracking_number,
+            auth_context.customer_id,
+        )
         if shipment is None:
             return {
                 "ok": False,
@@ -75,32 +93,11 @@ def execute_tool_call(
             "shipment": shipment,
         }
 
-    if tool_call.name == "get_shipment_by_user":
-        user_id = str(arguments.get("user_id", "")).strip()
-        if not user_id:
-            return {
-                "ok": False,
-                "error": "user_id is required",
-            }
-        try:
-            UUID(user_id)
-        except ValueError:
-            return {
-                "ok": False,
-                "error": "user_id must be a valid UUID",
-                "user_id": user_id,
-            }
-        try:
-            return {
-                "ok": True,
-                **shipment_repository.get_shipments_by_customer_id(user_id),
-            }
-        except ValueError:
-            return {
-                "ok": False,
-                "error": "user_id must be a valid UUID",
-                "user_id": user_id,
-            }
+    if tool_call.name == "get_my_shipments":
+        return {
+            "ok": True,
+            **shipment_repository.get_shipments_for_customer(auth_context.customer_id),
+        }
 
     return {
         "ok": False,

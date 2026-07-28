@@ -4,9 +4,10 @@ import asyncio
 import json
 import unittest
 from collections.abc import AsyncIterator
+from uuid import uuid4
 
 from app.llm.base import LLMCompletion, LLMMessage, ToolCall
-from app.llm.tools import execute_tool_call
+from app.llm.tools import AuthContext, execute_tool_call
 from app.repositories.shipments import ShipmentRepository
 from app.services.chat import ChatService
 
@@ -37,8 +38,9 @@ class FakeShipmentRepository(ShipmentRepository):
         self.tracking_numbers: list[str] = []
         self.customer_ids: list[str] = []
 
-    def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:
+    def get_shipment_by_tracking_number_for_customer(self, tracking_number: str, customer_id) -> dict | None:
         self.tracking_numbers.append(tracking_number)
+        self.customer_ids.append(str(customer_id))
         if tracking_number == "TRK123":
             return {
                 "tracking_number": tracking_number,
@@ -46,11 +48,12 @@ class FakeShipmentRepository(ShipmentRepository):
             }
         return None
 
-    def get_shipments_by_customer_id(self, customer_id: str) -> dict:
-        self.customer_ids.append(customer_id)
+    def get_shipments_for_customer(self, customer_id) -> dict:
+        customer_id_str = str(customer_id)
+        self.customer_ids.append(customer_id_str)
         return {
             "found": True,
-            "customer": {"id": customer_id},
+            "customer": {"id": customer_id_str},
             "shipments": [{"tracking_number": "TRK123"}],
         }
 
@@ -64,24 +67,28 @@ class ToolExecutionTests(unittest.TestCase):
             arguments=json.dumps({"tracking_number": "TRK123"}),
         )
 
-        result = execute_tool_call(tool_call, repository)
+        result = execute_tool_call(
+            tool_call,
+            repository,
+            AuthContext(customer_id=uuid4()),
+        )
 
         self.assertTrue(result["ok"])
         self.assertTrue(result["found"])
         self.assertEqual(repository.tracking_numbers, ["TRK123"])
 
-    def test_execute_get_shipment_by_user_rejects_invalid_uuid(self) -> None:
+    def test_execute_tool_returns_auth_required_when_unverified(self) -> None:
         repository = FakeShipmentRepository()
         tool_call = ToolCall(
             id="tool-2",
-            name="get_shipment_by_user",
-            arguments=json.dumps({"user_id": "not-a-uuid"}),
+            name="get_my_shipments",
+            arguments=json.dumps({}),
         )
 
-        result = execute_tool_call(tool_call, repository)
+        result = execute_tool_call(tool_call, repository, AuthContext(customer_id=None))
 
         self.assertFalse(result["ok"])
-        self.assertEqual(result["error"], "user_id must be a valid UUID")
+        self.assertEqual(result["error"], "auth_required")
         self.assertEqual(repository.customer_ids, [])
 
 
@@ -107,7 +114,13 @@ class ChatServiceTests(unittest.IsolatedAsyncioTestCase):
         repository = FakeShipmentRepository()
         service = ChatService(llm_client, repository)
 
-        output = [event async for event in service.agent_stream([LLMMessage(role="user", content="Where is TRK123?")])]
+        output = [
+            event
+            async for event in service.agent_stream(
+                [LLMMessage(role="user", content="Where is TRK123?")],
+                auth_context=AuthContext(customer_id=uuid4()),
+            )
+        ]
 
         self.assertEqual(
             output,
@@ -130,7 +143,13 @@ class ChatServiceTests(unittest.IsolatedAsyncioTestCase):
         repository = FakeShipmentRepository()
         service = ChatService(llm_client, repository)
 
-        output = [event async for event in service.agent_stream([LLMMessage(role="user", content="Hello")])]
+        output = [
+            event
+            async for event in service.agent_stream(
+                [LLMMessage(role="user", content="Hello")],
+                auth_context=AuthContext(customer_id=uuid4()),
+            )
+        ]
 
         self.assertEqual(output, [{"type": "token", "content": "Direct"}, {"type": "token", "content": " answer"}, {"type": "done"}])
         self.assertEqual(len(llm_client.complete_calls), 1)

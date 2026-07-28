@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any
 
 from app.llm.base import LLMClient, LLMMessage
-from app.llm.tools import SHIPMENT_TOOLS, execute_tool_call
+from app.llm.tools import AuthContext, SHIPMENT_TOOLS, execute_tool_call
 from app.repositories.shipments import ShipmentRepository
 
 SYSTEM_PROMPT = (
@@ -20,7 +20,12 @@ class ChatService:
         self._llm_client = llm_client
         self._shipment_repository = shipment_repository
 
-    async def agent_stream(self, messages: Sequence[LLMMessage]) -> AsyncIterator[dict[str, Any]]:
+    async def agent_stream(
+        self,
+        messages: Sequence[LLMMessage],
+        *,
+        auth_context: AuthContext,
+    ) -> AsyncIterator[dict[str, Any]]:
         """Run the agent loop and yield structured events for SSE transport."""
 
         conversation = [LLMMessage(role="system", content=SYSTEM_PROMPT), *messages]
@@ -51,7 +56,7 @@ class ChatService:
                         "args": tool_args,
                     }
 
-                    tool_result = execute_tool_call(tool_call, self._shipment_repository)
+                    tool_result = execute_tool_call(tool_call, self._shipment_repository, auth_context)
                     yield {
                         "type": "tool_result",
                         "tool": tool_call.name,

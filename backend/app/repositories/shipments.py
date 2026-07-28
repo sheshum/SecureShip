@@ -16,25 +16,34 @@ class ShipmentRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
 
-    def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:
+    def get_shipment_by_tracking_number_for_customer(
+        self,
+        tracking_number: str,
+        customer_id: UUID | str,
+    ) -> dict | None:
+        customer_uuid = UUID(str(customer_id))
         with self._session_factory() as session:
             shipment = session.scalar(
                 select(Shipment)
                 .options(selectinload(Shipment.packages), selectinload(Shipment.customer))
-                .where(Shipment.tracking_number == tracking_number)
+                .where(
+                    Shipment.tracking_number == tracking_number,
+                    Shipment.customer_id == customer_uuid,
+                )
             )
             if shipment is None:
                 return None
             return self._serialize_shipment(shipment)
 
-    def get_shipments_by_customer_id(self, customer_id: str) -> dict:
-        customer_uuid = UUID(customer_id)
+    def get_shipments_for_customer(self, customer_id: UUID | str) -> dict:
+        customer_uuid = UUID(str(customer_id))
+        customer_id_value = str(customer_uuid)
         with self._session_factory() as session:
             customer = session.get(Customer, customer_uuid)
             if customer is None:
                 return {
                     "found": False,
-                    "customer_id": customer_id,
+                    "customer_id": customer_id_value,
                     "shipments": [],
                 }
 
