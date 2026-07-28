@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import get_settings
-from app.routers import chat, health, sessions
+from app.routers import auth, chat, health, sessions
 
 
 def create_app() -> FastAPI:
@@ -25,6 +25,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(sessions.router)
     app.include_router(chat.router)
+    app.include_router(auth.router)
 
     return app
 

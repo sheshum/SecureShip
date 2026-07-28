@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import ChatSession
+from app.schemas.sessions import ChatSessionState
 
 
 class ChatSessionRepository:
@@ -89,6 +90,24 @@ class ChatSessionRepository:
                 chat_session.transcript = transcript
                 session.commit()
                 session.refresh(chat_session)
+            return chat_session
+
+    def update_auth_state(
+        self,
+        session_id: UUID,
+        *,
+        state: ChatSessionState,
+        customer_id: UUID | None,
+    ) -> ChatSession | None:
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            chat_session.state = state
+            chat_session.customer_id = customer_id
+            session.commit()
+            session.refresh(chat_session)
             return chat_session
 
     @staticmethod

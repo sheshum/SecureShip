@@ -14,9 +14,11 @@ from app.core.config import Settings
 from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
 from app.repositories.chat_sessions import ChatSessionRepository
+from app.repositories.customers import CustomerRepository
 from app.repositories.shipments import ShipmentRepository
 from app.services.auth_session import AuthSessionStore, InMemoryAuthSessionStore
 from app.services.chat import ChatService
+from app.services.identity_verification import IdentityVerificationService
 from app.services.otp import OtpService
 from app.services.sms import ConsoleSmsProvider, SmsProvider, SmsService
 
@@ -40,6 +42,10 @@ def get_shipment_repository() -> ShipmentRepository:
 
 def get_chat_session_repository() -> ChatSessionRepository:
     return ChatSessionRepository()
+
+
+def get_customer_repository() -> CustomerRepository:
+    return CustomerRepository()
 
 
 @lru_cache
@@ -74,6 +80,12 @@ def get_otp_service(
         auth_session_store,
         max_attempts=settings.otp_max_attempts,
     )
+
+
+def get_identity_verification_service(
+    customer_repository: Annotated[CustomerRepository, Depends(get_customer_repository)],
+) -> IdentityVerificationService:
+    return IdentityVerificationService(customer_repository)
 
 
 def get_chat_service(
