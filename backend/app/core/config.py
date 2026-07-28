@@ -56,3 +56,7 @@ class Settings(BaseSettings):
         ge=1,
         validation_alias=AliasChoices("AUTH_SESSION_CLEANUP_INTERVAL_SECONDS"),
     )
+    sms_provider: str = Field(
+        default="console",
+        validation_alias=AliasChoices("SMS_PROVIDER"),
+    )

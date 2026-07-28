@@ -65,6 +65,10 @@ class AuthSessionStore(Protocol):
 
     def delete(self, session_id: UUID) -> None: ...
 
+    def next_otp_expiry(self, *, now: datetime | None = None) -> datetime: ...
+
+    def next_resend_available_at(self, *, now: datetime | None = None) -> datetime: ...
+
 
 class InMemoryAuthSessionStore:
     def __init__(

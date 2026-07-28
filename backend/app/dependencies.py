@@ -17,6 +17,8 @@ from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.shipments import ShipmentRepository
 from app.services.auth_session import AuthSessionStore, InMemoryAuthSessionStore
 from app.services.chat import ChatService
+from app.services.otp import OtpService
+from app.services.sms import ConsoleSmsProvider, SmsProvider, SmsService
 
 
 @lru_cache
@@ -47,6 +49,30 @@ def get_auth_session_store() -> AuthSessionStore:
         auth_ttl=timedelta(seconds=settings.auth_session_ttl_seconds),
         otp_ttl=timedelta(seconds=settings.otp_ttl_seconds),
         otp_resend_cooldown=timedelta(seconds=settings.otp_resend_cooldown_seconds),
+    )
+
+
+@lru_cache
+def get_sms_provider() -> SmsProvider:
+    settings = get_settings()
+    if settings.sms_provider == "console":
+        return ConsoleSmsProvider()
+    return ConsoleSmsProvider()
+
+
+def get_sms_service(
+    provider: Annotated[SmsProvider, Depends(get_sms_provider)],
+) -> SmsService:
+    return SmsService(provider)
+
+
+def get_otp_service(
+    auth_session_store: Annotated[AuthSessionStore, Depends(get_auth_session_store)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> OtpService:
+    return OtpService(
+        auth_session_store,
+        max_attempts=settings.otp_max_attempts,
     )
 
 
