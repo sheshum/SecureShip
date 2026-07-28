@@ -35,3 +35,4 @@ class VerifyCodeResponse(BaseModel):
     message: str
     error_code: str | None = None
     remaining_attempts: int | None = None
+    pending_turn_id: str | None = None

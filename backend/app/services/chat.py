@@ -5,7 +5,12 @@ from collections.abc import AsyncIterator, Sequence
 from typing import Any
 
 from app.llm.base import LLMClient, LLMMessage
-from app.llm.tools import AuthContext, SHIPMENT_TOOLS, execute_tool_call
+from app.llm.tools import (
+    AUTH_GATE_TOOLS,
+    AuthContext,
+    SHIPMENT_TOOLS,
+    execute_tool_call,
+)
 from app.repositories.shipments import ShipmentRepository
 
 SYSTEM_PROMPT = (
@@ -83,3 +88,42 @@ class ChatService:
             return
 
         yield {"type": "error", "message": "Max agent turns reached. Please try again."}
+
+    async def auth_gate_stream(
+        self,
+        messages: Sequence[LLMMessage],
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Plan and emit auth-initiation tool calls for unauthenticated turns."""
+
+        conversation = [
+            LLMMessage(role="system", content=SYSTEM_PROMPT),
+            LLMMessage(
+                role="system",
+                content=(
+                    "The user is not verified. You must call request_identity_info before any shipment assistance."
+                ),
+            ),
+            *messages,
+        ]
+
+        completion = await self._llm_client.plan_chat_turn(conversation, tools=AUTH_GATE_TOOLS)
+        tool_calls = completion.tool_calls
+
+        if not tool_calls:
+            yield {
+                "type": "auth_required",
+                "message": "Please share your first name, last name, and phone number to verify your identity.",
+            }
+            return
+
+        for tool_call in tool_calls:
+            try:
+                tool_args = json.loads(tool_call.arguments or "{}")
+            except json.JSONDecodeError:
+                tool_args = {}
+
+            yield {
+                "type": "tool_call",
+                "tool": tool_call.name,
+                "args": tool_args,
+            }

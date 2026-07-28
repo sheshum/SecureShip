@@ -67,6 +67,12 @@ class FakeChatSessionRepository:
         session.customer_id = customer_id
         return session
 
+    def get_pending_turn(self, session_id: UUID) -> dict | None:
+        session = self.sessions.get(session_id)
+        if session is None:
+            return None
+        return session.transcript.get("pending_turn")
+
 
 class FakeIdentityService:
     def __init__(self, customer_id: UUID | None = None) -> None:

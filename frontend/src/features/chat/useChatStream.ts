@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { streamChat, type ChatStreamHandlers } from '../../api/chatStream'
+import {
+  streamChat,
+  streamPendingChat,
+  type ChatContinueRequest,
+  type ChatStreamHandlers,
+} from '../../api/chatStream'
 import type { ChatRequest } from '../../api/generated/schemas'
 
 export function useChatStream() {
@@ -45,6 +50,40 @@ export function useChatStream() {
     }
   }, [])
 
+  const continuePending = useCallback(async (request: ChatContinueRequest, handlers?: ChatStreamHandlers) => {
+    abortControllerRef.current?.abort()
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+    setIsStreaming(true)
+    setError(null)
+
+    try {
+      await streamPendingChat(
+        request,
+        {
+          ...handlers,
+          onError: (message) => {
+            setError(message)
+            handlers?.onError?.(message)
+          },
+        },
+        abortController.signal,
+      )
+    } catch (streamError) {
+      if (streamError instanceof DOMException && streamError.name === 'AbortError') {
+        return
+      }
+
+      const message = streamError instanceof Error ? streamError.message : 'Chat stream failed'
+      setError(message)
+    } finally {
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null
+      }
+      setIsStreaming(false)
+    }
+  }, [])
+
   useEffect(() => {
     return () => {
       abortControllerRef.current?.abort()
@@ -55,6 +94,7 @@ export function useChatStream() {
     isStreaming,
     error,
     send,
+    continuePending,
     cancel,
   }
 }

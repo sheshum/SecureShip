@@ -49,14 +49,20 @@ def auth_state_event(state: ChatSessionState, *, auth_expires_at: str | None = N
     return payload
 
 
-def auth_required_event() -> dict:
+def auth_required_event(
+    *,
+    pending_turn_id: str | None = None,
+    message: str | None = None,
+) -> dict:
     return {
         "type": "auth_required",
-        "message": "Please authenticate to access shipment details for this chat.",
+        "message": message
+        or "Please share your first name, last name, and phone number to verify your identity before I can access shipment details.",
         "cta": {
-            "label": "Authenticate",
-            "action": "start_verification",
+            "label": "Reply with identity details",
+            "action": "reply_with_identity",
         },
+        "pending_turn_id": pending_turn_id,
     }
 
 

@@ -73,6 +73,16 @@ export function useChatSessions(_: UseChatSessionsOptions = {}) {
     setSessionError(null)
   }, [])
 
+  const appendAssistantPlaceholder = useCallback((assistantMessage: ChatMessage) => {
+    setMessages((currentMessages) => [...currentMessages, assistantMessage])
+    setSessionError(null)
+  }, [])
+
+  const appendAssistantMessage = useCallback((assistantMessage: ChatMessage) => {
+    setMessages((currentMessages) => [...currentMessages, assistantMessage])
+    setSessionError(null)
+  }, [])
+
   const appendAssistantToken = useCallback((assistantMessageId: number, token: string) => {
     setMessages((currentMessages) =>
       currentMessages.map((message) =>
@@ -137,6 +147,8 @@ export function useChatSessions(_: UseChatSessionsOptions = {}) {
     ensureSession,
     bindSessionId,
     addPendingTurn,
+    appendAssistantPlaceholder,
+    appendAssistantMessage,
     appendAssistantToken,
     setAssistantError,
     removeTrailingEmptyAssistant,

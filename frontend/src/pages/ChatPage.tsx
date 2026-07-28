@@ -1,17 +1,14 @@
 import { useRef, useState } from 'react'
-import { type IdentityInput } from '../components/AuthRequiredMessage'
 import { type ChatMessage } from '../components/ChatMessageList'
 import { ChatPanel } from '../components/ChatPanel'
 import { OtpVerificationModal } from '../components/OtpVerificationModal'
 import {
-  useStartVerificationApiAuthStartVerificationPost,
   useVerifyCodeApiVerifyCodePost,
 } from '../api/generated/client'
 import { useChatStream } from '../features/chat/useChatStream'
 import { useChatSessions } from '../features/chat/useChatSessions'
 import type {
   ChatRequest,
-  StartVerificationResponse,
   VerifyCodeResponse,
 } from '../api/generated/schemas'
 
@@ -34,9 +31,9 @@ export function ChatPage() {
   const [otpHelperMessage, setOtpHelperMessage] = useState<string | null>(null)
   const [otpErrorMessage, setOtpErrorMessage] = useState<string | null>(null)
   const [otpRemainingAttempts, setOtpRemainingAttempts] = useState<number | null>(null)
+  const [pendingTurnId, setPendingTurnId] = useState<string | null>(null)
   const nextMessageIdRef = useRef(1)
-  const { isStreaming, error, send, cancel } = useChatStream()
-  const startVerificationMutation = useStartVerificationApiAuthStartVerificationPost()
+  const { isStreaming, error, send, continuePending, cancel } = useChatStream()
   const verifyCodeMutation = useVerifyCodeApiVerifyCodePost()
   const {
     sessionId,
@@ -46,26 +43,13 @@ export function ChatPage() {
     ensureSession,
     bindSessionId,
     addPendingTurn,
+    appendAssistantPlaceholder,
+    appendAssistantMessage,
     appendAssistantToken,
     setAssistantError,
     removeTrailingEmptyAssistant,
     clearSessionError,
   } = useChatSessions()
-
-  const unwrapStartVerificationResponse = (response: unknown): StartVerificationResponse | null => {
-    if (response && typeof response === 'object' && 'data' in response) {
-      const data = (response as { data?: unknown }).data
-      if (data && typeof data === 'object' && 'state' in data) {
-        return data as StartVerificationResponse
-      }
-    }
-
-    if (response && typeof response === 'object' && 'state' in response) {
-      return response as StartVerificationResponse
-    }
-
-    return null
-  }
 
   const unwrapVerifyCodeResponse = (response: unknown): VerifyCodeResponse | null => {
     if (response && typeof response === 'object' && 'data' in response) {
@@ -139,15 +123,26 @@ export function ChatPage() {
       },
       onAuthRequired: (event) => {
         removeTrailingEmptyAssistant()
+        const nextPendingTurnId = event.pending_turn_id ?? null
+        if (event.message && nextPendingTurnId !== pendingTurnId) {
+          appendAssistantMessage({
+            id: nextMessageIdRef.current++,
+            role: 'assistant',
+            content: event.message,
+          })
+        }
         setAuthRequiredMessage(event.message)
+        setPendingTurnId(nextPendingTurnId)
       },
       onShowCodeModal: (event) => {
         if (!event.open) {
           return
         }
 
+        setOtpModalOpen(true)
         setCodeModalHint(true)
-        setAuthInfoMessage('A verification code was already issued for this session.')
+        setAuthInfoMessage('Verification code sent. Enter the code to continue.')
+        setOtpHelperMessage('Verification code sent. Enter the code to continue.')
       },
       onToken: (token) => {
         appendAssistantToken(assistantMessageId, token)
@@ -159,51 +154,6 @@ export function ChatPage() {
         removeTrailingEmptyAssistant()
       },
     })
-  }
-
-  const handleAuthenticate = async (input: IdentityInput) => {
-    if (!sessionId) {
-      return
-    }
-
-    setOtpErrorMessage(null)
-    setOtpHelperMessage(null)
-    setOtpRemainingAttempts(null)
-
-    try {
-      const response = await startVerificationMutation.mutateAsync({
-        data: {
-          session_id: sessionId,
-          first_name: input.firstName,
-          last_name: input.lastName,
-          phone_number: input.phoneNumber,
-        },
-      })
-      const payload = unwrapStartVerificationResponse(response)
-      if (!payload) {
-        setOtpErrorMessage('Unexpected verification response. Please try again.')
-        return
-      }
-
-      setAuthInfoMessage(payload.message)
-
-      if (payload.started && payload.show_code_modal) {
-        setOtpModalOpen(true)
-        setOtpHelperMessage(payload.message)
-        setOtpErrorMessage(null)
-        return
-      }
-
-      if (payload.error_code) {
-        setOtpErrorMessage(payload.message)
-      }
-    } catch (verificationError) {
-      const message =
-        verificationError instanceof Error
-          ? verificationError.message
-          : 'Unable to start verification right now. Please try again.'
-      setOtpErrorMessage(message)
-    }
   }
 
   const handleVerifyCode = async (code: string) => {
@@ -236,6 +186,44 @@ export function ChatPage() {
         setOtpModalOpen(false)
         setOtpErrorMessage(null)
         setOtpRemainingAttempts(null)
+
+        const verifyPayload = payload as VerifyCodeResponse & { pending_turn_id?: string | null }
+        const turnToContinue = verifyPayload.pending_turn_id ?? pendingTurnId
+
+        if (turnToContinue) {
+          const assistantMessageId = nextMessageIdRef.current++
+          appendAssistantPlaceholder({
+            id: assistantMessageId,
+            role: 'assistant',
+            content: '',
+          })
+
+          setAuthInfoMessage('Identity verified. Finishing your previous request...')
+
+          void continuePending(
+            {
+              session_id: sessionId,
+              pending_turn_id: turnToContinue,
+              messages: messages.map((message) => ({
+                role: message.role,
+                content: message.content,
+              })),
+            },
+            {
+              onToken: (token) => {
+                appendAssistantToken(assistantMessageId, token)
+              },
+              onError: (message) => {
+                setAssistantError(assistantMessageId, message)
+              },
+              onDone: () => {
+                removeTrailingEmptyAssistant()
+                setPendingTurnId(null)
+              },
+            },
+          )
+        }
+
         return
       }
 
@@ -283,8 +271,6 @@ export function ChatPage() {
               ? authInfoMessage ?? 'A verification code is ready for this session.'
               : authInfoMessage
           }
-          isStartingVerification={startVerificationMutation.isPending}
-          onAuthenticate={handleAuthenticate}
           onDraftChange={handleChange}
           onSubmit={handleSubmit}
           onCancel={handleCancel}

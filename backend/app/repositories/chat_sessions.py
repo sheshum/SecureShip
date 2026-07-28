@@ -110,22 +110,82 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
+    def set_pending_turn(self, session_id: UUID, *, turn_id: str, content: str) -> ChatSession | None:
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            transcript = self._normalize_transcript(chat_session.transcript)
+            transcript["pending_turn"] = {
+                "turn_id": turn_id,
+                "content": content,
+                "status": "pending",
+            }
+            chat_session.transcript = transcript
+            session.commit()
+            session.refresh(chat_session)
+            return chat_session
+
+    def get_pending_turn(self, session_id: UUID) -> dict[str, Any] | None:
+        chat_session = self.get_session(session_id)
+        if chat_session is None:
+            return None
+
+        transcript = self._normalize_transcript(chat_session.transcript)
+        pending_turn = transcript.get("pending_turn")
+        if not isinstance(pending_turn, dict):
+            return None
+        return pending_turn
+
+    def set_pending_turn_status(self, session_id: UUID, *, status: str) -> ChatSession | None:
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            transcript = self._normalize_transcript(chat_session.transcript)
+            pending_turn = transcript.get("pending_turn")
+            if not isinstance(pending_turn, dict):
+                return chat_session
+
+            pending_turn["status"] = status
+            transcript["pending_turn"] = pending_turn
+            chat_session.transcript = transcript
+            session.commit()
+            session.refresh(chat_session)
+            return chat_session
+
+    def clear_pending_turn(self, session_id: UUID) -> ChatSession | None:
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            transcript = self._normalize_transcript(chat_session.transcript)
+            if "pending_turn" in transcript:
+                transcript.pop("pending_turn")
+                chat_session.transcript = transcript
+                session.commit()
+                session.refresh(chat_session)
+            return chat_session
+
     @staticmethod
     def _normalize_transcript(transcript: dict[str, Any] | None) -> dict[str, Any]:
         if not isinstance(transcript, dict):
             return {"version": 1, "title": None, "events": []}
 
+        normalized = dict(transcript)
         events = transcript.get("events")
         if not isinstance(events, list):
             events = []
 
         # Return a detached list so callers can append safely without mutating
         # the ORM-loaded JSON object in-place (which may not be tracked).
-        return {
-            "version": transcript.get("version", 1),
-            "title": transcript.get("title"),
-            "events": list(events),
-        }
+        normalized["version"] = transcript.get("version", 1)
+        normalized["title"] = transcript.get("title")
+        normalized["events"] = list(events)
+        return normalized
 
     @staticmethod
     def _derive_title_from_events(events: list[dict[str, Any]]) -> str | None:

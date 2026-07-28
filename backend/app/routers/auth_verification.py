@@ -169,10 +169,17 @@ def verify_code(
         state="verified",
         customer_id=auth_record.pending_customer_id,
     )
+    pending_turn = session_repository.get_pending_turn(request.session_id)
+    pending_turn_id = (
+        str(pending_turn.get("turn_id"))
+        if isinstance(pending_turn, dict) and pending_turn.get("turn_id")
+        else None
+    )
 
     return VerifyCodeResponse(
         verified=True,
         state="verified",
         message="Verification successful.",
         remaining_attempts=verify_result.remaining_attempts,
+        pending_turn_id=pending_turn_id,
     )

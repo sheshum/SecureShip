@@ -52,6 +52,44 @@ SHIPMENT_TOOLS: list[dict[str, Any]] = [
     },
 ]
 
+AUTH_GATE_TOOLS: list[dict[str, Any]] = [
+    {
+        "type": "function",
+        "function": {
+            "name": "request_identity_info",
+            "description": "Request identity fields required to verify a customer before shipment access.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False,
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "verify_identity",
+            "description": "Verify customer identity and start OTP challenge.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                    },
+                    "last_name": {
+                        "type": "string",
+                    },
+                    "phone_number": {
+                        "type": "string",
+                    },
+                },
+                "required": ["first_name", "last_name", "phone_number"],
+                "additionalProperties": False,
+            },
+        },
+    },
+]
+
 
 def execute_tool_call(
     tool_call: ToolCall,

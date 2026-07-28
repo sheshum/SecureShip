@@ -1,5 +1,4 @@
 import { useRef } from 'react'
-import { AuthRequiredMessage, type IdentityInput } from './AuthRequiredMessage'
 import { ChatInput } from './ChatInput'
 import { ChatMessageList, type ChatMessage } from './ChatMessageList'
 
@@ -11,8 +10,6 @@ type ChatPanelProps = {
   errorMessage: string | null
   authRequiredMessage: string | null
   authRequiredInfoMessage: string | null
-  isStartingVerification: boolean
-  onAuthenticate: (input: IdentityInput) => Promise<void> | void
   onDraftChange: (value: string) => void
   onSubmit: () => void
   onCancel: () => void
@@ -26,8 +23,6 @@ export function ChatPanel({
   errorMessage,
   authRequiredMessage,
   authRequiredInfoMessage,
-  isStartingVerification,
-  onAuthenticate,
   onDraftChange,
   onSubmit,
   onCancel,
@@ -46,8 +41,7 @@ export function ChatPanel({
     <section className="flex min-h-[calc(100svh-4.5rem)] w-full flex-col rounded-[1.6rem] border border-white/70 bg-white/84 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
       <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Conversation</p>
-          <h2 className="mt-1 truncate text-sm font-semibold text-slate-900 sm:text-base">Support chat</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">SecureShip Assistant</p>
         </div>
 
       </header>
@@ -81,7 +75,7 @@ export function ChatPanel({
         ) : (
           <div className="flex flex-1 flex-col justify-center">
             <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/80 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">
-              <h3 className="text-lg font-semibold text-slate-900">Ask SecureShip Assistant</h3>
+              <h3 className="text-lg font-semibold text-slate-900">How Can I Help You Today</h3>
               <p className="mt-2 text-sm text-slate-600">
                 Start with a quick question about tracking, delivery ETA, or address changes.
               </p>
@@ -105,14 +99,9 @@ export function ChatPanel({
         )}
 
         {authRequiredMessage ? (
-          <div className="mt-4">
-            <AuthRequiredMessage
-              message={authRequiredMessage}
-              ctaLabel="Authenticate"
-              isSubmitting={isStartingVerification}
-              infoMessage={authRequiredInfoMessage}
-              onSubmit={onAuthenticate}
-            />
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 shadow-sm" role="status" aria-live="polite">
+            <p className="font-medium">{authRequiredMessage}</p>
+            {authRequiredInfoMessage ? <p className="mt-1 text-xs text-amber-800/90">{authRequiredInfoMessage}</p> : null}
           </div>
         ) : null}
 
