@@ -34,3 +34,88 @@
     min-height: 100svh;
   }
 }
+
+@layer components {
+  .chat-markdown {
+    overflow-wrap: anywhere;
+  }
+
+  .chat-markdown > * + * {
+    margin-top: 0.7rem;
+  }
+
+  .chat-markdown p {
+    margin: 0;
+  }
+
+  .chat-markdown ul,
+  .chat-markdown ol {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+
+  .chat-markdown li + li {
+    margin-top: 0.2rem;
+  }
+
+  .chat-markdown a {
+    color: #0369a1;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  .chat-markdown pre {
+    margin: 0;
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(100, 116, 139, 0.28);
+    background: #f8fafc;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .chat-markdown code {
+    border-radius: 0.35rem;
+    background: rgba(148, 163, 184, 0.18);
+    padding: 0.08rem 0.3rem;
+    font-family: 'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
+    font-size: 0.88em;
+  }
+
+  .chat-markdown pre code {
+    background: transparent;
+    padding: 0;
+  }
+
+  .chat-markdown blockquote {
+    margin: 0;
+    border-left: 3px solid rgba(14, 116, 144, 0.45);
+    padding-left: 0.75rem;
+    color: #334155;
+  }
+
+  .chat-markdown hr {
+    margin: 0.7rem 0;
+    border: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.45);
+  }
+
+  .chat-markdown table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .chat-markdown th,
+  .chat-markdown td {
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    padding: 0.35rem 0.5rem;
+    text-align: left;
+  }
+
+  .chat-markdown th {
+    background: rgba(148, 163, 184, 0.16);
+    font-weight: 600;
+  }
+}

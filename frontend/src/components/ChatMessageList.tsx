@@ -1,3 +1,7 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeSanitize from 'rehype-sanitize'
+
 export type ChatMessage = {
   id: number
   role: 'user' | 'assistant'
@@ -30,9 +34,25 @@ export function ChatMessageList({ messages, isStreaming }: ChatMessageListProps)
                 : 'self-start border border-slate-200 bg-white text-slate-800 shadow-[0_8px_24px_rgba(15,23,42,0.08)]',
             ].join(' ')}
           >
-            <p className={showThinkingPlaceholder ? 'text-slate-600' : undefined}>
-              {showThinkingPlaceholder ? 'Thinking...' : message.content}
-            </p>
+            {showThinkingPlaceholder ? (
+              <p className="text-slate-600">Thinking...</p>
+            ) : isUser ? (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            ) : (
+              <div className="chat-markdown">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeSanitize]}
+                  components={{
+                    a: ({ node: _node, ...props }) => (
+                      <a {...props} target="_blank" rel="noopener noreferrer" />
+                    ),
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+            )}
           </article>
         )
       })}
