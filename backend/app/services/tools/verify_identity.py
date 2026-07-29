@@ -18,7 +18,6 @@ from app.services.sms_mock import send_mock_sms
 from app.services.tool_registry import register_tool
 from app.services.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code
 
-
 @register_tool(
     name="verify_identity",
     schema={

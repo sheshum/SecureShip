@@ -93,6 +93,45 @@ class ChatSession(Base):
     transcript: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     customer: Mapped[Customer | None] = relationship(back_populates="chat_sessions")
+    session_verification: Mapped["SessionVerification | None"] = relationship(
+        back_populates="session",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+
+class SessionVerification(Base):
+    """OTP verification data for a chat session.
+    
+    One-to-one relationship with ChatSession. Stores only OTP lifecycle data:
+    - code_hash: SHA-256 hash of the 6-digit code (never plain text)
+    - attempts: Number of failed verification attempts (max 3)
+    - sent_at, expires_at: OTP validity window
+    - status: Current state (pending/verified/expired/exhausted)
+    - matched_customer_id: Customer that passed identity verification
+    """
+    __tablename__ = "session_verification"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("chat_session.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
+    )
+    code_hash: Mapped[str] = mapped_column(String(64))
+    attempts: Mapped[int] = mapped_column(default=0)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(20), default="pending")
+    matched_customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customer.id")
+    )
+
+    session: Mapped[ChatSession] = relationship(back_populates="session_verification")
+    matched_customer: Mapped[Customer] = relationship()
 
 
 class AdminUser(Base):

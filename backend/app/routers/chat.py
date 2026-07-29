@@ -1,12 +1,14 @@
 """Chat endpoints: public conversation with the LLM agent."""
 
 import logging
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.dependencies import get_llm_client
 from app.llm.base import LLMClient, LLMError, LLMMessage
+from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.chat import ChatRequest, ChatResponse
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])

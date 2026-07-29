@@ -15,6 +15,7 @@ from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
+from app.repositories.session_verification import SessionVerificationRepository
 from app.repositories.shipments import ShipmentRepository
 
 @lru_cache
@@ -40,3 +41,7 @@ def get_chat_session_repository() -> ChatSessionRepository:
 
 def get_customer_repository() -> CustomerRepository:
     return CustomerRepository()
+
+
+def get_session_verification_repository() -> SessionVerificationRepository:
+    return SessionVerificationRepository()
