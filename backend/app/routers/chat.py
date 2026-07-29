@@ -13,13 +13,15 @@ from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.sessions import ChatSessionState
+from app.services.auth_context import AuthContext
 from app.services.dispatch import dispatch_tool_call
 from app.tools.utils import log_console
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 SYSTEM_PROMPT = """You are SecureShip's customer support assistant.
-Be helpful, professional, and concise."""
+Your role is to help customers with questions about their shipments, tracking, and deliveries
+Be helpful, professional, and concise. If you don't know something, say so instead of guessing."""
 
 
 def ensure_session(
@@ -47,8 +49,7 @@ def ensure_session(
                 detail=f"Session {session_id} not found"
             )
         return chat_session
-    
-    # Create new session
+
     now = datetime.now(timezone.utc)
     return session_repo.create_session(now)
 
@@ -60,8 +61,14 @@ async def chat(
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
     tool_registry: Annotated[dict, Depends(get_tool_registry)],
 ) -> ChatResponse:
-    now = datetime.now(timezone.utc)
     chat_session = ensure_session(request.session_id, session_repo)
+    
+    # Build auth context from session state
+    auth_context = AuthContext(
+        session_id=chat_session.id,
+        customer_id=chat_session.customer_id,
+        state=chat_session.state,
+    )
     
     try:
         messages = [LLMMessage(role="system", content=SYSTEM_PROMPT)]
@@ -75,28 +82,23 @@ async def chat(
 
         available_tools = [t.schema for t in tool_registry.values()]
 
-        # Agentic loop: keep calling LLM until no more tool calls
         while True:
-            # Call LLM with current message history and available tools
             completion = await llm_client.plan_chat_turn(
                 messages=messages,
                 tools=available_tools if available_tools else None
             )
-            
-            # Log LLM response
+
             log_console("LLM Response", {
                 "has_tool_calls": bool(completion.tool_calls),
                 "content_preview": completion.content[:100] if completion.content else None
             })
-            
-            # Add assistant's message to conversation history
+
             messages.append(LLMMessage(
                 role="assistant",
                 content=completion.content or "",
                 tool_calls=completion.tool_calls
             ))
-            
-            # If no tool calls, we have the final response
+
             if not completion.tool_calls:
                 break
             
@@ -106,9 +108,7 @@ async def chat(
                 for tc in completion.tool_calls
             ])
             
-            # Execute each tool call
             for tool_call in completion.tool_calls:
-                # Parse tool arguments
                 try:
                     tool_args = json.loads(tool_call.arguments)
                 except json.JSONDecodeError:
@@ -116,7 +116,7 @@ async def chat(
                 
                 # Dispatch tool call (enforces verification gate)
                 tool_result = await dispatch_tool_call(
-                    session=chat_session,
+                    context=auth_context,
                     fn_name=tool_call.name,
                     args=tool_args,
                     tool_registry=tool_registry,
@@ -124,18 +124,15 @@ async def chat(
                 
                 # Log tool result
                 log_console(f"Tool Result: {tool_call.name}", tool_result)
-                
-                # Add tool result to message history
+
                 messages.append(LLMMessage(
                     role="tool",
                     content=json.dumps(tool_result),
                     tool_call_id=tool_call.id
                 ))
-            
-            # Reload session to get any state changes from tools
+
             chat_session = session_repo.get_session(chat_session.id) or chat_session
         
-        # Save conversation messages to transcript (excluding system prompt)
         serialized_messages = [
             {
                 "role": msg.role,

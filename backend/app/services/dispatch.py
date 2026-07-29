@@ -6,12 +6,12 @@ the tool didn't run. Nothing else in the codebase calls a handler directly.
 
 from typing import Any
 
-from app.models import ChatSession
+from app.services.auth_context import AuthContext
 from app.services.identity_gate import enforce_gate
 
 
 async def dispatch_tool_call(
-    session: ChatSession,
+    context: AuthContext,
     fn_name: str,
     args: dict[str, Any],
     tool_registry: dict[str, Any],
@@ -23,7 +23,7 @@ async def dispatch_tool_call(
     ever runs if the session is not verified.
     
     Args:
-        session: Chat session (contains verification state)
+        context: Authentication context (contains verification state)
         fn_name: Name of the tool to call
         args: Arguments to pass to the tool handler
         tool_registry: The tool registry (injected per-request with fresh tool instances)
@@ -38,9 +38,9 @@ async def dispatch_tool_call(
     # Epic F3: The gate check happens HERE, before any handler runs.
     # A tool that requires verification cannot execute without a verified session.
     if spec.requires_verification:
-        gate_result = enforce_gate(session)
+        gate_result = enforce_gate(context)
         if not gate_result.allowed:
             return {"error": "not_verified"}
 
     # Only verified tools OR public tools (requires_verification=False) reach this point.
-    return await spec.handler.execute(session, **args)
+    return await spec.handler.execute(context, **args)

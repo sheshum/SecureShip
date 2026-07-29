@@ -10,11 +10,11 @@ This tool is the entry point to the verification flow. It:
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
 from app.repositories.session_verification import SessionVerificationRepository
 from app.schemas.sessions import ChatSessionState
+from app.services.auth_context import AuthContext
 from app.services.sms_mock import send_mock_sms
 from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code
 from app.tools.tool_registry import tool
@@ -78,14 +78,14 @@ class VerifyIdentityTool:
     
     async def execute(
         self,
-        session: ChatSession,
+        context: AuthContext,
         first_name: str,
         last_name: str,
         phone_number: str,
     ) -> dict[str, Any]:
         """Verify customer identity and send OTP code.
         Args:
-            session: Chat session
+            context: Authentication context
             first_name: Customer's first name
             last_name: Customer's last name
             phone_number: Customer's phone number
@@ -93,6 +93,14 @@ class VerifyIdentityTool:
         Returns:
             Neutral success or failure message (enumeration-proof)
         """
+
+        if (context.state != ChatSessionState.ANONYMOUS):
+            # This should never happen (dispatch_tool_call checks verification)
+            log_console(f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}")
+            return {
+                "status": "error",
+                "message": "Already verified. Identity verification cannot be performed in the current session state."
+            }
         # Use repository to find customer by identity
         customer = self.customer_repo.find_by_identity(first_name, last_name, phone_number)
 
@@ -114,14 +122,14 @@ class VerifyIdentityTool:
 
         log_console(f"verify_identity: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}")
         self.verification_repo.create(
-            session_id=session.id,
+            session_id=context.session_id,
             code_hash=code_hash_value,
             matched_customer_id=customer.id,
             sent_at=now,
             expires_at=expires_at,
         )
         
-        self.session_repo.update_session_state(session.id, ChatSessionState.CODE_SENT)
+        self.session_repo.update_session_state(context.session_id, ChatSessionState.CODE_SENT)
         
         # Send mock SMS (logs to console in dev, would be Twilio in prod)
         send_mock_sms(customer.phone_number, code)

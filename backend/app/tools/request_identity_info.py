@@ -1,6 +1,6 @@
 from typing import Any
 
-from app.models import ChatSession
+from app.services.auth_context import AuthContext
 from app.tools.tool_registry import tool
 
 
@@ -36,12 +36,12 @@ class RequestIdentityInfoTool:
     
     async def execute(
         self,
-        session: ChatSession,
+        _: AuthContext,
     ) -> dict[str, Any]:
         """Return a message requesting user verification.
         
         Args:
-            session: Chat session (verification state doesn't matter)
+            context: Authentication context (verification state doesn't matter)
             
         Returns:
             {"message": "..."} with instructions for the user

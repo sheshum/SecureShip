@@ -1,7 +1,8 @@
 from typing import Any
 
-from app.models import ChatSession, Shipment
+from app.models import Package, Shipment
 from app.repositories.shipments import ShipmentRepository
+from app.services.auth_context import AuthContext
 from app.tools.tool_registry import tool
 
 
@@ -43,29 +44,29 @@ class LookupShipmentsTool:
     
     async def execute(
         self,
-        session: ChatSession,
+        context: AuthContext,
         tracking_number: str | None = None,
     ) -> dict[str, Any]:
         """Look up shipments for the verified customer.
         
         Args:
-            session: Chat session (must be verified to reach this point)
+            context: Authentication context (must be verified to reach this point)
             tracking_number: Optional filter for a specific tracking number
             
         Returns:
             {"shipments": [...]} with flattened shipment data, or empty array
             if no matches found (neutral response, no enumeration leak)
         """
-        # Epic D2: customer_id comes from session state (server-side, verified),
+        # Epic D2: customer_id comes from auth context (server-side, verified),
         # NEVER from tool arguments or LLM output.
-        if session.customer_id is None:
+        if context.customer_id is None:
             # This should never happen (dispatch_tool_call checks verification),
             # but fail closed defensively.
             return {"shipments": []}
 
         # Use repository to query shipments
         shipments = self.shipment_repo.list_shipments_for_customer(
-            customer_id=session.customer_id,
+            customer_id=context.customer_id,
             tracking_number=tracking_number,
         )
 

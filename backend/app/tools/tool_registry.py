@@ -7,7 +7,7 @@ bodies — is what Epic F3 points to.
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol, TypeVar
 
-from app.models import ChatSession
+from app.services.auth_context import AuthContext
 
 
 class ToolHandler(Protocol):
@@ -15,7 +15,7 @@ class ToolHandler(Protocol):
     
     async def execute(
         self,
-        session: ChatSession,
+        context: AuthContext,
         **kwargs: Any,
     ) -> dict[str, Any]:
         """Execute the tool with given arguments."""
