@@ -7,12 +7,9 @@
  */
 
 /**
- * A single chat request with a user prompt.
+ * The assistant's reply.
  */
-export interface ChatRequest {
-  /**
-     * User's message to the assistant
-     * @minLength 1
-     */
-  prompt: string;
+export interface ChatResponse {
+  /** Assistant's response text */
+  reply: string;
 }
