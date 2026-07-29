@@ -72,16 +72,6 @@ async def chat(
                 messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
         
         messages.append(LLMMessage(role="user", content=request.prompt))
-        
-        # Track events to save to transcript
-        events = [
-            {
-                "type": "message",
-                "role": "user",
-                "content": request.prompt,
-                "created_at": now.isoformat(),
-            }
-        ]
 
         available_tools = [t.schema for t in tool_registry.values()]
 
@@ -108,31 +98,13 @@ async def chat(
             
             # If no tool calls, we have the final response
             if not completion.tool_calls:
-                events.append({
-                    "type": "message",
-                    "role": "assistant",
-                    "content": completion.content,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                })
                 break
             
-            # Record tool calls in transcript
-            tool_calls_data = []
-            for tc in completion.tool_calls:
-                tool_calls_data.append({
-                    "id": tc.id,
-                    "name": tc.name,
-                    "arguments": tc.arguments,
-                })
-            
-            events.append({
-                "type": "tool_calls",
-                "tool_calls": tool_calls_data,
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            })
-            
             # Log tool calls
-            log_console("Tool Calls", tool_calls_data)
+            log_console("Tool Calls", [
+                {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
+                for tc in completion.tool_calls
+            ])
             
             # Execute each tool call
             for tool_call in completion.tool_calls:
@@ -159,21 +131,24 @@ async def chat(
                     content=json.dumps(tool_result),
                     tool_call_id=tool_call.id
                 ))
-                
-                # Record tool result in transcript
-                events.append({
-                    "type": "tool_result",
-                    "tool_call_id": tool_call.id,
-                    "name": tool_call.name,
-                    "result": tool_result,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                })
             
             # Reload session to get any state changes from tools
             chat_session = session_repo.get_session(chat_session.id) or chat_session
         
-        # Save all events to transcript
-        session_repo.append_events(chat_session.id, events)
+        # Save conversation messages to transcript (excluding system prompt)
+        serialized_messages = [
+            {
+                "role": msg.role,
+                "content": msg.content,
+                "tool_call_id": msg.tool_call_id,
+                "tool_calls": [
+                    {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
+                    for tc in msg.tool_calls
+                ] if msg.tool_calls else None,
+            }
+            for msg in messages[1:]  # Skip system prompt
+        ]
+        session_repo.set_conversation_messages(chat_session.id, serialized_messages)
         
         return ChatResponse(
             reply=completion.content,

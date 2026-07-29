@@ -29,7 +29,7 @@ class ChatSessionRepository:
                 state=ChatSessionState.ANONYMOUS,
                 started_at=now,
                 ended_at=None,
-                transcript={"version": 1, "events": []},
+                transcript={"version": 2, "messages": []},
             )
             session.add(chat_session)
             session.commit()
@@ -59,18 +59,25 @@ class ChatSessionRepository:
             session.commit()
             return snapshot
 
-    def append_events(self, session_id: UUID, events: list[dict[str, Any]]) -> ChatSession | None:
-        if not events:
-            return self.get_session(session_id)
-
+    def set_conversation_messages(self, session_id: UUID, messages: list[dict[str, Any]]) -> ChatSession | None:
+        """Store conversation messages as the transcript.
+        
+        Args:
+            session_id: Session to update
+            messages: List of serialized LLMMessage dicts (role, content, tool_calls, tool_call_id)
+        
+        Returns:
+            Updated ChatSession or None if not found
+        """
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
             if chat_session is None:
                 return None
 
-            transcript = self._normalize_transcript(chat_session.transcript)
-            transcript["events"].extend(events)
-            chat_session.transcript = transcript
+            chat_session.transcript = {
+                "version": 2,
+                "messages": messages,
+            }
 
             session.commit()
             session.refresh(chat_session)
@@ -111,24 +118,28 @@ class ChatSessionRepository:
             return chat_session
 
     def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
+        """Get conversation history for LLM context.
+        
+        Returns only user/assistant messages, excluding system prompts and tool-role messages.
+        """
         chat_session = self.get_session(session_id)
         if chat_session is None:
             return []
 
         transcript = self._normalize_transcript(chat_session.transcript)
-        events = transcript.get("events")
-        if not isinstance(events, list):
+        messages = transcript.get("messages")
+        if not isinstance(messages, list):
             return []
 
         conversation: list[dict[str, str]] = []
-        for event in events:
-            if not isinstance(event, dict):
-                continue
-            if event.get("type") != "message":
+        for msg in messages:
+            if not isinstance(msg, dict):
                 continue
 
-            role = str(event.get("role") or "").strip()
-            content = str(event.get("content") or "").strip()
+            role = str(msg.get("role") or "").strip()
+            content = str(msg.get("content") or "").strip()
+            
+            # Only include user/assistant messages for conversation context
             if role not in {"user", "assistant"} or not content:
                 continue
 
@@ -138,17 +149,15 @@ class ChatSessionRepository:
 
     @staticmethod
     def _normalize_transcript(transcript: dict[str, Any] | None) -> dict[str, Any]:
+        """Normalize transcript to v2 format."""
         if not isinstance(transcript, dict):
-            return {"version": 1, "title": None, "events": []}
+            return {"version": 2, "messages": []}
 
-        normalized = dict(transcript)
-        events = transcript.get("events")
-        if not isinstance(events, list):
-            events = []
+        messages = transcript.get("messages")
+        if not isinstance(messages, list):
+            messages = []
 
-        # Return a detached list so callers can append safely without mutating
-        # the ORM-loaded JSON object in-place (which may not be tracked).
-        normalized["version"] = transcript.get("version", 1)
-        normalized["title"] = transcript.get("title")
-        normalized["events"] = list(events)
-        return normalized
+        return {
+            "version": 2,
+            "messages": list(messages),
+        }
