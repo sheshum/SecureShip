@@ -81,7 +81,7 @@ class ToolExecutionTests(unittest.TestCase):
         repository = FakeShipmentRepository()
         tool_call = ToolCall(
             id="tool-2",
-            name="get_my_shipments",
+            name="lookup_shipments",
             arguments=json.dumps({}),
         )
 
