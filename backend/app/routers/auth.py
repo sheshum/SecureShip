@@ -12,6 +12,7 @@ from app.dependencies import (
 )
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.session_verification import SessionVerificationRepository
+from app.schemas.sessions import ChatSessionState
 from app.schemas.verification import VerifyCodeRequest, VerifyCodeResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -72,7 +73,7 @@ async def verify_code(
         # Mark as expired
         verification_repo.update_status(request.session_id, "expired")
         session_repo.update_auth_state(
-            request.session_id, state="code_expired", customer_id=None
+            request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
         )
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
@@ -80,7 +81,7 @@ async def verify_code(
     if verification.attempts >= 3:
         verification_repo.update_status(request.session_id, "exhausted")
         session_repo.update_auth_state(
-            request.session_id, state="code_expired", customer_id=None
+            request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
         )
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
@@ -95,7 +96,7 @@ async def verify_code(
         
         # Update session state to awaiting_code
         session_repo.update_auth_state(
-            request.session_id, state="awaiting_code", customer_id=session.customer_id
+            request.session_id, state=ChatSessionState.AWAITING_CODE, customer_id=session.customer_id
         )
         
         # Check if this was the last attempt
@@ -103,7 +104,7 @@ async def verify_code(
         if attempts_remaining == 0:
             verification_repo.update_status(request.session_id, "exhausted")
             session_repo.update_auth_state(
-                request.session_id, state="code_expired", customer_id=None
+                request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
             )
             return VerifyCodeResponse(result="expired", attempts_remaining=0)
         
@@ -117,7 +118,7 @@ async def verify_code(
     verification_repo.update_status(request.session_id, "verified")
     session_repo.update_auth_state(
         request.session_id,
-        state="verified",
+        state=ChatSessionState.VERIFIED,
         customer_id=verification.matched_customer_id,
     )
     

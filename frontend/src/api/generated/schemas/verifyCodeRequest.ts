@@ -6,11 +6,16 @@
  * OpenAPI spec version: 1.0.0
  */
 
+/**
+ * Request to verify an OTP code.
+ */
 export interface VerifyCodeRequest {
+  /** The chat session ID */
   session_id: string;
   /**
-     * @minLength 1
-     * @maxLength 20
+     * The 6-digit OTP code
+     * @minLength 6
+     * @maxLength 6
      */
   code: string;
 }

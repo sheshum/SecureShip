@@ -8,6 +8,10 @@
 
 export * from './chatRequest';
 export * from './chatResponse';
+export * from './chatSessionState';
 export * from './hTTPValidationError';
 export * from './validationError';
 export * from './validationErrorCtx';
+export * from './verifyCodeRequest';
+export * from './verifyCodeResponse';
+export * from './verifyCodeResponseResult';

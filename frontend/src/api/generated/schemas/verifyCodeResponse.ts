@@ -5,13 +5,14 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
-import type { VerifyCodeResponseState } from './verifyCodeResponseState';
+import type { VerifyCodeResponseResult } from './verifyCodeResponseResult';
 
+/**
+ * Response from code verification attempt.
+ */
 export interface VerifyCodeResponse {
-  verified: boolean;
-  state: VerifyCodeResponseState;
-  message: string;
-  error_code?: string | null;
-  remaining_attempts?: number | null;
-  pending_turn_id?: string | null;
+  /** Verification result status */
+  result: VerifyCodeResponseResult;
+  /** Number of attempts remaining (only for 'incorrect' result) */
+  attempts_remaining?: number | null;
 }

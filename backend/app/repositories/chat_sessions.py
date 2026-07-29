@@ -26,10 +26,10 @@ class ChatSessionRepository:
     def create_session(self, now: datetime) -> ChatSession:
         with self._session_factory() as session:
             chat_session = ChatSession(
-                state="anonymous",
+                state=ChatSessionState.ANONYMOUS,
                 started_at=now,
                 ended_at=None,
-                transcript={"version": 1, "title": None, "events": []},
+                transcript={"version": 1, "events": []},
             )
             session.add(chat_session)
             session.commit()
@@ -70,26 +70,10 @@ class ChatSessionRepository:
 
             transcript = self._normalize_transcript(chat_session.transcript)
             transcript["events"].extend(events)
-            if not transcript.get("title"):
-                transcript["title"] = self._derive_title_from_events(transcript["events"])
             chat_session.transcript = transcript
 
             session.commit()
             session.refresh(chat_session)
-            return chat_session
-
-    def set_title_if_missing(self, session_id: UUID, title: str) -> ChatSession | None:
-        with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
-
-            transcript = self._normalize_transcript(chat_session.transcript)
-            if not transcript.get("title"):
-                transcript["title"] = title
-                chat_session.transcript = transcript
-                session.commit()
-                session.refresh(chat_session)
             return chat_session
 
     def update_auth_state(
@@ -108,66 +92,6 @@ class ChatSessionRepository:
             chat_session.customer_id = customer_id
             session.commit()
             session.refresh(chat_session)
-            return chat_session
-
-    def set_pending_turn(self, session_id: UUID, *, turn_id: str, content: str) -> ChatSession | None:
-        with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
-
-            transcript = self._normalize_transcript(chat_session.transcript)
-            transcript["pending_turn"] = {
-                "turn_id": turn_id,
-                "content": content,
-                "status": "pending",
-            }
-            chat_session.transcript = transcript
-            session.commit()
-            session.refresh(chat_session)
-            return chat_session
-
-    def get_pending_turn(self, session_id: UUID) -> dict[str, Any] | None:
-        chat_session = self.get_session(session_id)
-        if chat_session is None:
-            return None
-
-        transcript = self._normalize_transcript(chat_session.transcript)
-        pending_turn = transcript.get("pending_turn")
-        if not isinstance(pending_turn, dict):
-            return None
-        return pending_turn
-
-    def set_pending_turn_status(self, session_id: UUID, *, status: str) -> ChatSession | None:
-        with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
-
-            transcript = self._normalize_transcript(chat_session.transcript)
-            pending_turn = transcript.get("pending_turn")
-            if not isinstance(pending_turn, dict):
-                return chat_session
-
-            pending_turn["status"] = status
-            transcript["pending_turn"] = pending_turn
-            chat_session.transcript = transcript
-            session.commit()
-            session.refresh(chat_session)
-            return chat_session
-
-    def clear_pending_turn(self, session_id: UUID) -> ChatSession | None:
-        with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
-
-            transcript = self._normalize_transcript(chat_session.transcript)
-            if "pending_turn" in transcript:
-                transcript.pop("pending_turn")
-                chat_session.transcript = transcript
-                session.commit()
-                session.refresh(chat_session)
             return chat_session
 
     def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
@@ -212,16 +136,3 @@ class ChatSessionRepository:
         normalized["title"] = transcript.get("title")
         normalized["events"] = list(events)
         return normalized
-
-    @staticmethod
-    def _derive_title_from_events(events: list[dict[str, Any]]) -> str | None:
-        for event in events:
-            if event.get("type") == "message" and event.get("role") == "user":
-                content = str(event.get("content") or "")
-                normalized = " ".join(content.split()).strip()
-                if not normalized:
-                    continue
-                if len(normalized) <= 60:
-                    return normalized
-                return f"{normalized[:57]}..."
-        return None

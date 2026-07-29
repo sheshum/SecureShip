@@ -6,14 +6,18 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type SessionItemState = typeof SessionItemState[keyof typeof SessionItemState];
+/**
+ * Session authentication state.
+ */
+export type ChatSessionState = typeof ChatSessionState[keyof typeof ChatSessionState];
 
 
-export const SessionItemState = {
+export const ChatSessionState = {
   anonymous: 'anonymous',
   collecting_identity: 'collecting_identity',
   code_sent: 'code_sent',
   awaiting_code: 'awaiting_code',
   verified: 'verified',
   escalated_to_human: 'escalated_to_human',
+  code_expired: 'code_expired',
 } as const;

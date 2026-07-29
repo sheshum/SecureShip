@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ChatSession, Customer
+from app.schemas.sessions import ChatSessionState
 from app.services.auth_session import AuthSessionData
 from app.services.sms_mock import send_mock_sms
 from app.services.tool_registry import register_tool
@@ -125,7 +126,7 @@ async def tool_verify_identity(
     )
     
     # Update ChatSession state to indicate code was sent
-    session.state = "code_sent"
+    session.state = ChatSessionState.CODE_SENT
     await db.commit()
     
     # Send mock SMS (logs to console in dev, would be Twilio in prod)

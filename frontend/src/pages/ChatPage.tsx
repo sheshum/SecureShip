@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { ChatPanel } from '../components/ChatPanel'
 import { useChatApiChatPost } from '../api/generated/client'
+import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 
 export function ChatPage() {
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [_sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
   const chatMutation = useChatApiChatPost()
 
   const handleSubmit = async () => {
@@ -16,11 +19,17 @@ export function ChatPage() {
     setDraft('')
 
     try {
-      const response = await chatMutation.mutateAsync({ data: { prompt: trimmedMessage } })
+      const response = await chatMutation.mutateAsync({ 
+        data: { 
+          prompt: trimmedMessage,
+          session_id: sessionId || undefined,
+        } 
+      })
       
-      // Add assistant response
       if (response.status === 200) {
         setMessages((prev) => [...prev, { role: 'assistant', content: response.data.reply }])
+        setSessionId(response.data.session_id)
+        setSessionState(response.data.state)
       }
     } catch (error) {
       console.error('Chat request failed:', error)

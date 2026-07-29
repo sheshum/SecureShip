@@ -27,7 +27,9 @@ import type {
 import type {
   ChatRequest,
   ChatResponse,
-  HTTPValidationError
+  HTTPValidationError,
+  VerifyCodeRequest,
+  VerifyCodeResponse
 } from './schemas';
 
 import { customFetcher } from './fetcher';
@@ -195,7 +197,8 @@ export const getChatApiChatPostUrl = () => {
 /**
  * Send a message to the assistant and get a response.
  *
- * SEC-7: Basic proxy to Ollama, no tools, no session tracking yet.
+ * If session_id is provided, continues that session; otherwise creates a new one.
+ * Returns the session ID and current state along with the reply.
  * @summary Chat
  */
 export const chatApiChatPost = async (chatRequest: ChatRequest, options?: RequestInit): Promise<chatApiChatPostResponse> => {
@@ -256,5 +259,115 @@ export const useChatApiChatPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getChatApiChatPostMutationOptions(options), queryClient);
+    }
+
+export type verifyCodeApiAuthVerifyCodePostResponse200 = {
+  data: VerifyCodeResponse
+  status: 200
+}
+
+export type verifyCodeApiAuthVerifyCodePostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type verifyCodeApiAuthVerifyCodePostResponseSuccess = (verifyCodeApiAuthVerifyCodePostResponse200) & {
+  headers: Headers;
+};
+export type verifyCodeApiAuthVerifyCodePostResponseError = (verifyCodeApiAuthVerifyCodePostResponse422) & {
+  headers: Headers;
+};
+
+export type verifyCodeApiAuthVerifyCodePostResponse = (verifyCodeApiAuthVerifyCodePostResponseSuccess | verifyCodeApiAuthVerifyCodePostResponseError)
+
+export const getVerifyCodeApiAuthVerifyCodePostUrl = () => {
+
+
+
+
+  return `/api/auth/verify-code`
+}
+
+/**
+ * Verify an OTP code for a chat session.
+ *
+ * This is the ONLY code path that can set a session's state to "verified".
+ *
+ * Security enforcement (Epic F):
+ * - Checks code hash (SHA-256), never compares plain text
+ * - Enforces 3-attempt limit
+ * - Enforces 7-minute expiry
+ * - Returns neutral messages (no enumeration)
+ *
+ * Args:
+ *     request: Session ID and 6-digit code
+ *     session_repo: Repository for chat sessions
+ *     verification_repo: Repository for verification records
+ *
+ * Returns:
+ *     VerifyCodeResponse with result and attempts_remaining if applicable
+ *
+ * Raises:
+ *     HTTPException: 400 if no verification in progress or session not found
+ * @summary Verify Code
+ */
+export const verifyCodeApiAuthVerifyCodePost = async (verifyCodeRequest: VerifyCodeRequest, options?: RequestInit): Promise<verifyCodeApiAuthVerifyCodePostResponse> => {
+
+  return customFetcher<verifyCodeApiAuthVerifyCodePostResponse>(getVerifyCodeApiAuthVerifyCodePostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(verifyCodeRequest)
+  }
+);}
+
+
+
+
+
+export const getVerifyCodeApiAuthVerifyCodePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext> => {
+
+const mutationKey = ['verifyCodeApiAuthVerifyCodePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, {data: VerifyCodeRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  verifyCodeApiAuthVerifyCodePost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyCodeApiAuthVerifyCodePostMutationResult = NonNullable<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>>
+    export type VerifyCodeApiAuthVerifyCodePostMutationBody = VerifyCodeRequest
+    export type VerifyCodeApiAuthVerifyCodePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Verify Code
+ */
+export const useVerifyCodeApiAuthVerifyCodePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>,
+        TError,
+        {data: VerifyCodeRequest},
+        TContext
+      > => {
+      return useMutation(getVerifyCodeApiAuthVerifyCodePostMutationOptions(options), queryClient);
     }
 

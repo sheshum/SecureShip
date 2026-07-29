@@ -5,6 +5,7 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { ChatSessionState } from './chatSessionState';
 
 /**
  * The assistant's reply.
@@ -12,4 +13,8 @@
 export interface ChatResponse {
   /** Assistant's response text */
   reply: string;
+  /** Session ID for this conversation */
+  session_id: string;
+  /** Current session state */
+  state: ChatSessionState;
 }
