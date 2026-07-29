@@ -13,4 +13,5 @@ export interface VerifyCodeResponse {
   message: string;
   error_code?: string | null;
   remaining_attempts?: number | null;
+  pending_turn_id?: string | null;
 }

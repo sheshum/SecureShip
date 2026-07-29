@@ -25,12 +25,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ChatContinueRequest,
   ChatRequest,
   HTTPValidationError,
   SessionCreateResponse,
-  SessionDeleteResponse,
-  SessionDetailResponse,
-  SessionListResponse,
   StartVerificationRequest,
   StartVerificationResponse,
   VerifyCodeRequest,
@@ -285,119 +283,6 @@ export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealt
 
 
 
-export type listSessionsApiSessionsGetResponse200 = {
-  data: SessionListResponse
-  status: 200
-}
-
-export type listSessionsApiSessionsGetResponseSuccess = (listSessionsApiSessionsGetResponse200) & {
-  headers: Headers;
-};
-;
-
-export type listSessionsApiSessionsGetResponse = (listSessionsApiSessionsGetResponseSuccess)
-
-export const getListSessionsApiSessionsGetUrl = () => {
-
-
-
-
-  return `/api/sessions`
-}
-
-/**
- * @summary List Sessions
- */
-export const listSessionsApiSessionsGet = async ( options?: RequestInit): Promise<listSessionsApiSessionsGetResponse> => {
-
-  return customFetcher<listSessionsApiSessionsGetResponse>(getListSessionsApiSessionsGetUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getListSessionsApiSessionsGetQueryKey = () => {
-    return [
-    `/api/sessions`
-    ] as const;
-    }
-
-
-export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getListSessionsApiSessionsGetQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ListSessionsApiSessionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>>
-export type ListSessionsApiSessionsGetQueryError = unknown
-
-
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
-          TError,
-          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
-          TError,
-          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List Sessions
- */
-
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getListSessionsApiSessionsGetQueryOptions(options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
 export type createSessionApiSessionsPostResponse200 = {
   data: SessionCreateResponse
   status: 200
@@ -479,216 +364,6 @@ export const useCreateSessionApiSessionsPost = <TError = unknown,
         TContext
       > => {
       return useMutation(getCreateSessionApiSessionsPostMutationOptions(options), queryClient);
-    }
-
-export type getSessionApiSessionsSessionIdGetResponse200 = {
-  data: SessionDetailResponse
-  status: 200
-}
-
-export type getSessionApiSessionsSessionIdGetResponse422 = {
-  data: HTTPValidationError
-  status: 422
-}
-
-export type getSessionApiSessionsSessionIdGetResponseSuccess = (getSessionApiSessionsSessionIdGetResponse200) & {
-  headers: Headers;
-};
-export type getSessionApiSessionsSessionIdGetResponseError = (getSessionApiSessionsSessionIdGetResponse422) & {
-  headers: Headers;
-};
-
-export type getSessionApiSessionsSessionIdGetResponse = (getSessionApiSessionsSessionIdGetResponseSuccess | getSessionApiSessionsSessionIdGetResponseError)
-
-export const getGetSessionApiSessionsSessionIdGetUrl = (sessionId: string,) => {
-
-
-
-
-  return `/api/sessions/${sessionId}`
-}
-
-/**
- * @summary Get Session
- */
-export const getSessionApiSessionsSessionIdGet = async (sessionId: string, options?: RequestInit): Promise<getSessionApiSessionsSessionIdGetResponse> => {
-
-  return customFetcher<getSessionApiSessionsSessionIdGetResponse>(getGetSessionApiSessionsSessionIdGetUrl(sessionId),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetSessionApiSessionsSessionIdGetQueryKey = (sessionId: string,) => {
-    return [
-    `/api/sessions/${sessionId}`
-    ] as const;
-    }
-
-
-export const getGetSessionApiSessionsSessionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetSessionApiSessionsSessionIdGetQueryKey(sessionId);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>> = ({ signal }) => getSessionApiSessionsSessionIdGet(sessionId, { signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type GetSessionApiSessionsSessionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>>
-export type GetSessionApiSessionsSessionIdGetQueryError = HTTPValidationError
-
-
-export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>,
-          TError,
-          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>,
-          TError,
-          Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>
-        > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get Session
- */
-
-export function useGetSessionApiSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getGetSessionApiSessionsSessionIdGetQueryOptions(sessionId,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-
-export type deleteSessionApiSessionsSessionIdDeleteResponse200 = {
-  data: SessionDeleteResponse
-  status: 200
-}
-
-export type deleteSessionApiSessionsSessionIdDeleteResponse422 = {
-  data: HTTPValidationError
-  status: 422
-}
-
-export type deleteSessionApiSessionsSessionIdDeleteResponseSuccess = (deleteSessionApiSessionsSessionIdDeleteResponse200) & {
-  headers: Headers;
-};
-export type deleteSessionApiSessionsSessionIdDeleteResponseError = (deleteSessionApiSessionsSessionIdDeleteResponse422) & {
-  headers: Headers;
-};
-
-export type deleteSessionApiSessionsSessionIdDeleteResponse = (deleteSessionApiSessionsSessionIdDeleteResponseSuccess | deleteSessionApiSessionsSessionIdDeleteResponseError)
-
-export const getDeleteSessionApiSessionsSessionIdDeleteUrl = (sessionId: string,) => {
-
-
-
-
-  return `/api/sessions/${sessionId}`
-}
-
-/**
- * @summary Delete Session
- */
-export const deleteSessionApiSessionsSessionIdDelete = async (sessionId: string, options?: RequestInit): Promise<deleteSessionApiSessionsSessionIdDeleteResponse> => {
-
-  return customFetcher<deleteSessionApiSessionsSessionIdDeleteResponse>(getDeleteSessionApiSessionsSessionIdDeleteUrl(sessionId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-
-export const getDeleteSessionApiSessionsSessionIdDeleteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>, TError,{sessionId: string}, TContext> => {
-
-const mutationKey = ['deleteSessionApiSessionsSessionIdDelete'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>, {sessionId: string}> = (props) => {
-          const {sessionId} = props ?? {};
-
-          return  deleteSessionApiSessionsSessionIdDelete(sessionId,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type DeleteSessionApiSessionsSessionIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>>
-
-    export type DeleteSessionApiSessionsSessionIdDeleteMutationError = HTTPValidationError
-
-    /**
- * @summary Delete Session
- */
-export const useDeleteSessionApiSessionsSessionIdDelete = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>, TError,{sessionId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof deleteSessionApiSessionsSessionIdDelete>>,
-        TError,
-        {sessionId: string},
-        TContext
-      > => {
-      return useMutation(getDeleteSessionApiSessionsSessionIdDeleteMutationOptions(options), queryClient);
     }
 
 export type chatApiChatPostResponse200 = {
@@ -779,6 +454,96 @@ export const useChatApiChatPost = <TError = HTTPValidationError,
         TContext
       > => {
       return useMutation(getChatApiChatPostMutationOptions(options), queryClient);
+    }
+
+export type continueChatApiChatContinuePostResponse200 = {
+  data: unknown
+  status: 200
+}
+
+export type continueChatApiChatContinuePostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type continueChatApiChatContinuePostResponseSuccess = (continueChatApiChatContinuePostResponse200) & {
+  headers: Headers;
+};
+export type continueChatApiChatContinuePostResponseError = (continueChatApiChatContinuePostResponse422) & {
+  headers: Headers;
+};
+
+export type continueChatApiChatContinuePostResponse = (continueChatApiChatContinuePostResponseSuccess | continueChatApiChatContinuePostResponseError)
+
+export const getContinueChatApiChatContinuePostUrl = () => {
+
+
+
+
+  return `/api/chat/continue`
+}
+
+/**
+ * @summary Continue Chat
+ */
+export const continueChatApiChatContinuePost = async (chatContinueRequest: ChatContinueRequest, options?: RequestInit): Promise<continueChatApiChatContinuePostResponse> => {
+
+  return customFetcher<continueChatApiChatContinuePostResponse>(getContinueChatApiChatContinuePostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(chatContinueRequest)
+  }
+);}
+
+
+
+
+
+export const getContinueChatApiChatContinuePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof continueChatApiChatContinuePost>>, TError,{data: ChatContinueRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof continueChatApiChatContinuePost>>, TError,{data: ChatContinueRequest}, TContext> => {
+
+const mutationKey = ['continueChatApiChatContinuePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof continueChatApiChatContinuePost>>, {data: ChatContinueRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  continueChatApiChatContinuePost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ContinueChatApiChatContinuePostMutationResult = NonNullable<Awaited<ReturnType<typeof continueChatApiChatContinuePost>>>
+    export type ContinueChatApiChatContinuePostMutationBody = ChatContinueRequest
+    export type ContinueChatApiChatContinuePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Continue Chat
+ */
+export const useContinueChatApiChatContinuePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof continueChatApiChatContinuePost>>, TError,{data: ChatContinueRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof continueChatApiChatContinuePost>>,
+        TError,
+        {data: ChatContinueRequest},
+        TContext
+      > => {
+      return useMutation(getContinueChatApiChatContinuePostMutationOptions(options), queryClient);
     }
 
 export type startVerificationApiAuthStartVerificationPostResponse200 = {

@@ -6,21 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export * from './chatMessageIn';
-export * from './chatMessageInRole';
+export * from './chatContinueRequest';
 export * from './chatRequest';
 export * from './hTTPValidationError';
 export * from './sessionCreateResponse';
-export * from './sessionDeleteResponse';
-export * from './sessionDetailResponse';
 export * from './sessionItem';
 export * from './sessionItemState';
-export * from './sessionListResponse';
-export * from './sessionTranscript';
-export * from './sessionTranscriptEvent';
-export * from './sessionTranscriptEventArgs';
-export * from './sessionTranscriptEventMeta';
-export * from './sessionTranscriptEventResult';
 export * from './startVerificationRequest';
 export * from './startVerificationResponse';
 export * from './startVerificationResponseState';

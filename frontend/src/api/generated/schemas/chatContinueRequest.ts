@@ -6,11 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export interface ChatRequest {
-  session_id: string | null;
+export interface ChatContinueRequest {
+  session_id: string;
   /**
      * @minLength 1
-     * @maxLength 8000
+     * @maxLength 200
      */
-  prompt: string;
+  pending_turn_id: string;
 }
