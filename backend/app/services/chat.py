@@ -127,3 +127,4 @@ class ChatService:
                 "tool": tool_call.name,
                 "args": tool_args,
             }
+

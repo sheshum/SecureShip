@@ -471,7 +471,7 @@ class ChatPersistenceTests(unittest.TestCase):
         self.assertEqual(events[-1]["content"], "Your shipment is in transit.")
         self.assertIsNone(self.repository.sessions[session.id].transcript.get("pending_turn"))
 
-    def test_chat_verify_identity_tool_opens_code_modal_and_preserves_original_pending_turn(self) -> None:
+    def test_chat_verify_identity_tool_opens_code_modal_and_overwrites_pending_turn(self) -> None:
         llm_client = FakeLLMClient(
             completions=[
                 LLMCompletion(
@@ -545,6 +545,7 @@ class ChatPersistenceTests(unittest.TestCase):
 
         updated_pending_turn = self.repository.sessions[session.id].transcript.get("pending_turn")
         self.assertIsInstance(updated_pending_turn, dict)
-        self.assertEqual(updated_pending_turn["turn_id"], first_pending_turn_id)
+        # second request always overwrites the pending turn
+        self.assertNotEqual(updated_pending_turn["turn_id"], first_pending_turn_id)
         self.assertEqual(self.repository.sessions[session.id].state, "code_sent")
         self.assertEqual(len(sms_service.sent), 1)

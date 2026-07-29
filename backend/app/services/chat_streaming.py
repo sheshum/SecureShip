@@ -1,16 +1,23 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
+from app.llm.base import LLMMessage
 from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_session import AuthSessionStore
+
+if TYPE_CHECKING:
+    from app.services.auth_gate import AuthGateService
+    from app.services.chat import ChatService
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,3 +209,51 @@ def assistant_message_event(content: str, *, turn_id: str) -> dict:
         "created_at": utc_now_iso(),
         "meta": {"turn_id": turn_id, "finish_reason": "done"},
     }
+
+
+async def run_auth_gate_turn(
+    messages: Sequence[LLMMessage],
+    *,
+    session_id: UUID,
+    turn_id: str,
+    should_show_code_modal: bool,
+    chat_service: "ChatService",
+    auth_gate_service: "AuthGateService",
+    session_repository: ChatSessionRepository,
+) -> AsyncIterator[dict[str, Any]]:
+    """Execute one auth-gate LLM turn: drive tool calls, persist transcript, yield events."""
+    auth_prompt_message: str | None = None
+    open_code_modal = False
+
+    async for auth_event in chat_service.auth_gate_stream(messages):
+        if auth_event.get("type") == "tool_call":
+            tool_name = str(auth_event.get("tool") or "")
+            tool_args = auth_event.get("args")
+            if not isinstance(tool_args, dict):
+                tool_args = {}
+
+            session_repository.append_events(
+                session_id,
+                [tool_transcript_event(auth_event, turn_id=turn_id)],
+            )
+            yield auth_event
+
+            tool_result = auth_gate_service.execute_tool_call(tool_name, tool_args, session_id)
+            tool_result_event: dict[str, Any] = {"type": "tool_result", "tool": tool_name, "result": tool_result}
+            session_repository.append_events(
+                session_id,
+                [tool_transcript_event(tool_result_event, turn_id=turn_id)],
+            )
+            yield tool_result_event
+
+            if isinstance(tool_result.get("message"), str):
+                auth_prompt_message = str(tool_result["message"])
+            open_code_modal = bool(tool_result.get("show_code_modal"))
+
+        elif auth_event.get("type") == "auth_required":
+            auth_prompt_message = str(auth_event.get("message") or "")
+
+    if open_code_modal or should_show_code_modal:
+        yield show_code_modal_event()
+    yield auth_required_event(pending_turn_id=turn_id, message=auth_prompt_message)
+    yield done_event()

@@ -17,6 +17,7 @@ from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
 from app.repositories.shipments import ShipmentRepository
 from app.services.auth_session import AuthSessionStore, InMemoryAuthSessionStore
+from app.services.auth_gate import AuthGateService
 from app.services.chat import ChatService
 from app.services.identity_verification import IdentityVerificationService
 from app.services.otp import OtpService
@@ -93,3 +94,12 @@ def get_chat_service(
     shipment_repository: Annotated[ShipmentRepository, Depends(get_shipment_repository)],
 ) -> ChatService:
     return ChatService(llm_client, shipment_repository)
+
+
+def get_auth_gate_service(
+    identity_service: Annotated[IdentityVerificationService, Depends(get_identity_verification_service)],
+    otp_service: Annotated[OtpService, Depends(get_otp_service)],
+    sms_service: Annotated[SmsService, Depends(get_sms_service)],
+    session_repository: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> AuthGateService:
+    return AuthGateService(identity_service, otp_service, sms_service, session_repository)

@@ -19,31 +19,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import (
+    get_auth_gate_service,
     get_auth_session_store,
     get_chat_service,
     get_chat_session_repository,
-    get_identity_verification_service,
-    get_otp_service,
-    get_sms_service,
 )
 from app.llm.base import LLMError, LLMMessage
 from app.llm.tools import AuthContext
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.chat import ChatContinueRequest, ChatRequest
+from app.services.auth_gate import AuthGateService
 from app.services.auth_session import AuthSessionStore
 from app.services.chat import ChatService
-from app.services.identity_verification import IdentityVerificationService
-from app.services.otp import OtpService
-from app.services.sms import SmsService
 from app.services.chat_streaming import (
     assistant_message_event,
-    auth_required_event,
     auth_state_event,
-    done_event,
     resolve_auth_gate,
     resolve_or_create_session,
+    run_auth_gate_turn,
     session_event,
-    show_code_modal_event,
     sse_event,
     tool_transcript_event,
     user_message_event,
@@ -57,100 +51,6 @@ SSE_HEADERS = {
     # Tell reverse proxies (nginx) not to buffer the stream.
     "X-Accel-Buffering": "no",
 }
-
-
-def _execute_auth_gate_tool_call(
-    *,
-    tool_name: str,
-    tool_args: dict,
-    session_id: UUID,
-    session_repository: ChatSessionRepository,
-    identity_service: IdentityVerificationService,
-    otp_service: OtpService,
-    sms_service: SmsService,
-) -> dict:
-    if tool_name == "request_identity_info":
-        return {
-            "ok": True,
-            "action": "collect_identity",
-            "required_fields": ["first_name", "last_name", "phone_number"],
-            "message": "Please share your first name, last name, and phone number so I can verify your identity.",
-        }
-
-    if tool_name != "verify_identity":
-        return {
-            "ok": False,
-            "error": f"Unknown tool: {tool_name}",
-        }
-
-    first_name = str(tool_args.get("first_name") or "").strip()
-    last_name = str(tool_args.get("last_name") or "").strip()
-    phone_number = str(tool_args.get("phone_number") or "").strip()
-
-    if not first_name or not last_name or not phone_number:
-        return {
-            "ok": False,
-            "started": False,
-            "show_code_modal": False,
-            "state": "collecting_identity",
-            "message": "I still need first name, last name, and phone number to verify your identity.",
-            "error_code": "missing_identity_fields",
-        }
-
-    identity = identity_service.verify_identity(
-        first_name=first_name,
-        last_name=last_name,
-        phone_number=phone_number,
-    )
-    if not identity.matched or identity.match is None:
-        session_repository.update_auth_state(
-            session_id,
-            state="collecting_identity",
-            customer_id=None,
-        )
-        return {
-            "ok": False,
-            "started": False,
-            "show_code_modal": False,
-            "state": "collecting_identity",
-            "message": "We could not verify your identity. Please check your details and try again.",
-            "error_code": "identity_no_match",
-        }
-
-    pending_customer_id = UUID(identity.match.customer_id)
-    otp_issue = otp_service.issue_code(
-        session_id,
-        pending_customer_id=pending_customer_id,
-    )
-    if not otp_issue.ok:
-        return {
-            "ok": False,
-            "started": False,
-            "show_code_modal": False,
-            "state": "awaiting_code",
-            "message": "Please wait before requesting another verification code.",
-            "error_code": otp_issue.error_code,
-            "retry_at": (
-                otp_issue.retry_at.isoformat().replace("+00:00", "Z")
-                if otp_issue.retry_at is not None
-                else None
-            ),
-        }
-
-    sms_service.send_otp(phone_number, otp_issue.otp_code or "")
-    session_repository.update_auth_state(
-        session_id,
-        state="code_sent",
-        customer_id=None,
-    )
-
-    return {
-        "ok": True,
-        "started": True,
-        "show_code_modal": True,
-        "state": "code_sent",
-        "message": "Verification code sent. Enter the code to continue.",
-    }
 
 
 def _conversation_messages_for_session(
@@ -215,11 +115,7 @@ async def chat(
         ChatSessionRepository, Depends(get_chat_session_repository)
     ],
     auth_session_store: Annotated[AuthSessionStore, Depends(get_auth_session_store)],
-    identity_service: Annotated[
-        IdentityVerificationService, Depends(get_identity_verification_service)
-    ],
-    otp_service: Annotated[OtpService, Depends(get_otp_service)],
-    sms_service: Annotated[SmsService, Depends(get_sms_service)],
+    auth_gate_service: Annotated[AuthGateService, Depends(get_auth_gate_service)],
 ) -> StreamingResponse:
     current_time = datetime.now(UTC)
     session_context = resolve_or_create_session(
@@ -257,69 +153,21 @@ async def chat(
         yield sse_event(auth_state_event(gate.state, auth_expires_at=gate.auth_expires_at))
 
         if gate.requires_auth:
-            existing_pending_turn = session_repository.get_pending_turn(session_context.session_id)
-            active_pending_turn_id = pending_turn_id
-            if isinstance(existing_pending_turn, dict) and str(existing_pending_turn.get("status") or "") == "pending":
-                existing_turn_id = str(existing_pending_turn.get("turn_id") or "").strip()
-                if existing_turn_id:
-                    active_pending_turn_id = existing_turn_id
-            else:
-                session_repository.set_pending_turn(
-                    session_context.session_id,
-                    turn_id=pending_turn_id,
-                    content=user_message_content,
-                )
-
-            auth_prompt_message = None
-            should_open_code_modal = False
-            async for auth_event in service.auth_gate_stream(messages):
-                if auth_event.get("type") == "tool_call":
-                    tool_name = str(auth_event.get("tool") or "")
-                    tool_args = auth_event.get("args")
-                    if not isinstance(tool_args, dict):
-                        tool_args = {}
-
-                    session_repository.append_events(
-                        session_context.session_id,
-                        [tool_transcript_event(auth_event, turn_id=active_pending_turn_id)],
-                    )
-                    yield sse_event(auth_event)
-
-                    tool_result = _execute_auth_gate_tool_call(
-                        tool_name=tool_name,
-                        tool_args=tool_args,
-                        session_id=session_context.session_id,
-                        session_repository=session_repository,
-                        identity_service=identity_service,
-                        otp_service=otp_service,
-                        sms_service=sms_service,
-                    )
-                    tool_result_event = {
-                        "type": "tool_result",
-                        "tool": tool_name,
-                        "result": tool_result,
-                    }
-                    session_repository.append_events(
-                        session_context.session_id,
-                        [tool_transcript_event(tool_result_event, turn_id=active_pending_turn_id)],
-                    )
-                    yield sse_event(tool_result_event)
-
-                    if isinstance(tool_result.get("message"), str):
-                        auth_prompt_message = str(tool_result.get("message"))
-                    should_open_code_modal = bool(tool_result.get("show_code_modal"))
-                elif auth_event.get("type") == "auth_required":
-                    auth_prompt_message = str(auth_event.get("message") or "")
-
-            if should_open_code_modal or gate.should_show_code_modal:
-                yield sse_event(show_code_modal_event())
-            yield sse_event(
-                auth_required_event(
-                    pending_turn_id=active_pending_turn_id,
-                    message=auth_prompt_message,
-                )
+            session_repository.set_pending_turn(
+                session_context.session_id,
+                turn_id=pending_turn_id,
+                content=user_message_content,
             )
-            yield sse_event(done_event())
+            async for event in run_auth_gate_turn(
+                messages,
+                session_id=session_context.session_id,
+                turn_id=pending_turn_id,
+                should_show_code_modal=gate.should_show_code_modal,
+                chat_service=service,
+                auth_gate_service=auth_gate_service,
+                session_repository=session_repository,
+            ):
+                yield sse_event(event)
             return
 
         async for event in _stream_assistant_turn(
@@ -346,11 +194,7 @@ async def continue_chat(
         ChatSessionRepository, Depends(get_chat_session_repository)
     ],
     auth_session_store: Annotated[AuthSessionStore, Depends(get_auth_session_store)],
-    identity_service: Annotated[
-        IdentityVerificationService, Depends(get_identity_verification_service)
-    ],
-    otp_service: Annotated[OtpService, Depends(get_otp_service)],
-    sms_service: Annotated[SmsService, Depends(get_sms_service)],
+    auth_gate_service: Annotated[AuthGateService, Depends(get_auth_gate_service)],
 ) -> StreamingResponse:
     current_time = datetime.now(UTC)
     session_context = resolve_or_create_session(
@@ -388,56 +232,16 @@ async def continue_chat(
         yield sse_event(auth_state_event(gate.state, auth_expires_at=gate.auth_expires_at))
 
         if gate.requires_auth:
-            auth_prompt_message = None
-            should_open_code_modal = False
-            async for auth_event in service.auth_gate_stream(messages):
-                if auth_event.get("type") == "tool_call":
-                    tool_name = str(auth_event.get("tool") or "")
-                    tool_args = auth_event.get("args")
-                    if not isinstance(tool_args, dict):
-                        tool_args = {}
-
-                    session_repository.append_events(
-                        session_context.session_id,
-                        [tool_transcript_event(auth_event, turn_id=pending_turn_id)],
-                    )
-                    yield sse_event(auth_event)
-
-                    tool_result = _execute_auth_gate_tool_call(
-                        tool_name=tool_name,
-                        tool_args=tool_args,
-                        session_id=session_context.session_id,
-                        session_repository=session_repository,
-                        identity_service=identity_service,
-                        otp_service=otp_service,
-                        sms_service=sms_service,
-                    )
-                    tool_result_event = {
-                        "type": "tool_result",
-                        "tool": tool_name,
-                        "result": tool_result,
-                    }
-                    session_repository.append_events(
-                        session_context.session_id,
-                        [tool_transcript_event(tool_result_event, turn_id=pending_turn_id)],
-                    )
-                    yield sse_event(tool_result_event)
-
-                    if isinstance(tool_result.get("message"), str):
-                        auth_prompt_message = str(tool_result.get("message"))
-                    should_open_code_modal = bool(tool_result.get("show_code_modal"))
-                elif auth_event.get("type") == "auth_required":
-                    auth_prompt_message = str(auth_event.get("message") or "")
-
-            if should_open_code_modal or gate.should_show_code_modal:
-                yield sse_event(show_code_modal_event())
-            yield sse_event(
-                auth_required_event(
-                    pending_turn_id=pending_turn_id,
-                    message=auth_prompt_message,
-                )
-            )
-            yield sse_event(done_event())
+            async for event in run_auth_gate_turn(
+                messages,
+                session_id=session_context.session_id,
+                turn_id=pending_turn_id,
+                should_show_code_modal=gate.should_show_code_modal,
+                chat_service=service,
+                auth_gate_service=auth_gate_service,
+                session_repository=session_repository,
+            ):
+                yield sse_event(event)
             return
 
         session_repository.set_pending_turn_status(

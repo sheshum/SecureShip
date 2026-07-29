@@ -82,23 +82,22 @@ function dispatchEvent(event: ChatSseEvent, handlers: ChatStreamHandlers) {
   }
 }
 
-export async function streamChat(
-  payload: ChatRequest,
-  handlers: ChatStreamHandlers,
-  signal?: AbortSignal,
-): Promise<void> {
-  const response = await fetch(resolveApiUrl('/api/chat'), {
+async function fetchSseReader(
+  path: string,
+  payload: unknown,
+  signal: AbortSignal | undefined,
+  errorLabel: string,
+): Promise<ReadableStreamDefaultReader<Uint8Array>> {
+  const response = await fetch(resolveApiUrl(path), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
     signal,
   })
 
   if (!response.ok) {
     const message = await response.text()
-    throw new Error(message || `Chat request failed: HTTP ${response.status}`)
+    throw new Error(message || `${errorLabel} failed: HTTP ${response.status}`)
   }
 
   const contentType = response.headers.get('content-type') ?? ''
@@ -110,54 +109,49 @@ export async function streamChat(
     throw new Error('Response body stream is empty')
   }
 
-  const reader = response.body.getReader()
+  return response.body.getReader()
+}
+
+async function readSseStream(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  handlers: ChatStreamHandlers,
+): Promise<void> {
   const decoder = new TextDecoder()
   let buffer = ''
 
   while (true) {
     const { done, value } = await reader.read()
-
-    if (done) {
-      break
-    }
+    if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-
     const frames = buffer.split('\n\n')
     buffer = frames.pop() ?? ''
 
     for (const frame of frames) {
       for (const line of frame.split('\n')) {
-        if (!line.startsWith(DATA_PREFIX)) {
-          continue
-        }
-
-        const raw = line.slice(DATA_PREFIX.length).trim()
-        const event = safeJsonParse(raw)
-        if (!event) {
-          continue
-        }
-
-        dispatchEvent(event, handlers)
+        if (!line.startsWith(DATA_PREFIX)) continue
+        const event = safeJsonParse(line.slice(DATA_PREFIX.length).trim())
+        if (event) dispatchEvent(event, handlers)
       }
     }
   }
 
   if (buffer.trim()) {
     for (const line of buffer.split('\n')) {
-      if (!line.startsWith(DATA_PREFIX)) {
-        continue
-      }
-
-      const raw = line.slice(DATA_PREFIX.length).trim()
-      const event = safeJsonParse(raw)
-      if (!event) {
-        continue
-      }
-
-      dispatchEvent(event, handlers)
+      if (!line.startsWith(DATA_PREFIX)) continue
+      const event = safeJsonParse(line.slice(DATA_PREFIX.length).trim())
+      if (event) dispatchEvent(event, handlers)
     }
   }
+}
+
+export async function streamChat(
+  payload: ChatRequest,
+  handlers: ChatStreamHandlers,
+  signal?: AbortSignal,
+): Promise<void> {
+  const reader = await fetchSseReader('/api/chat', payload, signal, 'Chat request')
+  await readSseStream(reader, handlers)
 }
 
 export async function streamPendingChat(
@@ -165,75 +159,6 @@ export async function streamPendingChat(
   handlers: ChatStreamHandlers,
   signal?: AbortSignal,
 ): Promise<void> {
-  const response = await fetch(resolveApiUrl('/api/chat/continue'), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-    signal,
-  })
-
-  if (!response.ok) {
-    const message = await response.text()
-    throw new Error(message || `Chat continuation failed: HTTP ${response.status}`)
-  }
-
-  const contentType = response.headers.get('content-type') ?? ''
-  if (!contentType.includes('text/event-stream')) {
-    throw new Error(`Unexpected response content-type: ${contentType}`)
-  }
-
-  if (!response.body) {
-    throw new Error('Response body stream is empty')
-  }
-
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-
-  while (true) {
-    const { done, value } = await reader.read()
-
-    if (done) {
-      break
-    }
-
-    buffer += decoder.decode(value, { stream: true })
-
-    const frames = buffer.split('\n\n')
-    buffer = frames.pop() ?? ''
-
-    for (const frame of frames) {
-      for (const line of frame.split('\n')) {
-        if (!line.startsWith(DATA_PREFIX)) {
-          continue
-        }
-
-        const raw = line.slice(DATA_PREFIX.length).trim()
-        const event = safeJsonParse(raw)
-        if (!event) {
-          continue
-        }
-
-        dispatchEvent(event, handlers)
-      }
-    }
-  }
-
-  if (buffer.trim()) {
-    for (const line of buffer.split('\n')) {
-      if (!line.startsWith(DATA_PREFIX)) {
-        continue
-      }
-
-      const raw = line.slice(DATA_PREFIX.length).trim()
-      const event = safeJsonParse(raw)
-      if (!event) {
-        continue
-      }
-
-      dispatchEvent(event, handlers)
-    }
-  }
+  const reader = await fetchSseReader('/api/chat/continue', payload, signal, 'Chat continuation')
+  await readSseStream(reader, handlers)
 }

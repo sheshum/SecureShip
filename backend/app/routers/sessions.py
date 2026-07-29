@@ -14,7 +14,6 @@ from app.schemas.sessions import (
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
-
 @router.post("", response_model=SessionCreateResponse)
 def create_session(
     repository: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
