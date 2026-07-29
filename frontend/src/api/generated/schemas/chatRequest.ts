@@ -5,13 +5,11 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
-import type { ChatMessageIn } from './chatMessageIn';
-
 export interface ChatRequest {
   session_id: string | null;
   /**
-     * @minItems 1
-     * @maxItems 100
+     * @maxLength 8000
+     * @minLength 1
      */
-  messages: ChatMessageIn[];
+  prompt: string;
 }

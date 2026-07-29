@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { type ChatMessage } from '../components/ChatMessageList'
 import { ChatPanel } from '../components/ChatPanel'
 import { OtpVerificationModal } from '../components/OtpVerificationModal'
 import {
@@ -12,13 +11,10 @@ import type {
   VerifyCodeResponse,
 } from '../api/generated/schemas'
 
-function toChatRequest(sessionId: string, messages: ChatMessage[]): ChatRequest {
+function toChatRequest(sessionId: string, prompt: string): ChatRequest {
   return {
     session_id: sessionId,
-    messages: messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-    })),
+    prompt,
   }
 }
 
@@ -80,14 +76,6 @@ export function ChatPage() {
 
     const userMessageId = nextMessageIdRef.current++
     const assistantMessageId = nextMessageIdRef.current++
-    const requestMessages = [
-      ...messages,
-      {
-        id: userMessageId,
-        role: 'user' as const,
-        content: trimmedMessage,
-      },
-    ]
 
     addPendingTurn(
       {
@@ -104,7 +92,7 @@ export function ChatPage() {
     setDraft('')
     clearSessionError()
 
-    const request = toChatRequest(currentSessionId, requestMessages)
+    const request = toChatRequest(currentSessionId, trimmedMessage)
 
     void send(request, {
       onSession: (streamSessionId) => {
@@ -204,10 +192,6 @@ export function ChatPage() {
             {
               session_id: sessionId,
               pending_turn_id: turnToContinue,
-              messages: messages.map((message) => ({
-                role: message.role,
-                content: message.content,
-              })),
             },
             {
               onToken: (token) => {

@@ -153,6 +153,18 @@ def _execute_auth_gate_tool_call(
     }
 
 
+def _conversation_messages_for_session(
+    *,
+    session_repository: ChatSessionRepository,
+    session_id: UUID,
+) -> list[LLMMessage]:
+    transcript_messages = session_repository.get_conversation_messages(session_id)
+    return [
+        LLMMessage(role=message["role"], content=message["content"])
+        for message in transcript_messages
+    ]
+
+
 async def _stream_assistant_turn(
     *,
     service: ChatService,
@@ -222,17 +234,23 @@ async def chat(
         now=current_time,
     )
 
-    user_message = request.messages[-1]
+    user_message_content = request.prompt.strip()
+    if not user_message_content:
+        raise HTTPException(status_code=422, detail="Prompt must not be empty.")
+
     pending_turn_id = f"turn_{uuid4().hex}"
     session_repository.append_events(
         session_context.session_id,
         [
-            user_message_event(user_message.content)
+            user_message_event(user_message_content)
             | {"meta": {"source": "ui", "turn_id": pending_turn_id}}
         ],
     )
 
-    messages = [LLMMessage(role=m.role, content=m.content) for m in request.messages]
+    messages = _conversation_messages_for_session(
+        session_repository=session_repository,
+        session_id=session_context.session_id,
+    )
 
     async def stream() -> AsyncIterator[str]:
         yield sse_event(session_event(session_context.session_id))
@@ -249,7 +267,7 @@ async def chat(
                 session_repository.set_pending_turn(
                     session_context.session_id,
                     turn_id=pending_turn_id,
-                    content=user_message.content,
+                    content=user_message_content,
                 )
 
             auth_prompt_message = None
@@ -360,7 +378,10 @@ async def continue_chat(
     if pending_status != "pending":
         raise HTTPException(status_code=409, detail="Pending turn is already being processed.")
 
-    messages = [LLMMessage(role=m.role, content=m.content) for m in request.messages]
+    messages = _conversation_messages_for_session(
+        session_repository=session_repository,
+        session_id=session_context.session_id,
+    )
 
     async def stream() -> AsyncIterator[str]:
         yield sse_event(session_event(session_context.session_id))

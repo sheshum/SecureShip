@@ -170,6 +170,32 @@ class ChatSessionRepository:
                 session.refresh(chat_session)
             return chat_session
 
+    def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
+        chat_session = self.get_session(session_id)
+        if chat_session is None:
+            return []
+
+        transcript = self._normalize_transcript(chat_session.transcript)
+        events = transcript.get("events")
+        if not isinstance(events, list):
+            return []
+
+        conversation: list[dict[str, str]] = []
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            if event.get("type") != "message":
+                continue
+
+            role = str(event.get("role") or "").strip()
+            content = str(event.get("content") or "").strip()
+            if role not in {"user", "assistant"} or not content:
+                continue
+
+            conversation.append({"role": role, "content": content})
+
+        return conversation
+
     @staticmethod
     def _normalize_transcript(transcript: dict[str, Any] | None) -> dict[str, Any]:
         if not isinstance(transcript, dict):

@@ -141,6 +141,28 @@ class FakeChatSessionRepository:
         session.transcript.pop("pending_turn", None)
         return session
 
+    def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
+        session = self.get_session(session_id)
+        if session is None:
+            return []
+
+        events = session.transcript.get("events", [])
+        conversation: list[dict[str, str]] = []
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            if event.get("type") != "message":
+                continue
+
+            role = str(event.get("role") or "").strip()
+            content = str(event.get("content") or "").strip()
+            if role not in {"user", "assistant"} or not content:
+                continue
+
+            conversation.append({"role": role, "content": content})
+
+        return conversation
+
 
 class FakeLLMClient:
     def __init__(self, completions: list[LLMCompletion], stream_chunks: list[str]) -> None:
@@ -289,7 +311,7 @@ class ChatPersistenceTests(unittest.TestCase):
         response = self.client.post(
             "/api/chat",
             json={
-                "messages": [{"role": "user", "content": "hello"}],
+                "prompt": "hello",
             },
         )
         self.assertEqual(response.status_code, 422)
@@ -299,7 +321,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": None,
-                "messages": [{"role": "user", "content": "hello"}],
+                "prompt": "hello",
             },
         )
 
@@ -321,7 +343,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [{"role": "user", "content": "Track my package"}],
+                "prompt": "Track my package",
             },
         )
 
@@ -345,7 +367,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [{"role": "user", "content": "Any updates?"}],
+                "prompt": "Any updates?",
             },
         )
 
@@ -382,7 +404,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [{"role": "user", "content": "Where is TRK123?"}],
+                "prompt": "Where is TRK123?",
             },
         )
 
@@ -422,7 +444,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [{"role": "user", "content": "Where is my package?"}],
+                "prompt": "Where is my package?",
             },
         )
         self.assertEqual(first_response.status_code, 200)
@@ -439,7 +461,6 @@ class ChatPersistenceTests(unittest.TestCase):
             json={
                 "session_id": str(session.id),
                 "pending_turn_id": pending_turn_id,
-                "messages": [{"role": "user", "content": "Where is my package?"}],
             },
         )
         self.assertEqual(continue_response.status_code, 200)
@@ -503,7 +524,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [{"role": "user", "content": "Where is my package?"}],
+                "prompt": "Where is my package?",
             },
         )
         self.assertEqual(first_response.status_code, 200)
@@ -515,12 +536,7 @@ class ChatPersistenceTests(unittest.TestCase):
             "/api/chat",
             json={
                 "session_id": str(session.id),
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": "My first name is Mary, last name Johnson, phone +14155550112",
-                    }
-                ],
+                "prompt": "My first name is Mary, last name Johnson, phone +14155550112",
             },
         )
         self.assertEqual(second_response.status_code, 200)

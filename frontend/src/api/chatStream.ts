@@ -4,7 +4,6 @@ import { resolveApiUrl } from './url'
 export type ChatContinueRequest = {
   session_id: string
   pending_turn_id: string
-  messages: ChatRequest['messages']
 }
 
 export type ChatSseEvent =
