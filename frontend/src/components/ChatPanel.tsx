@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { ChatInput } from './ChatInput'
+import { MessageContent } from './MessageContent'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -50,7 +51,11 @@ export function ChatPanel({
                     : 'mr-auto max-w-[80%] bg-white text-slate-900 shadow-sm'
                 }`}
               >
-                <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                {message.role === 'user' ? (
+                  <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                ) : (
+                  <MessageContent content={message.content} />
+                )}
               </div>
             ))}
             {isLoading && (

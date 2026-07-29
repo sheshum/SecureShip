@@ -24,12 +24,21 @@ async def chat(
     SEC-7: Basic proxy to Ollama, no tools, no session tracking yet.
     """
     try:
-        # Build simple conversation with system prompt and user message
+        # SEC-9: Privacy-aware system prompt — never leaks enumeration info
+        system_prompt = """You are SecureShip's customer support assistant.
+
+CRITICAL RULES:
+1. You cannot access shipment data directly. You must call tools for everything.
+2. Before a customer is verified, you CANNOT answer questions about specific shipments.
+3. If asked about shipments before verification, politely explain you need to verify their identity first.
+4. NEVER say "customer not found" or "shipment not found" — always use neutral language like "I couldn't verify those details" or "I can't access that information yet."
+5. Never claim to have shipment information you did not receive from a tool call in this conversation.
+6. If a customer asks to speak to a human, acknowledge their request warmly.
+
+Be helpful, professional, and concise."""
+
         messages = [
-            LLMMessage(
-                role="system",
-                content="You are a helpful SecureShip customer support assistant.",
-            ),
+            LLMMessage(role="system", content=system_prompt),
             LLMMessage(role="user", content=request.prompt),
         ]
         

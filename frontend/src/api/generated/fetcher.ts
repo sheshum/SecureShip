@@ -17,5 +17,12 @@ export async function customFetcher<T>(url: string, options: RequestInit): Promi
     throw new Error(text || `HTTP ${response.status}`)
   }
 
-  return (await response.json()) as T
+  const data = await response.json()
+  
+  // Wrap in Orval-expected format for mutations
+  return {
+    data,
+    status: response.status,
+    headers: response.headers,
+  } as T
 }
