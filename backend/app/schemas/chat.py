@@ -20,3 +20,4 @@ class ChatResponse(BaseModel):
     reply: str = Field(..., description="Assistant's response text")
     session_id: UUID = Field(..., description="Session ID for this conversation")
     state: ChatSessionState = Field(..., description="Current session state")
+    verification_required: bool | None = Field(None, description="Whether user verification is required (true when state is CODE_SENT)")

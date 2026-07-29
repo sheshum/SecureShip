@@ -17,4 +17,6 @@ export interface ChatResponse {
   session_id: string;
   /** Current session state */
   state: ChatSessionState;
+  /** Whether user verification is required (true when state is CODE_SENT) */
+  verification_required?: boolean | null;
 }

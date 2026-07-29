@@ -94,6 +94,22 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
+    def update_session_state(
+        self,
+        session_id: UUID,
+        state: ChatSessionState,
+    ) -> ChatSession | None:
+        """Update only the session state (convenience method for tools)."""
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            chat_session.state = state
+            session.commit()
+            session.refresh(chat_session)
+            return chat_session
+
     def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
         chat_session = self.get_session(session_id)
         if chat_session is None:

@@ -60,6 +60,31 @@ class ShipmentRepository:
                 "shipments": [self._serialize_shipment(shipment) for shipment in shipments],
             }
 
+    def list_shipments_for_customer(
+        self,
+        customer_id: UUID | str,
+        tracking_number: str | None = None,
+    ) -> list[Shipment]:
+        """List shipments for a customer, optionally filtered by tracking number.
+        
+        Returns raw Shipment models (not serialized) for tool use.
+        Used by LLM tools that need to apply custom serialization.
+        """
+        customer_uuid = UUID(str(customer_id))
+        with self._session_factory() as session:
+            stmt = (
+                select(Shipment)
+                .options(selectinload(Shipment.packages))
+                .where(Shipment.customer_id == customer_uuid)
+            )
+            
+            if tracking_number:
+                stmt = stmt.where(Shipment.tracking_number == tracking_number)
+            
+            stmt = stmt.order_by(Shipment.last_update.desc())
+            
+            return session.scalars(stmt).all()
+
     @staticmethod
     def _serialize_customer(customer: Customer) -> dict:
         return {

@@ -195,10 +195,6 @@ export const getChatApiChatPostUrl = () => {
 }
 
 /**
- * Send a message to the assistant and get a response.
- *
- * If session_id is provided, continues that session; otherwise creates a new one.
- * Returns the session ID and current state along with the reply.
  * @summary Chat
  */
 export const chatApiChatPost = async (chatRequest: ChatRequest, options?: RequestInit): Promise<chatApiChatPostResponse> => {

@@ -1,31 +1,24 @@
 """Chat endpoints: public conversation with the LLM agent."""
 
-import logging
+import json
 from datetime import datetime, timezone
 from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_chat_session_repository, get_llm_client
+from app.dependencies import get_chat_session_repository, get_llm_client, get_tool_registry
 from app.llm.base import LLMClient, LLMError, LLMMessage
 from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.sessions import ChatSessionState
+from app.services.dispatch import dispatch_tool_call
+from app.tools.utils import log_console
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
-logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """You are SecureShip's customer support assistant.
-
-CRITICAL RULES:
-1. You cannot access shipment data directly. You must call tools for everything.
-2. Before a customer is verified, you CANNOT answer questions about specific shipments.
-3. If asked about shipments before verification, politely explain you need to verify their identity first.
-4. NEVER say "customer not found" or "shipment not found" — always use neutral language like "I couldn't verify those details" or "I can't access that information yet."
-5. Never claim to have shipment information you did not receive from a tool call in this conversation.
-6. If a customer asks to speak to a human, acknowledge their request warmly.
-
 Be helpful, professional, and concise."""
 
 
@@ -65,55 +58,131 @@ async def chat(
     request: ChatRequest,
     llm_client: Annotated[LLMClient, Depends(get_llm_client)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    tool_registry: Annotated[dict, Depends(get_tool_registry)],
 ) -> ChatResponse:
-    """
-    Send a message to the assistant and get a response.
-    
-    If session_id is provided, continues that session; otherwise creates a new one.
-    Returns the session ID and current state along with the reply.
-    """
     now = datetime.now(timezone.utc)
     chat_session = ensure_session(request.session_id, session_repo)
     
     try:
         messages = [LLMMessage(role="system", content=SYSTEM_PROMPT)]
-        
-        # Load conversation history from transcript if continuing a session
+
         if request.session_id:
             history = session_repo.get_conversation_messages(chat_session.id)
             for msg in history:
                 messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
         
-        # Add the new user message
         messages.append(LLMMessage(role="user", content=request.prompt))
         
-        completion = await llm_client.plan_chat_turn(messages=messages, tools=None)
-        
-        # Append user message and assistant reply to session transcript
+        # Track events to save to transcript
         events = [
             {
                 "type": "message",
                 "role": "user",
                 "content": request.prompt,
                 "created_at": now.isoformat(),
-            },
-            {
-                "type": "message",
-                "role": "assistant",
-                "content": completion.content,
-                "created_at": datetime.now(timezone.utc).isoformat(),
             }
         ]
+
+        available_tools = [t.schema for t in tool_registry.values()]
+
+        # Agentic loop: keep calling LLM until no more tool calls
+        while True:
+            # Call LLM with current message history and available tools
+            completion = await llm_client.plan_chat_turn(
+                messages=messages,
+                tools=available_tools if available_tools else None
+            )
+            
+            # Log LLM response
+            log_console("LLM Response", {
+                "has_tool_calls": bool(completion.tool_calls),
+                "content_preview": completion.content[:100] if completion.content else None
+            })
+            
+            # Add assistant's message to conversation history
+            messages.append(LLMMessage(
+                role="assistant",
+                content=completion.content or "",
+                tool_calls=completion.tool_calls
+            ))
+            
+            # If no tool calls, we have the final response
+            if not completion.tool_calls:
+                events.append({
+                    "type": "message",
+                    "role": "assistant",
+                    "content": completion.content,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+                break
+            
+            # Record tool calls in transcript
+            tool_calls_data = []
+            for tc in completion.tool_calls:
+                tool_calls_data.append({
+                    "id": tc.id,
+                    "name": tc.name,
+                    "arguments": tc.arguments,
+                })
+            
+            events.append({
+                "type": "tool_calls",
+                "tool_calls": tool_calls_data,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            })
+            
+            # Log tool calls
+            log_console("Tool Calls", tool_calls_data)
+            
+            # Execute each tool call
+            for tool_call in completion.tool_calls:
+                # Parse tool arguments
+                try:
+                    tool_args = json.loads(tool_call.arguments)
+                except json.JSONDecodeError:
+                    tool_args = {}
+                
+                # Dispatch tool call (enforces verification gate)
+                tool_result = await dispatch_tool_call(
+                    session=chat_session,
+                    fn_name=tool_call.name,
+                    args=tool_args,
+                    tool_registry=tool_registry,
+                )
+                
+                # Log tool result
+                log_console(f"Tool Result: {tool_call.name}", tool_result)
+                
+                # Add tool result to message history
+                messages.append(LLMMessage(
+                    role="tool",
+                    content=json.dumps(tool_result),
+                    tool_call_id=tool_call.id
+                ))
+                
+                # Record tool result in transcript
+                events.append({
+                    "type": "tool_result",
+                    "tool_call_id": tool_call.id,
+                    "name": tool_call.name,
+                    "result": tool_result,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+            
+            # Reload session to get any state changes from tools
+            chat_session = session_repo.get_session(chat_session.id) or chat_session
+        
+        # Save all events to transcript
         session_repo.append_events(chat_session.id, events)
         
         return ChatResponse(
             reply=completion.content,
             session_id=chat_session.id,
             state=chat_session.state,
+            verification_required=chat_session.state == ChatSessionState.CODE_SENT,
         )
         
     except LLMError as exc:
-        logger.error("LLM request failed: %s", exc)
         raise HTTPException(
             status_code=503,
             detail="The assistant is temporarily unavailable. Please try again.",

@@ -6,18 +6,15 @@ the tool didn't run. Nothing else in the codebase calls a handler directly.
 
 from typing import Any
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.models import ChatSession
 from app.services.identity_gate import enforce_gate
-from app.services.tool_registry import TOOL_REGISTRY
 
 
 async def dispatch_tool_call(
-    db: AsyncSession,
     session: ChatSession,
     fn_name: str,
     args: dict[str, Any],
+    tool_registry: dict[str, Any],
 ) -> dict[str, Any]:
     """Execute a tool call after enforcing the verification gate.
     
@@ -26,15 +23,15 @@ async def dispatch_tool_call(
     ever runs if the session is not verified.
     
     Args:
-        db: Database session
         session: Chat session (contains verification state)
         fn_name: Name of the tool to call
         args: Arguments to pass to the tool handler
+        tool_registry: The tool registry (injected per-request with fresh tool instances)
         
     Returns:
         Tool execution result dict, or {"error": "..."} on failure
     """
-    spec = TOOL_REGISTRY.get(fn_name)
+    spec = tool_registry.get(fn_name)
     if spec is None:
         return {"error": f"unknown_tool: {fn_name}"}
 
@@ -46,4 +43,4 @@ async def dispatch_tool_call(
             return {"error": "not_verified"}
 
     # Only verified tools OR public tools (requires_verification=False) reach this point.
-    return await spec.handler(db, session, **args)
+    return await spec.handler.execute(session, **args)
