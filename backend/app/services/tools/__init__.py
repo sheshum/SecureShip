@@ -13,6 +13,7 @@ auth_store = InMemoryAuthSessionStore()
 
 # Import all tools to trigger registration
 # (The @register_tool decorator runs on import, adding tools to TOOL_REGISTRY)
+from app.services.tools.lookup_shipments import tool_lookup_shipments
 from app.services.tools.verify_identity import tool_verify_identity
 
-__all__ = ["auth_store", "tool_verify_identity"]
+__all__ = ["auth_store", "tool_lookup_shipments", "tool_verify_identity"]
