@@ -75,7 +75,7 @@ export function ChatPanel({
         ) : (
           <div className="flex flex-1 flex-col justify-center">
             <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/80 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">
-              <h3 className="text-lg font-semibold text-slate-900">How Can I Help You Today</h3>
+              <h3 className="text-lg font-semibold text-slate-900">What can I help you with today?</h3>
               <p className="mt-2 text-sm text-slate-600">
                 Start with a quick question about tracking, delivery ETA, or address changes.
               </p>
