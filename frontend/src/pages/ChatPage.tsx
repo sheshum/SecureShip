@@ -1,16 +1,20 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ChatPanel } from '../components/ChatPanel'
+import { ChatCloseModal } from '../components/ChatCloseModal'
 import { OtpVerificationModal } from '../components/OtpVerificationModal'
 import { Toast } from '../components/Toast'
 import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost } from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 
 export function ChatPage() {
+  const navigate = useNavigate()
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [_sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
@@ -104,8 +108,15 @@ export function ChatPage() {
           isLoading={chatMutation.isPending}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
+          onClose={() => setIsCloseModalOpen(true)}
         />
       </div>
+
+      <ChatCloseModal
+        isOpen={isCloseModalOpen}
+        onClose={() => setIsCloseModalOpen(false)}
+        onConfirm={() => navigate('/')}
+      />
 
       <OtpVerificationModal
         isOpen={isOtpModalOpen}
