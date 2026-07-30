@@ -832,26 +832,26 @@ Suggested labels: `backend` / `frontend` / `infra` / `security-critical` (the la
 
 | Ticket | Title | Status | Acceptance criteria (from doc) |
 |---|---|---|---|
-| SEC-7 | `/chat` endpoint: proxy a single user message to Ollama, no tools yet | ⬜ InProgress | A1, A2 — response returns within target latency |
-| SEC-8 | `ChatWindow.tsx` wired to `/chat` via Orval-generated hook | ⬜ Todo | A1 — no login/signup anywhere in the flow |
-| SEC-9 | System prompt v1: decline shipment questions pre-verification, no enumeration leak | ⬜ Todo | A3 — write the "we can't confirm or deny" test case explicitly |
-| SEC-9b | `MessageContent.tsx`: render assistant replies as markdown (`react-markdown` + `remark-gfm`) | ⬜ Todo | Not a security ticket, but keep raw-HTML passthrough (`rehype-raw`) off unless there's a real need — see §7 note |
+| SEC-7 | `/chat` endpoint: proxy a single user message to Ollama, no tools yet | ✅ Done | A1, A2 — response returns within target latency |
+| SEC-8 | `ChatWindow.tsx` wired to `/chat` via Orval-generated hook | ✅ Done | A1 — no login/signup anywhere in the flow |
+| SEC-9 | System prompt v1: decline shipment questions pre-verification, no enumeration leak | ✅ Done | A3 — write the "we can't confirm or deny" test case explicitly |
+| SEC-9b | `MessageContent.tsx`: render assistant replies as markdown (`react-markdown` + `remark-gfm`) | ✅ Done | Not a security ticket, but keep raw-HTML passthrough (`rehype-raw`) off unless there's a real need — see §7 note |
 
 ### Epic B — Identity collection
 
 | Ticket | Title | Status | Depends on |
 |---|---|---|---|
-| SEC-10 | `tool_registry.py` + `dispatch.py` (the enforcement point itself) | ⬜ Todo | SEC-5 — do this **before** SEC-12/13, not after |
-| SEC-11 | `collect_identity` tool: register + handler, extracts partial/multi-field input | ⬜ Todo | B1, B2 — SEC-10 |
-| SEC-12 | `identity_gate.py`: `enforce_gate()` predicate + unit tests | ⬜ Todo | §11 first test file — SEC-10 |
-| SEC-13 | Neutral rejection copy for non-matching identity ("we couldn't verify that") | ⬜ Todo | B3 — privacy/enumeration review, not just a UX nicety |
+| SEC-10 | `tool_registry.py` + `dispatch.py` (the enforcement point itself) | ✅ Done | SEC-5 — do this **before** SEC-12/13, not after |
+| SEC-11 | `collect_identity` tool: register + handler, extracts partial/multi-field input | ⬜ Skipped | B1, B2 — SEC-10 |
+| SEC-12 | `identity_gate.py`: `enforce_gate()` predicate + unit tests | ✅ Done | §11 first test file — SEC-10 |
+| SEC-13 | Neutral rejection copy for non-matching identity ("we couldn't verify that") | ✅ Done | B3 — privacy/enumeration review, not just a UX nicety |
 
 ### Epic C — 2FA verification
 
 | Ticket | Title | Status | Depends on |
 |---|---|---|---|
-| SEC-14 | `attempt_verification` tool: match candidate fields, generate + hash code, mock-send | ⬜ Todo | C1 — SEC-11, SEC-12 |
-| SEC-15 | `sms_mock.py`: console/log-only "delivery" | ⬜ Todo | C1 |
+| SEC-14 | `attempt_verification` tool: match candidate fields, generate + hash code, mock-send | ✅ Done | C1 — SEC-11, SEC-12 |
+| SEC-15 | `sms_mock.py`: console/log-only "delivery" | ✅ Done | C1 |
 | SEC-16 | `/verify-code` REST endpoint: hash comparison, attempt counter, expiry | ⬜ Todo | C3, C4 — **only code path allowed to set `state = verified`**, flag in review |
 | SEC-17 | `CodeModal.tsx`: renders on demand, not pre-mounted | ⬜ Todo | C2 |
 | SEC-18 | Retry/cooldown policy decision documented in README | ⬜ Todo | C3 — team's call, but must be deliberate |
