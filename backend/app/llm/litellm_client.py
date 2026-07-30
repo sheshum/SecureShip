@@ -53,22 +53,6 @@ class LiteLLMClient(LLMClient):
             logger.exception("LLM completion failed (model=%s)", self._model)
             raise LLMError("The language model is currently unavailable.") from exc
 
-    async def stream_chat(self, messages: Sequence[LLMMessage]) -> AsyncIterator[str]:
-        try:
-            stream = await litellm.acompletion(
-                model=self._model,
-                messages=self._serialize_messages(messages),
-                api_base=self._api_base,
-                api_key=self._api_key,
-                stream=True,
-            )
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content
-                if delta:
-                    yield delta
-        except Exception as exc:
-            logger.exception("LLM completion failed (model=%s)", self._model)
-            raise LLMError("The language model is currently unavailable.") from exc
 
     @staticmethod
     def _serialize_messages(messages: Sequence[LLMMessage]) -> list[dict[str, Any]]:

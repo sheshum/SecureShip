@@ -43,7 +43,3 @@ class LLMClient(ABC):
         tools: Sequence[dict[str, Any]] | None = None,
     ) -> LLMCompletion:
         """Return one assistant response, optionally requesting tool calls."""
-
-    @abstractmethod
-    def stream_chat(self, messages: Sequence[LLMMessage]) -> AsyncIterator[str]:
-        """Send a conversation to the model and yield response text deltas."""
