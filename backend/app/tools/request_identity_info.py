@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.services.auth_context import AuthContext
+from app.tools.result import ToolResult
 from app.tools.tool_registry import tool
 
 
@@ -37,18 +38,19 @@ class RequestIdentityInfoTool:
     async def execute(
         self,
         _: AuthContext,
-    ) -> dict[str, Any]:
+    ) -> ToolResult:
         """Return a message requesting user verification.
         
         Args:
             context: Authentication context (verification state doesn't matter)
             
         Returns:
-            {"message": "..."} with instructions for the user
+            ToolResult with instructions for the user
         """
-        return {
-            "message": (
+        return ToolResult(
+            success=True,
+            message=(
                 "I need to verify your identity before I can access your shipment information. "
                 "Please provide your first name, last name, and phone number to begin the verification process."
             )
-        }
+        )

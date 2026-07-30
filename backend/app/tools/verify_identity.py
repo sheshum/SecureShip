@@ -16,6 +16,7 @@ from app.repositories.session_verification import SessionVerificationRepository
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
 from app.services.sms_mock import send_mock_sms
+from app.tools.result import ToolResult
 from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code
 from app.tools.tool_registry import tool
 
@@ -82,7 +83,7 @@ class VerifyIdentityTool:
         first_name: str,
         last_name: str,
         phone_number: str,
-    ) -> dict[str, Any]:
+    ) -> ToolResult:
         """Verify customer identity and send OTP code.
         Args:
             context: Authentication context
@@ -91,27 +92,28 @@ class VerifyIdentityTool:
             phone_number: Customer's phone number
             
         Returns:
-            Neutral success or failure message (enumeration-proof)
+            ToolResult with neutral success or failure message (enumeration-proof)
         """
 
         if (context.state != ChatSessionState.ANONYMOUS):
             # This should never happen (dispatch_tool_call checks verification)
             log_console(f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}")
-            return {
-                "status": "error",
-                "message": "Already verified. Identity verification cannot be performed in the current session state."
-            }
+            return ToolResult(
+                success=False,
+                message="Already verified. Identity verification cannot be performed in the current session state."
+            )
+        
         # Use repository to find customer by identity
         customer = self.customer_repo.find_by_identity(first_name, last_name, phone_number)
 
         log_console("verify identity: got customer match: " + (f"customer_id={customer.id}" if customer else "no match"))
         
         if customer is None:
-            # No match - but we return the SAME message as success
-            return {
-                "status": "ok",
-                "message": "No matching customer found."
-            }
+            # No match - but we return success=True (enumeration-proof)
+            return ToolResult(
+                success=True,
+                message="Identity verification failed."
+            )
 
         # Match found - generate and send OTP
         code = generate_otp()
@@ -136,7 +138,8 @@ class VerifyIdentityTool:
         
         # Return SAME neutral message as failure case (SEC-13)
         # The model learns "code sent" but never learns the code itself
-        return {
-            "status": "pending",
-            "message": "If that information matches our records, a verification code will be sent to your phone shortly.",
-        }
+        return ToolResult(
+            success=True,
+            message="If that information matches our records, a verification code will be sent to your phone shortly.",
+            data={"verification_status": "code_sent"}
+        )

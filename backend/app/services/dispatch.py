@@ -8,6 +8,7 @@ from typing import Any
 
 from app.services.auth_context import AuthContext
 from app.services.identity_gate import enforce_gate
+from app.tools.result import ToolResult
 
 
 async def dispatch_tool_call(
@@ -43,4 +44,11 @@ async def dispatch_tool_call(
             return {"error": "not_verified"}
 
     # Only verified tools OR public tools (requires_verification=False) reach this point.
-    return await spec.handler.execute(context, **args)
+    tool_result = await spec.handler.execute(context, **args)
+    
+    # Convert ToolResult to dict for JSON serialization
+    if isinstance(tool_result, ToolResult):
+        return tool_result.to_dict()
+    
+    # Backward compatibility: if tool still returns raw dict, pass through
+    return tool_result
