@@ -48,20 +48,10 @@ def get_session_verification_repository() -> SessionVerificationRepository:
 
 
 # Tool dependencies - tools are constructed per-request with their dependencies
-from app.services.auth_session import InMemoryAuthSessionStore
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
 from app.tools.verify_identity import VerifyIdentityTool
 from app.tools.tool_registry import TOOL_REGISTRY, register_tool, get_tool_metadata
-
-# Global auth session store (in-memory for now, Redis later)
-# Shared across all tool instances
-_auth_store = InMemoryAuthSessionStore()
-
-
-def get_auth_store() -> InMemoryAuthSessionStore:
-    """Dependency that provides the global auth session store."""
-    return _auth_store
 
 
 def get_verify_identity_tool(
