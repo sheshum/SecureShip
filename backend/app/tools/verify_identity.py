@@ -131,7 +131,7 @@ class VerifyIdentityTool:
             expires_at=expires_at,
         )
         
-        self.session_repo.update_session_state(context.session_id, ChatSessionState.CODE_SENT)
+        self.session_repo.update_session(context.session_id, state=ChatSessionState.CODE_SENT)
         
         # Send mock SMS (logs to console in dev, would be Twilio in prod)
         send_mock_sms(customer.phone_number, code)

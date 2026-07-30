@@ -10,7 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
 from app.models import ChatSession
+from app.repositories.session_state_machine import SessionStateValidator
 from app.schemas.sessions import ChatSessionState
+
+# Sentinel value to distinguish "don't change" from "set to None"
+_UNSET = object()
 
 
 class ChatSessionRepository:
@@ -83,36 +87,59 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
-    def update_auth_state(
+    def update_session(
         self,
         session_id: UUID,
         *,
-        state: ChatSessionState,
-        customer_id: UUID | None,
+        state: ChatSessionState | None = None,
+        customer_id: UUID | None | object = _UNSET,
     ) -> ChatSession | None:
+        """Update session state and/or customer_id with validation.
+        
+        Uses a sentinel pattern to distinguish between:
+        - Not changing customer_id (default, _UNSET sentinel)
+        - Setting customer_id to None (explicit None value)
+        - Setting customer_id to a UUID
+        
+        Args:
+            session_id: Session to update
+            state: New state (if None, state is not changed)
+            customer_id: New customer_id value:
+                - _UNSET (default): don't change customer_id
+                - None: clear customer_id
+                - UUID: set customer_id
+        
+        Returns:
+            Updated ChatSession or None if not found
+            
+        Raises:
+            ValueError: If state transition is invalid or violates invariants
+        """
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
             if chat_session is None:
                 return None
 
-            chat_session.state = state
-            chat_session.customer_id = customer_id
-            session.commit()
-            session.refresh(chat_session)
-            return chat_session
+            # Determine final values after update
+            new_state = state if state is not None else chat_session.state
+            new_customer_id = (
+                chat_session.customer_id if customer_id is _UNSET else customer_id
+            )
 
-    def update_session_state(
-        self,
-        session_id: UUID,
-        state: ChatSessionState,
-    ) -> ChatSession | None:
-        """Update only the session state (convenience method for tools)."""
-        with self._session_factory() as session:
-            chat_session = session.get(ChatSession, session_id)
-            if chat_session is None:
-                return None
+            # Validate state transition if state is changing
+            if state is not None and state != chat_session.state:
+                SessionStateValidator.validate_transition(
+                    from_state=chat_session.state,
+                    to_state=new_state,
+                    new_customer_id=new_customer_id,
+                )
 
-            chat_session.state = state
+            # Apply updates
+            if state is not None:
+                chat_session.state = state
+            if customer_id is not _UNSET:
+                chat_session.customer_id = customer_id
+
             session.commit()
             session.refresh(chat_session)
             return chat_session
