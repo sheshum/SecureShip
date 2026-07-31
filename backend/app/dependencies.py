@@ -22,6 +22,7 @@ from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
 from app.tools.tool_registry import TOOL_REGISTRY, get_tool_metadata, register_tool
 from app.tools.verify_identity import VerifyIdentityTool
+from app.tools.escalate_to_human import EscalateToHumanTool
 
 
 @lru_cache
@@ -80,12 +81,19 @@ def get_request_identity_info_tool() -> RequestIdentityInfoTool:
     """Dependency that constructs RequestIdentityInfoTool (no dependencies needed)."""
     return RequestIdentityInfoTool()
 
+def get_escalate_to_human_tool() -> EscalateToHumanTool:
+    """Dependency that constructs EscalateToHumanTool (no dependencies needed)."""
+    return EscalateToHumanTool()
+
 
 def get_tool_registry(
     verify_identity_tool: Annotated[VerifyIdentityTool, Depends(get_verify_identity_tool)],
     lookup_shipments_tool: Annotated[LookupShipmentsTool, Depends(get_lookup_shipments_tool)],
     request_identity_info_tool: Annotated[
         RequestIdentityInfoTool, Depends(get_request_identity_info_tool)
+    ],
+    escalate_to_human_tool: Annotated[
+        EscalateToHumanTool, Depends(get_escalate_to_human_tool)
     ],
 ) -> dict[str, Any]:
     """Dependency that builds and returns the tool registry with all tools.
@@ -98,7 +106,7 @@ def get_tool_registry(
     TOOL_REGISTRY.clear()
 
     # Register each tool with its metadata from the @tool decorator
-    for tool_instance in [verify_identity_tool, lookup_shipments_tool, request_identity_info_tool]:
+    for tool_instance in [verify_identity_tool, lookup_shipments_tool, request_identity_info_tool, escalate_to_human_tool]:
         tool_class = type(tool_instance)
         name, schema, requires_verification = get_tool_metadata(tool_class)
         register_tool(
