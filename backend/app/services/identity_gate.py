@@ -1,13 +1,13 @@
-"""
-The verification predicate itself. Kept separate from the registry/dispatcher
+"""The verification predicate itself. Kept separate from the registry/dispatcher
 so "what does verified mean" and "who gets asked this question" stay
 two small, independently-testable pieces.
 """
 
 from dataclasses import dataclass
 
-from app.services.auth_context import AuthContext
 from app.schemas.sessions import ChatSessionState
+from app.services.auth_context import AuthContext
+
 
 @dataclass
 class GateResult:
@@ -18,11 +18,11 @@ class GateResult:
 
 def enforce_gate(context: AuthContext) -> GateResult:
     """Deliberately dumb: one condition, no exceptions.
-    
+
     A session is allowed access to verified tools only when BOTH:
     1. context.state == ChatSessionState.VERIFIED
     2. context.customer_id is not None
-    
+
     If state and customer_id ever disagree, fail closed.
     This is the single point where "verified" is defined (Epic F3).
     """

@@ -5,7 +5,7 @@ Nothing in this module may import a concrete LLM SDK. Adapters
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -44,7 +44,7 @@ class LLMClient(ABC):
         tool_choice: str | list[str] | dict[str, Any] | None = None,
     ) -> LLMCompletion:
         """Return one assistant response, optionally requesting tool calls.
-        
+
         Args:
             messages: Conversation history
             tools: Available tool schemas

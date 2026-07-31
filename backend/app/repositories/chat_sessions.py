@@ -63,13 +63,15 @@ class ChatSessionRepository:
             session.commit()
             return snapshot
 
-    def set_conversation_messages(self, session_id: UUID, messages: list[dict[str, Any]]) -> ChatSession | None:
+    def set_conversation_messages(
+        self, session_id: UUID, messages: list[dict[str, Any]]
+    ) -> ChatSession | None:
         """Store conversation messages as the transcript.
-        
+
         Args:
             session_id: Session to update
             messages: List of serialized LLMMessage dicts (role, content, tool_calls, tool_call_id)
-        
+
         Returns:
             Updated ChatSession or None if not found
         """
@@ -92,15 +94,15 @@ class ChatSessionRepository:
         session_id: UUID,
         *,
         state: ChatSessionState | None = None,
-        customer_id: UUID | None | object = _UNSET,
+        customer_id: UUID | object | None = _UNSET,
     ) -> ChatSession | None:
         """Update session state and/or customer_id with validation.
-        
+
         Uses a sentinel pattern to distinguish between:
         - Not changing customer_id (default, _UNSET sentinel)
         - Setting customer_id to None (explicit None value)
         - Setting customer_id to a UUID
-        
+
         Args:
             session_id: Session to update
             state: New state (if None, state is not changed)
@@ -108,10 +110,10 @@ class ChatSessionRepository:
                 - _UNSET (default): don't change customer_id
                 - None: clear customer_id
                 - UUID: set customer_id
-        
+
         Returns:
             Updated ChatSession or None if not found
-            
+
         Raises:
             ValueError: If state transition is invalid or violates invariants
         """
@@ -122,9 +124,7 @@ class ChatSessionRepository:
 
             # Determine final values after update
             new_state = state if state is not None else chat_session.state
-            new_customer_id = (
-                chat_session.customer_id if customer_id is _UNSET else customer_id
-            )
+            new_customer_id = chat_session.customer_id if customer_id is _UNSET else customer_id
 
             # Validate state transition if state is changing
             if state is not None and state != chat_session.state:
@@ -146,7 +146,7 @@ class ChatSessionRepository:
 
     def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
         """Get conversation history for LLM context.
-        
+
         Returns only user/assistant messages, excluding system prompts and tool-role messages.
         """
         chat_session = self.get_session(session_id)
@@ -165,7 +165,7 @@ class ChatSessionRepository:
 
             role = str(msg.get("role") or "").strip()
             content = str(msg.get("content") or "").strip()
-            
+
             # Only include user/assistant messages for conversation context
             if role not in {"user", "assistant"} or not content:
                 continue

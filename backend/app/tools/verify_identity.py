@@ -1,5 +1,4 @@
-"""
-verify_identity tool - Verify customer identity and send OTP code.
+"""verify_identity tool - Verify customer identity and send OTP code.
 
 This tool is the entry point to the verification flow. It:
 1. Matches user-provided identity info (name + phone) against Customer table
@@ -7,8 +6,7 @@ This tool is the entry point to the verification flow. It:
 3. Returns neutral responses to prevent enumeration attacks (SEC-13)
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import UTC, datetime, timedelta
 
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
@@ -17,11 +15,8 @@ from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
 from app.services.sms_mock import send_mock_sms
 from app.tools.result import ToolResult
-from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code
 from app.tools.tool_registry import tool
-
-from app.tools.utils import log_console
-
+from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code, log_console
 
 VERIFY_IDENTITY_SCHEMA = {
     "type": "function",
@@ -62,11 +57,11 @@ VERIFY_IDENTITY_SCHEMA = {
 )
 class VerifyIdentityTool:
     """Tool for verifying customer identity and sending OTP codes.
-    
+
     Dependencies are injected via constructor to enable proper testing
     and follow the repository pattern used throughout the codebase.
     """
-    
+
     def __init__(
         self,
         customer_repo: CustomerRepository,
@@ -76,7 +71,7 @@ class VerifyIdentityTool:
         self.customer_repo = customer_repo
         self.session_repo = session_repo
         self.verification_repo = verification_repo
-    
+
     async def execute(
         self,
         context: AuthContext,
@@ -85,44 +80,48 @@ class VerifyIdentityTool:
         phone_number: str,
     ) -> ToolResult:
         """Verify customer identity and send OTP code.
+
         Args:
             context: Authentication context
             first_name: Customer's first name
             last_name: Customer's last name
             phone_number: Customer's phone number
-            
+
         Returns:
             ToolResult with neutral success or failure message (enumeration-proof)
         """
-
-        if (context.state != ChatSessionState.ANONYMOUS):
+        if context.state != ChatSessionState.ANONYMOUS:
             # This should never happen (dispatch_tool_call checks verification)
-            log_console(f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}")
+            log_console(
+                f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}"
+            )
             return ToolResult(
                 success=False,
-                message="Already verified. Identity verification cannot be performed in the current session state."
+                message="Already verified. Identity verification cannot be performed in the current session state.",
             )
-        
+
         # Use repository to find customer by identity
         customer = self.customer_repo.find_by_identity(first_name, last_name, phone_number)
 
-        log_console("verify identity: got customer match: " + (f"customer_id={customer.id}" if customer else "no match"))
-        
+        log_console(
+            "verify identity: got customer match: "
+            + (f"customer_id={customer.id}" if customer else "no match")
+        )
+
         if customer is None:
             # No match - but we return success=True (enumeration-proof)
-            return ToolResult(
-                success=True,
-                message="Identity verification failed."
-            )
+            return ToolResult(success=True, message="Identity verification failed.")
 
         # Match found - generate and send OTP
         code = generate_otp()
         code_hash_value = hash_code(code)
-        
-        now = datetime.now(timezone.utc)
+
+        now = datetime.now(UTC)
         expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
-        log_console(f"verify_identity: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}")
+        log_console(
+            f"verify_identity: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}"
+        )
         self.verification_repo.create(
             session_id=context.session_id,
             code_hash=code_hash_value,
@@ -130,16 +129,16 @@ class VerifyIdentityTool:
             sent_at=now,
             expires_at=expires_at,
         )
-        
+
         self.session_repo.update_session(context.session_id, state=ChatSessionState.CODE_SENT)
-        
+
         # Send mock SMS (logs to console in dev, would be Twilio in prod)
         send_mock_sms(customer.phone_number, code)
-        
+
         # Return SAME neutral message as failure case (SEC-13)
         # The model learns "code sent" but never learns the code itself
         return ToolResult(
             success=True,
             message="If that information matches our records, a verification code will be sent to your phone shortly.",
-            data={"verification_status": "code_sent"}
+            data={"verification_status": "code_sent"},
         )

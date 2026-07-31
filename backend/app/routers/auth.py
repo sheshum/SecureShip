@@ -1,7 +1,7 @@
 """Authentication and verification endpoints."""
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -21,39 +21,35 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 @router.post("/verify-code", response_model=VerifyCodeResponse)
 async def verify_code(
     request: VerifyCodeRequest,
-    session_repo: Annotated[
-        ChatSessionRepository, Depends(get_chat_session_repository)
-    ],
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
     verification_repo: Annotated[
         SessionVerificationRepository, Depends(get_session_verification_repository)
     ],
 ) -> VerifyCodeResponse:
     """Verify an OTP code for a chat session.
-    
+
     This is the ONLY code path that can set a session's state to "verified".
-    
+
     Security enforcement (Epic F):
     - Checks code hash (SHA-256), never compares plain text
     - Enforces 3-attempt limit
     - Enforces 7-minute expiry
     - Returns neutral messages (no enumeration)
-    
+
     Args:
         request: Session ID and 6-digit code
         session_repo: Repository for chat sessions
         verification_repo: Repository for verification records
-    
+
     Returns:
         VerifyCodeResponse with result and attempts_remaining if applicable
-    
+
     Raises:
         HTTPException: 400 if no verification in progress or session not found
     """
-
     session = session_repo.get_session(request.session_id)
     if session is None:
         raise HTTPException(status_code=400, detail="Session not found")
-
 
     verification = verification_repo.get_by_session(request.session_id)
     if verification is None:
@@ -65,7 +61,7 @@ async def verify_code(
     if session.state not in [ChatSessionState.CODE_SENT, ChatSessionState.AWAITING_CODE]:
         raise HTTPException(status_code=400, detail="No verification in progress")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if verification.expires_at < now:
         verification_repo.update_status(request.session_id, "expired")
         session_repo.update_session(
@@ -80,20 +76,21 @@ async def verify_code(
         )
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
-
     code_hash = hashlib.sha256(request.code.encode()).hexdigest()
-    
+
     if code_hash != verification.code_hash:
         # Increment attempt counter
         updated = verification_repo.increment_attempt(request.session_id)
         if updated is None:
             raise HTTPException(status_code=500, detail="Failed to update attempts")
-        
+
         # Update session state to awaiting_code
         session_repo.update_session(
-            request.session_id, state=ChatSessionState.AWAITING_CODE, customer_id=session.customer_id
+            request.session_id,
+            state=ChatSessionState.AWAITING_CODE,
+            customer_id=session.customer_id,
         )
-        
+
         # Check if this was the last attempt
         attempts_remaining = max(0, 3 - updated.attempts)
         if attempts_remaining == 0:
@@ -102,11 +99,8 @@ async def verify_code(
                 request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
             )
             return VerifyCodeResponse(result="expired", attempts_remaining=0)
-        
-        return VerifyCodeResponse(
-            result="incorrect", 
-            attempts_remaining=attempts_remaining
-        )
+
+        return VerifyCodeResponse(result="incorrect", attempts_remaining=attempts_remaining)
 
     verification_repo.update_status(request.session_id, "verified")
     session_repo.update_session(
@@ -114,5 +108,5 @@ async def verify_code(
         state=ChatSessionState.VERIFIED,
         customer_id=verification.matched_customer_id,
     )
-    
+
     return VerifyCodeResponse(result="verified", attempts_remaining=None)

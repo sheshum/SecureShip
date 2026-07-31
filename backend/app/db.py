@@ -3,9 +3,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://user:pass@localhost:5432/secureship"
-)
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://user:pass@localhost:5432/secureship")
 
 
 def _to_psycopg_url(url: str) -> str:

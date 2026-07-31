@@ -24,9 +24,11 @@ class CustomerRepository:
             ).all()
             return [self._serialize_customer(customer) for customer in customers]
 
-    def find_by_identity(self, first_name: str, last_name: str, phone_number: str) -> Customer | None:
+    def find_by_identity(
+        self, first_name: str, last_name: str, phone_number: str
+    ) -> Customer | None:
         """Find customer by name and phone (case-insensitive name match).
-        
+
         Used by identity verification to match customer records.
         Returns the actual Customer model (not serialized) for tool use.
         """

@@ -1,7 +1,7 @@
 """LiteLLM adapter — the only module that talks to the litellm SDK."""
 
 import logging
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import Sequence
 from typing import Any
 
 import litellm
@@ -61,27 +61,26 @@ class LiteLLMClient(LLMClient):
         tools: Sequence[dict[str, Any]] | None,
     ) -> str | dict[str, Any] | None:
         """Convert tool_choice to OpenAI format.
-        
+
         Args:
             tool_choice: User-provided tool choice (string, list, dict, or None)
             tools: Available tools
-            
+
         Returns:
             OpenAI-formatted tool_choice or None
         """
         if not tools:
             return None
-            
+
         if tool_choice is None:
             return "auto"
-            
+
         if isinstance(tool_choice, dict):
             return tool_choice
-            
+
         # Convert string or list to OpenAI format
         tool_name = tool_choice if isinstance(tool_choice, str) else tool_choice[0]
         return tool_name
-
 
     @staticmethod
     def _serialize_messages(messages: Sequence[LLMMessage]) -> list[dict[str, Any]]:

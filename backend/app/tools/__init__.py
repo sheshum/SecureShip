@@ -1,5 +1,4 @@
-"""
-LLM tool handlers. Each tool is defined in its own module.
+"""LLM tool handlers. Each tool is defined in its own module.
 
 Tools are now constructed per-request via FastAPI dependency injection.
 This module exports the tool classes decorated with @tool.

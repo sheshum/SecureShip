@@ -66,7 +66,7 @@ class ShipmentRepository:
         tracking_number: str | None = None,
     ) -> list[Shipment]:
         """List shipments for a customer, optionally filtered by tracking number.
-        
+
         Returns raw Shipment models (not serialized) for tool use.
         Used by LLM tools that need to apply custom serialization.
         """
@@ -77,12 +77,12 @@ class ShipmentRepository:
                 .options(selectinload(Shipment.packages))
                 .where(Shipment.customer_id == customer_uuid)
             )
-            
+
             if tracking_number:
                 stmt = stmt.where(Shipment.tracking_number == tracking_number)
-            
+
             stmt = stmt.order_by(Shipment.last_update.desc())
-            
+
             return session.scalars(stmt).all()
 
     @staticmethod

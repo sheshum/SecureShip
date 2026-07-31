@@ -5,7 +5,7 @@
 # General Settings
 # ============================================================================
 
-line-length = 100
+line-length = 120
 target-version = "py313"
 
 # Exclude patterns
@@ -141,6 +141,7 @@ ignore = [
     "S101",
     # Allow datetime.now() without timezone (FastAPI handles this)
     "DTZ005",
+    "COM812"  # may cause conflicts when used with the formatter: `COM812`. To avoid unexpected behavior, we recommend disabling this rule
 ]
 
 # Allow autofix for all enabled rules

@@ -31,14 +31,14 @@ class SessionVerificationRepository:
         expires_at: datetime,
     ) -> SessionVerification:
         """Create a new OTP verification record for a session.
-        
+
         Args:
             session_id: The chat session being verified
             code_hash: SHA-256 hash of the 6-digit OTP code
             matched_customer_id: Customer that passed identity verification
             sent_at: When the OTP was generated
             expires_at: When the OTP expires (typically sent_at + 7 minutes)
-        
+
         Returns:
             The created SessionVerification record
         """
@@ -59,36 +59,32 @@ class SessionVerificationRepository:
 
     def get_by_session(self, session_id: UUID) -> SessionVerification | None:
         """Retrieve verification record by session ID.
-        
+
         Args:
             session_id: The chat session ID
-        
+
         Returns:
             SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
             from sqlalchemy import select
 
-            stmt = select(SessionVerification).where(
-                SessionVerification.session_id == session_id
-            )
+            stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             return session.scalar(stmt)
 
     def increment_attempt(self, session_id: UUID) -> SessionVerification | None:
         """Increment the failed attempt counter for a session.
-        
+
         Args:
             session_id: The chat session ID
-        
+
         Returns:
             Updated SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
             from sqlalchemy import select
 
-            stmt = select(SessionVerification).where(
-                SessionVerification.session_id == session_id
-            )
+            stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             verification = session.scalar(stmt)
             if verification is None:
                 return None
@@ -98,24 +94,20 @@ class SessionVerificationRepository:
             session.refresh(verification)
             return verification
 
-    def update_status(
-        self, session_id: UUID, status: str
-    ) -> SessionVerification | None:
+    def update_status(self, session_id: UUID, status: str) -> SessionVerification | None:
         """Update the status of a verification record.
-        
+
         Args:
             session_id: The chat session ID
             status: New status (pending/verified/expired/exhausted)
-        
+
         Returns:
             Updated SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
             from sqlalchemy import select
 
-            stmt = select(SessionVerification).where(
-                SessionVerification.session_id == session_id
-            )
+            stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             verification = session.scalar(stmt)
             if verification is None:
                 return None
@@ -127,15 +119,13 @@ class SessionVerificationRepository:
 
     def delete(self, session_id: UUID) -> None:
         """Delete verification record for a session.
-        
+
         Args:
             session_id: The chat session ID
         """
         with self._session_factory() as session:
             from sqlalchemy import delete
 
-            stmt = delete(SessionVerification).where(
-                SessionVerification.session_id == session_id
-            )
+            stmt = delete(SessionVerification).where(SessionVerification.session_id == session_id)
             session.execute(stmt)
             session.commit()

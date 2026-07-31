@@ -1,18 +1,18 @@
-"""
-Every tool the model can call registers itself here, declaring up front
+"""Every tool the model can call registers itself here, declaring up front
 whether it requires a verified session. This registry — not the handler
 bodies — is what Epic F3 points to.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar
 
 from app.services.auth_context import AuthContext
 
 
 class ToolHandler(Protocol):
     """Protocol for tool handler classes."""
-    
+
     async def execute(
         self,
         context: AuthContext,
@@ -43,12 +43,12 @@ def register_tool(
     requires_verification: bool,
 ) -> None:
     """Register a tool handler with its schema and verification requirement.
-    
+
     No default for requires_verification, on purpose: every tool author
     has to make an explicit choice. This is a load-bearing design decision
     for Epic F — forgetting to register means the tool doesn't exist,
     and forgetting the verification flag is a loud error, not a silent leak.
-    
+
     Note: With FastAPI DI, handlers are now constructed per-request via
     dependency injection. This function is called from get_tool_registry()
     with freshly constructed tool instances.
@@ -74,11 +74,11 @@ def tool(
     requires_verification: bool,
 ) -> Callable[[T], T]:
     """Decorator to attach tool metadata to a tool class.
-    
+
     This decorator stores the tool's name, schema, and verification requirement
     as class attributes. The tool must still be instantiated and registered
     separately (allowing for dependency injection).
-    
+
     Usage:
         @tool(
             name="lookup_shipments",
@@ -88,31 +88,33 @@ def tool(
         class LookupShipmentsTool:
             def __init__(self, shipment_repo: ShipmentRepository):
                 self.shipment_repo = shipment_repo
-            
+
             async def execute(self, session: ChatSession, **kwargs) -> dict:
                 ...
-        
+
         # Later, in __init__.py:
         tool_instance = LookupShipmentsTool(shipment_repo=ShipmentRepository())
         register_tool_instance(tool_instance)
     """
+
     def decorator(cls: T) -> T:
         cls._tool_name = name  # type: ignore
         cls._tool_schema = schema  # type: ignore
         cls._tool_requires_verification = requires_verification  # type: ignore
         return cls
+
     return decorator
 
 
 def get_tool_metadata(tool_class: type) -> tuple[str, dict[str, Any], bool]:
     """Extract tool metadata from a @tool decorated class.
-    
+
     Args:
         tool_class: A class decorated with @tool
-    
+
     Returns:
         Tuple of (name, schema, requires_verification)
-    
+
     Raises:
         AttributeError: If the class wasn't decorated with @tool
     """
@@ -123,6 +125,5 @@ def get_tool_metadata(tool_class: type) -> tuple[str, dict[str, Any], bool]:
         return name, schema, requires_verification
     except AttributeError as e:
         raise AttributeError(
-            f"Tool class {tool_class.__name__} must be decorated with @tool. "
-            f"Missing attribute: {e}"
+            f"Tool class {tool_class.__name__} must be decorated with @tool. Missing attribute: {e}"
         ) from e

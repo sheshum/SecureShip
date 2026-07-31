@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 class ChatSessionState(str, Enum):
     """Session authentication state."""
+
     ANONYMOUS = "anonymous"
     COLLECTING_IDENTITY = "collecting_identity"
     CODE_SENT = "code_sent"
@@ -15,6 +16,7 @@ class ChatSessionState(str, Enum):
     VERIFIED = "verified"
     ESCALATED_TO_HUMAN = "escalated_to_human"
     CODE_EXPIRED = "code_expired"
+
 
 class SessionItem(BaseModel):
     id: UUID

@@ -5,7 +5,6 @@ nowhere else, so swapping providers never touches business logic or routes.
 """
 
 from functools import lru_cache
-from datetime import timedelta
 from typing import Annotated, Any
 
 from fastapi import Depends
@@ -17,6 +16,13 @@ from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
 from app.repositories.session_verification import SessionVerificationRepository
 from app.repositories.shipments import ShipmentRepository
+
+# Tool dependencies - tools are constructed per-request with their dependencies
+from app.tools.lookup_shipments import LookupShipmentsTool
+from app.tools.request_identity_info import RequestIdentityInfoTool
+from app.tools.tool_registry import TOOL_REGISTRY, get_tool_metadata, register_tool
+from app.tools.verify_identity import VerifyIdentityTool
+
 
 @lru_cache
 def get_settings() -> Settings:
@@ -47,17 +53,13 @@ def get_session_verification_repository() -> SessionVerificationRepository:
     return SessionVerificationRepository()
 
 
-# Tool dependencies - tools are constructed per-request with their dependencies
-from app.tools.lookup_shipments import LookupShipmentsTool
-from app.tools.request_identity_info import RequestIdentityInfoTool
-from app.tools.verify_identity import VerifyIdentityTool
-from app.tools.tool_registry import TOOL_REGISTRY, register_tool, get_tool_metadata
-
 
 def get_verify_identity_tool(
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
-    verification_repo: Annotated[SessionVerificationRepository, Depends(get_session_verification_repository)],
+    verification_repo: Annotated[
+        SessionVerificationRepository, Depends(get_session_verification_repository)
+    ],
 ) -> VerifyIdentityTool:
     """Dependency that constructs VerifyIdentityTool with its dependencies."""
     return VerifyIdentityTool(
@@ -82,18 +84,19 @@ def get_request_identity_info_tool() -> RequestIdentityInfoTool:
 def get_tool_registry(
     verify_identity_tool: Annotated[VerifyIdentityTool, Depends(get_verify_identity_tool)],
     lookup_shipments_tool: Annotated[LookupShipmentsTool, Depends(get_lookup_shipments_tool)],
-    request_identity_info_tool: Annotated[RequestIdentityInfoTool, Depends(get_request_identity_info_tool)],
+    request_identity_info_tool: Annotated[
+        RequestIdentityInfoTool, Depends(get_request_identity_info_tool)
+    ],
 ) -> dict[str, Any]:
     """Dependency that builds and returns the tool registry with all tools.
-    
+
     This is called per-request, ensuring tools are freshly constructed with
     their dependencies via FastAPI DI. Returns the TOOL_REGISTRY dict after
     populating it with the current tool instances.
     """
-
     # Clear the registry (in case of hot reload)
     TOOL_REGISTRY.clear()
-    
+
     # Register each tool with its metadata from the @tool decorator
     for tool_instance in [verify_identity_tool, lookup_shipments_tool, request_identity_info_tool]:
         tool_class = type(tool_instance)
@@ -104,6 +107,5 @@ def get_tool_registry(
             handler=tool_instance,
             requires_verification=requires_verification,
         )
-    
-    return TOOL_REGISTRY
 
+    return TOOL_REGISTRY
