@@ -1,0 +1,237 @@
+# Ruff configuration for SecureShip backend
+# Documentation: https://docs.astral.sh/ruff/
+
+# ============================================================================
+# General Settings
+# ============================================================================
+
+line-length = 100
+target-version = "py313"
+
+# Exclude patterns
+exclude = [
+    ".git",
+    ".venv",
+    ".uv-cache",
+    "__pycache__",
+    "*.egg-info",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    # Alembic migration files - often auto-generated
+    "alembic/versions/*.py",
+]
+
+# ============================================================================
+# Linter Configuration
+# ============================================================================
+
+[lint]
+# Enable comprehensive rule sets
+select = [
+    # Pyflakes - essential error detection
+    "F",
+    # pycodestyle errors and warnings
+    "E",
+    "W",
+    # isort - import sorting
+    "I",
+    # pep8-naming - enforce PEP 8 naming conventions
+    "N",
+    # pydocstyle - docstring conventions (selective)
+    "D",
+    # pyupgrade - modern Python syntax
+    "UP",
+    # flake8-2020 - misuse of sys.version
+    "YTT",
+    # flake8-annotations - type annotations
+    "ANN",
+    # flake8-async - async/await best practices
+    "ASYNC",
+    # flake8-bandit - security issues
+    "S",
+    # flake8-blind-except - blind except statements
+    "BLE",
+    # flake8-boolean-trap - boolean trap anti-pattern
+    "FBT",
+    # flake8-bugbear - common bugs and design problems
+    "B",
+    # flake8-builtins - avoid shadowing built-ins
+    "A",
+    # flake8-commas - trailing commas
+    "COM",
+    # flake8-comprehensions - better list/dict comprehensions
+    "C4",
+    # flake8-datetimez - enforce timezone-aware datetime
+    "DTZ",
+    # flake8-debugger - detect debugger imports
+    "T10",
+    # flake8-errmsg - better exception messages
+    "EM",
+    # flake8-implicit-str-concat - string concatenation
+    "ISC",
+    # flake8-logging-format - logging best practices
+    "G",
+    # flake8-pie - misc lints
+    "PIE",
+    # flake8-print - detect print statements (warning only)
+    "T20",
+    # flake8-pytest-style - pytest best practices
+    "PT",
+    # flake8-quotes - consistent quotes
+    "Q",
+    # flake8-return - return statement issues
+    "RET",
+    # flake8-simplify - simplify code
+    "SIM",
+    # flake8-tidy-imports - better imports
+    "TID",
+    # flake8-unused-arguments - unused function arguments
+    "ARG",
+    # flake8-use-pathlib - prefer pathlib over os.path
+    "PTH",
+    # pylint - additional checks
+    "PL",
+    # tryceratops - exception handling anti-patterns
+    "TRY",
+    # flynt - prefer f-strings
+    "FLY",
+    # NumPy-specific (if using numpy)
+    "NPY",
+    # Ruff-specific rules
+    "RUF",
+]
+
+# Rules to ignore
+ignore = [
+    # Allow TODO comments (common in development)
+    "FIX002",
+    # Allow non-abstract empty methods in abstract base classes
+    "B027",
+    # Allow boolean positional values in function calls
+    "FBT003",
+    # Ignore complexity checks (too opinionated)
+    "C901",
+    "PLR0911", # too-many-return-statements
+    "PLR0912", # too-many-branches
+    "PLR0913", # too-many-arguments
+    "PLR0915", # too-many-statements
+    "PLR2004", # magic-value-comparison
+    # Ignore docstring requirements for now (enable gradually)
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D104", # Missing docstring in public package
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in __init__
+    # Allow print statements in specific contexts (can enable T201 if strict)
+    "T201",
+    # Type annotations - relax for gradual adoption
+    "ANN001", # Missing type annotation for function argument
+    "ANN002", # Missing type annotation for *args
+    "ANN003", # Missing type annotation for **kwargs
+    "ANN204", # Missing return type annotation for special method
+    # Allow subprocess without shell=False check (we control inputs)
+    "S603",
+    "S607",
+    # Allow assert statements (common in tests)
+    "S101",
+    # Allow datetime.now() without timezone (FastAPI handles this)
+    "DTZ005",
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# ============================================================================
+# Per-file Ignores
+# ============================================================================
+
+[lint.per-file-ignores]
+# Allow unused imports in __init__.py files
+"__init__.py" = ["F401", "F403"]
+# Tests can use assert, print, magic values, etc.
+"tests/**/*.py" = [
+    "S101",   # assert
+    "PLR2004", # magic values
+    "ANN",    # type annotations
+    "D",      # docstrings
+    "T201",   # print
+]
+# Alembic migrations - auto-generated, don't lint strictly
+"alembic/env.py" = ["F401", "D"]
+"alembic/versions/*.py" = ["D", "N999"]
+# Scripts can be more lenient
+"scripts/**/*.py" = ["T201", "D", "ANN"]
+# Main entry point
+"main.py" = ["D"]
+
+# ============================================================================
+# Import Sorting (isort)
+# ============================================================================
+
+[lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+known-first-party = ["app"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
+
+# ============================================================================
+# Pydocstyle Configuration
+# ============================================================================
+
+[lint.pydocstyle]
+# Use Google-style docstrings (common in Python community)
+convention = "google"
+
+# ============================================================================
+# flake8-annotations
+# ============================================================================
+
+[lint.flake8-annotations]
+allow-star-arg-any = true
+suppress-none-returning = true
+
+# ============================================================================
+# flake8-quotes
+# ============================================================================
+
+[lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "double"
+
+# ============================================================================
+# Formatter Configuration
+# ============================================================================
+
+[format]
+# Use double quotes for strings (Black-compatible)
+quote-style = "double"
+
+# Indent with spaces (4 spaces per indent level)
+indent-style = "space"
+
+# Respect magic trailing commas (Black-compatible)
+skip-magic-trailing-comma = false
+
+# Automatically detect line ending
+line-ending = "auto"
+
+# Format code examples in docstrings
+docstring-code-format = true
+
+# Use dynamic line length for code in docstrings
+docstring-code-line-length = "dynamic"
