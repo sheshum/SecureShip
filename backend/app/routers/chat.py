@@ -62,13 +62,15 @@ async def chat(
     tool_registry: Annotated[dict, Depends(get_tool_registry)],
 ) -> ChatResponse:
     chat_session = ensure_session(request.session_id, session_repo)
-    
-    # Build auth context from session state
+
     auth_context = AuthContext(
         session_id=chat_session.id,
         customer_id=chat_session.customer_id,
         state=chat_session.state,
     )
+    
+    # Force verify_identity tool for unverified sessions
+    tool_choice = ["verify_identity"] if auth_context.state != ChatSessionState.VERIFIED else None
     
     try:
         messages = [LLMMessage(role="system", content=SYSTEM_PROMPT)]
@@ -85,7 +87,8 @@ async def chat(
         while True:
             completion = await llm_client.plan_chat_turn(
                 messages=messages,
-                tools=available_tools if available_tools else None
+                tools=available_tools if available_tools else None,
+                tool_choice=tool_choice,
             )
 
             log_console("LLM Response", {

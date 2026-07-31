@@ -26,15 +26,17 @@ class LiteLLMClient(LLMClient):
         self,
         messages: Sequence[LLMMessage],
         tools: Sequence[dict[str, Any]] | None = None,
+        tool_choice: str | list[str] | dict[str, Any] | None = None,
     ) -> LLMCompletion:
         try:
+            resolved_tool_choice = self._resolve_tool_choice(tool_choice, tools)
             response = await litellm.acompletion(
                 model=self._model,
                 messages=self._serialize_messages(messages),
                 api_base=self._api_base,
                 api_key=self._api_key,
                 tools=list(tools) if tools else None,
-                tool_choice="auto" if tools else None,
+                tool_choice=resolved_tool_choice,
                 stream=False,
             )
             choice = response.choices[0]
@@ -52,6 +54,33 @@ class LiteLLMClient(LLMClient):
         except Exception as exc:
             logger.exception("LLM completion failed (model=%s)", self._model)
             raise LLMError("The language model is currently unavailable.") from exc
+
+    @staticmethod
+    def _resolve_tool_choice(
+        tool_choice: str | list[str] | dict[str, Any] | None,
+        tools: Sequence[dict[str, Any]] | None,
+    ) -> str | dict[str, Any] | None:
+        """Convert tool_choice to OpenAI format.
+        
+        Args:
+            tool_choice: User-provided tool choice (string, list, dict, or None)
+            tools: Available tools
+            
+        Returns:
+            OpenAI-formatted tool_choice or None
+        """
+        if not tools:
+            return None
+            
+        if tool_choice is None:
+            return "auto"
+            
+        if isinstance(tool_choice, dict):
+            return tool_choice
+            
+        # Convert string or list to OpenAI format
+        tool_name = tool_choice if isinstance(tool_choice, str) else tool_choice[0]
+        return tool_name
 
 
     @staticmethod

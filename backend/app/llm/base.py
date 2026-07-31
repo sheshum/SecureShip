@@ -41,5 +41,16 @@ class LLMClient(ABC):
         self,
         messages: Sequence[LLMMessage],
         tools: Sequence[dict[str, Any]] | None = None,
+        tool_choice: str | list[str] | dict[str, Any] | None = None,
     ) -> LLMCompletion:
-        """Return one assistant response, optionally requesting tool calls."""
+        """Return one assistant response, optionally requesting tool calls.
+        
+        Args:
+            messages: Conversation history
+            tools: Available tool schemas
+            tool_choice: Optional tool selection strategy:
+                - None: "auto" (model decides)
+                - str: force specific tool by name
+                - list[str]: force specific tool (uses first item)
+                - dict: raw OpenAI tool_choice format
+        """
