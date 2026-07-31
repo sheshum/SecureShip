@@ -9,6 +9,7 @@ from typing import Annotated, Any
 
 from fastapi import Depends
 
+from app.agent import SYSTEM_PROMPT, Agent
 from app.core.config import Settings
 from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
@@ -16,13 +17,13 @@ from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
 from app.repositories.session_verification import SessionVerificationRepository
 from app.repositories.shipments import ShipmentRepository
+from app.tools.escalate_to_human import EscalateToHumanTool
 
 # Tool dependencies - tools are constructed per-request with their dependencies
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
 from app.tools.tool_registry import TOOL_REGISTRY, get_tool_metadata, register_tool
 from app.tools.verify_identity import VerifyIdentityTool
-from app.tools.escalate_to_human import EscalateToHumanTool
 
 
 @lru_cache
@@ -106,7 +107,12 @@ def get_tool_registry(
     TOOL_REGISTRY.clear()
 
     # Register each tool with its metadata from the @tool decorator
-    for tool_instance in [verify_identity_tool, lookup_shipments_tool, request_identity_info_tool, escalate_to_human_tool]:
+    for tool_instance in [
+        verify_identity_tool,
+        lookup_shipments_tool,
+        request_identity_info_tool,
+        escalate_to_human_tool,
+    ]:
         tool_class = type(tool_instance)
         name, schema, requires_verification = get_tool_metadata(tool_class)
         register_tool(
@@ -117,3 +123,15 @@ def get_tool_registry(
         )
 
     return TOOL_REGISTRY
+
+
+def get_agent(
+    llm_client: Annotated[LLMClient, Depends(get_llm_client)],
+    tool_registry: Annotated[dict, Depends(get_tool_registry)],
+) -> Agent:
+    """Construct Agent with injected dependencies."""
+    return Agent(
+        llm_client=llm_client,
+        tool_registry=tool_registry,
+        system_prompt=SYSTEM_PROMPT,
+    )
