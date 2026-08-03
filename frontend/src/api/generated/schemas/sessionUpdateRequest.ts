@@ -6,4 +6,9 @@
  * OpenAPI spec version: 1.0.0
  */
 
-export type ValidationErrorCtx = { [key: string]: unknown };
+/**
+ * Request to update session fields (e.g., set ended_at to close session).
+ */
+export interface SessionUpdateRequest {
+  ended_at?: string | null;
+}

@@ -22,6 +22,7 @@ class SessionStateValidator:
         (ChatSessionState.ANONYMOUS, ChatSessionState.COLLECTING_IDENTITY),
         # OTP flow
         (ChatSessionState.CODE_SENT, ChatSessionState.AWAITING_CODE),
+        (ChatSessionState.CODE_SENT, ChatSessionState.VERIFIED),
         (
             ChatSessionState.AWAITING_CODE,
             ChatSessionState.AWAITING_CODE,

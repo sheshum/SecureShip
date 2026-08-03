@@ -23,7 +23,6 @@ class SessionItem(BaseModel):
     state: ChatSessionState
     started_at: datetime
     ended_at: datetime | None
-    title: str
 
 
 class SessionListResponse(BaseModel):
@@ -36,6 +35,12 @@ class SessionCreateResponse(BaseModel):
 
 class SessionDeleteResponse(BaseModel):
     session: SessionItem
+
+
+class SessionUpdateRequest(BaseModel):
+    """Request to update session fields (e.g., set ended_at to close session)."""
+
+    ended_at: datetime | None = None
 
 
 class SessionTranscriptEvent(BaseModel):

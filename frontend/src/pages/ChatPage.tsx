@@ -6,6 +6,7 @@ import { OtpVerificationModal } from '../components/OtpVerificationModal'
 import { Toast } from '../components/Toast'
 import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost } from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
+import { resolveApiUrl } from '../api/url'
 
 export function ChatPage() {
   const navigate = useNavigate()
@@ -18,6 +19,8 @@ export function ChatPage() {
   const [otpError, setOtpError] = useState<string | null>(null)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [closeError, setCloseError] = useState<string | null>(null)
+  const [isClosingSession, setIsClosingSession] = useState(false)
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
 
@@ -97,6 +100,39 @@ export function ChatPage() {
     setAttemptsRemaining(null)
   }
 
+  const handleCloseSession = async () => {
+    if (!sessionId) {
+      navigate('/')
+      return
+    }
+
+    setCloseError(null)
+    setIsClosingSession(true)
+
+    try {
+      // Call PATCH /api/sessions/{sessionId} with ended_at to close session
+      const url = resolveApiUrl(`/api/sessions/${sessionId}`)
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ended_at: new Date().toISOString() }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
+        throw new Error(errorData.detail || 'Failed to close session')
+      }
+
+      // Successfully closed - navigate home
+      navigate('/')
+    } catch (error) {
+      console.error('Failed to close session:', error)
+      setCloseError(error instanceof Error ? error.message : 'Failed to close session. Please try again.')
+    } finally {
+      setIsClosingSession(false)
+    }
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[url('/secure-ship-background.jpeg')] bg-cover bg-fixed bg-center px-2 py-3 sm:px-4 sm:py-4">
       <div className="pointer-events-none absolute inset-0 bg-slate-950/38" aria-hidden="true" />
@@ -114,8 +150,13 @@ export function ChatPage() {
 
       <ChatCloseModal
         isOpen={isCloseModalOpen}
-        onClose={() => setIsCloseModalOpen(false)}
-        onConfirm={() => navigate('/')}
+        isClosing={isClosingSession}
+        errorMessage={closeError}
+        onClose={() => {
+          setIsCloseModalOpen(false)
+          setCloseError(null)
+        }}
+        onConfirm={handleCloseSession}
       />
 
       <OtpVerificationModal

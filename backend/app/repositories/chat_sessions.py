@@ -95,6 +95,7 @@ class ChatSessionRepository:
         *,
         state: ChatSessionState | None = None,
         customer_id: UUID | object | None = _UNSET,
+        ended_at: datetime | object | None = _UNSET,
     ) -> ChatSession | None:
         """Update session state and/or customer_id with validation.
 
@@ -110,6 +111,10 @@ class ChatSessionRepository:
                 - _UNSET (default): don't change customer_id
                 - None: clear customer_id
                 - UUID: set customer_id
+            ended_at: Session end timestamp:
+                - _UNSET (default): don't change ended_at
+                - None: clear ended_at (reopen session)
+                - datetime: set ended_at (close session)
 
         Returns:
             Updated ChatSession or None if not found
@@ -139,6 +144,8 @@ class ChatSessionRepository:
                 chat_session.state = state
             if customer_id is not _UNSET:
                 chat_session.customer_id = customer_id
+            if ended_at is not _UNSET:
+                chat_session.ended_at = ended_at
 
             session.commit()
             session.refresh(chat_session)

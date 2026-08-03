@@ -66,9 +66,13 @@ class EscalateToHumanTool:
         # Here you would implement the logic to log the escalation request,
         # notify a human operator, or take any other necessary actions.
         # For this example, we'll just return a success message.
+        mock_request_id = "REQ-123456"  # In a real implementation, this would be a unique identifier for the escalation request
         return ToolResult(
             success=True,
-            message="The issue has been escalated to a human operator. A representative will review your request shortly.",
-            issue_description=issue_description,
-            issue_id="REQ-123456"  # In a real implementation, this would be a unique identifier for the escalation request
+            message=f"The issue has been escalated to a human operator. A representative will review your request shortly. Your request id: {mock_request_id}. "
+                    "Thank you for your patience.",
+            data={
+                "issue_description": issue_description,
+                "issue_id": mock_request_id  # In a real implementation, this would be a unique identifier for the escalation request
+            }
         )

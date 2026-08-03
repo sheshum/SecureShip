@@ -1,10 +1,12 @@
 type ChatCloseModalProps = {
   isOpen: boolean
+  isClosing?: boolean
+  errorMessage?: string | null
   onClose: () => void
   onConfirm: () => void
 }
 
-export function ChatCloseModal({ isOpen, onClose, onConfirm }: ChatCloseModalProps) {
+export function ChatCloseModal({ isOpen, isClosing, errorMessage, onClose, onConfirm }: ChatCloseModalProps) {
   if (!isOpen) {
     return null
   }
@@ -23,6 +25,10 @@ export function ChatCloseModal({ isOpen, onClose, onConfirm }: ChatCloseModalPro
         <p className="mt-2 text-sm text-slate-600">
           You won't be able to send more messages in this conversation once it's closed.
         </p>
+        
+        {errorMessage && (
+          <p className="mt-3 text-sm text-red-600">{errorMessage}</p>
+        )}
 
         <div className="mt-6 flex gap-3 justify-end">
           <button
@@ -35,9 +41,10 @@ export function ChatCloseModal({ isOpen, onClose, onConfirm }: ChatCloseModalPro
           <button
             type="button"
             onClick={onConfirm}
-            className="rounded-lg bg-[#b3432b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9a3724]"
+            disabled={isClosing}
+            className="rounded-lg bg-[#b3432b] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#9a3724] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Close chat
+            {isClosing ? 'Closing...' : 'Close chat'}
           </button>
         </div>
       </section>
