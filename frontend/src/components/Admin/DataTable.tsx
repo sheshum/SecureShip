@@ -38,7 +38,7 @@ export function DataTable<T>({ data, columns, isLoading, emptyMessage = 'No data
   }
 
   return (
-    <div>
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
