@@ -15,27 +15,33 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 @router.get("", response_model=SessionListResponse)
 async def list_sessions(
-    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    limit: int = 100,
+    offset: int = 0,
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)] = None,
 ) -> SessionListResponse:
-    """List all chat sessions.
+    """List all chat sessions with pagination.
     
     Args:
+        limit: Maximum number of sessions to return
+        offset: Number of sessions to skip
         session_repo: Session repository dependency
         
     Returns:
-        List of all chat sessions
+        List of chat sessions
     """
-    sessions_data = session_repo.list_sessions()
+    sessions_data = session_repo.list_sessions(limit=limit, offset=offset)
+    total = session_repo.count_sessions()
     return SessionListResponse(
         sessions=[
             SessionItem(
-                id=s["id"],
-                state=ChatSessionState(s["state"]),
-                started_at=s["started_at"],
-                ended_at=s["ended_at"],
+                id=s.id,
+                state=ChatSessionState(s.state),
+                started_at=s.started_at,
+                ended_at=s.ended_at,
             )
             for s in sessions_data
-        ]
+        ],
+        total=total,
     )
 
 

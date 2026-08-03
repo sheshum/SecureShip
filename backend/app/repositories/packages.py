@@ -27,6 +27,12 @@ class PackageRepository:
             ).all()
             return [self._serialize_package(pkg) for pkg in packages]
 
+    def count_packages(self) -> int:
+        """Return total count of all packages."""
+        with self._session_factory() as session:
+            from sqlalchemy import func
+            return session.scalar(select(func.count()).select_from(Package)) or 0
+
     def get_package(self, package_id: UUID) -> dict | None:
         """Get single package by ID (admin view)."""
         with self._session_factory() as session:

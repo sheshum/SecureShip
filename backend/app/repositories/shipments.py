@@ -97,6 +97,12 @@ class ShipmentRepository:
             ).all()
             return [self._serialize_shipment_with_customer(ship) for ship in shipments]
 
+    def count_shipments(self) -> int:
+        """Return total count of all shipments."""
+        with self._session_factory() as session:
+            from sqlalchemy import func
+            return session.scalar(select(func.count()).select_from(Shipment)) or 0
+
     def get_shipment_by_id(self, shipment_id: UUID) -> dict | None:
         """Get single shipment by ID (admin view)."""
         with self._session_factory() as session:

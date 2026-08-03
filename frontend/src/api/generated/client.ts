@@ -29,6 +29,7 @@ import type {
   ChatResponse,
   HTTPValidationError,
   ListPackagesApiPackagesGetParams,
+  ListSessionsApiSessionsGetParams,
   ListShipmentsApiShipmentsGetParams,
   PackageItem,
   PackageListResponse,
@@ -382,34 +383,50 @@ export type listSessionsApiSessionsGetResponse200 = {
   status: 200
 }
 
+export type listSessionsApiSessionsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
 export type listSessionsApiSessionsGetResponseSuccess = (listSessionsApiSessionsGetResponse200) & {
   headers: Headers;
 };
-;
+export type listSessionsApiSessionsGetResponseError = (listSessionsApiSessionsGetResponse422) & {
+  headers: Headers;
+};
 
-export type listSessionsApiSessionsGetResponse = (listSessionsApiSessionsGetResponseSuccess)
+export type listSessionsApiSessionsGetResponse = (listSessionsApiSessionsGetResponseSuccess | listSessionsApiSessionsGetResponseError)
 
-export const getListSessionsApiSessionsGetUrl = () => {
+export const getListSessionsApiSessionsGetUrl = (params?: ListSessionsApiSessionsGetParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/sessions`
+  return stringifiedParams.length > 0 ? `/api/sessions?${stringifiedParams}` : `/api/sessions`
 }
 
 /**
- * List all chat sessions.
+ * List all chat sessions with pagination.
  *
  * Args:
+ *     limit: Maximum number of sessions to return
+ *     offset: Number of sessions to skip
  *     session_repo: Session repository dependency
  *
  * Returns:
- *     List of all chat sessions
+ *     List of chat sessions
  * @summary List Sessions
  */
-export const listSessionsApiSessionsGet = async ( options?: Parameters<typeof customFetcher>[1]): Promise<listSessionsApiSessionsGetResponse> => {
+export const listSessionsApiSessionsGet = async (params?: ListSessionsApiSessionsGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listSessionsApiSessionsGetResponse> => {
 
-  return customFetcher<listSessionsApiSessionsGetResponse>(getListSessionsApiSessionsGetUrl(),
+  return customFetcher<listSessionsApiSessionsGetResponse>(getListSessionsApiSessionsGetUrl(params),
   {
     ...options,
     method: 'GET'
@@ -422,23 +439,23 @@ export const listSessionsApiSessionsGet = async ( options?: Parameters<typeof cu
 
 
 
-export const getListSessionsApiSessionsGetQueryKey = () => {
+export const getListSessionsApiSessionsGetQueryKey = (params?: ListSessionsApiSessionsGetParams,) => {
     return [
-    `/api/sessions`
+    `/api/sessions`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListSessionsApiSessionsGetQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListSessionsApiSessionsGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet(params, { signal, ...requestOptions });
 
 
 
@@ -448,11 +465,11 @@ const {query: queryOptions, request: requestOptions} = options ?? {};
 }
 
 export type ListSessionsApiSessionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>>
-export type ListSessionsApiSessionsGetQueryError = unknown
+export type ListSessionsApiSessionsGetQueryError = HTTPValidationError
 
 
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListSessionsApiSessionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
           TError,
@@ -461,8 +478,8 @@ export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof 
       >, request?: SecondParameter<typeof customFetcher>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
+ params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
           TError,
@@ -471,20 +488,20 @@ export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof 
       >, request?: SecondParameter<typeof customFetcher>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
+ params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary List Sessions
  */
 
-export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
+ params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getListSessionsApiSessionsGetQueryOptions(options)
+  const queryOptions = getListSessionsApiSessionsGetQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -29,9 +29,10 @@ async def list_packages(
         List of packages with total count
     """
     packages = package_repo.list_packages(limit=limit, offset=offset)
+    total = package_repo.count_packages()
     return PackageListResponse(
         packages=[PackageItem(**pkg) for pkg in packages],
-        total=len(packages),  # Simplified - full implementation would query total separately
+        total=total,
     )
 
 

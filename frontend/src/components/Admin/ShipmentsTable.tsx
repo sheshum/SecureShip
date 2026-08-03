@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { useListShipmentsApiShipmentsGet } from '../../api/generated/client'
 import type { ShipmentItem } from '../../api/generated/schemas'
 import { DataTable } from './DataTable'
+
+const ITEMS_PER_PAGE = 10
 
 const statusColors: Record<string, string> = {
   delivered: 'bg-green-100 text-green-800',
@@ -11,8 +14,15 @@ const statusColors: Record<string, string> = {
 }
 
 export function ShipmentsTable() {
-  const { data: response, isLoading } = useListShipmentsApiShipmentsGet()
+  const [currentPage, setCurrentPage] = useState(1)
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE
+  
+  const { data: response, isLoading } = useListShipmentsApiShipmentsGet({
+    limit: ITEMS_PER_PAGE,
+    offset: offset,
+  })
   const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
+  const total = (response?.data && 'total' in response.data) ? response.data.total : 0
 
   const columns = [
     {
@@ -74,7 +84,18 @@ export function ShipmentsTable() {
         <h2 className="text-lg font-semibold text-slate-900">Shipments</h2>
         <p className="text-sm text-slate-500">All shipments across all customers</p>
       </div>
-      <DataTable data={data} columns={columns} isLoading={isLoading} emptyMessage="No shipments found" />
+      <DataTable 
+        data={data} 
+        columns={columns} 
+        isLoading={isLoading} 
+        emptyMessage="No shipments found"
+        pagination={{
+          currentPage,
+          totalItems: total,
+          itemsPerPage: ITEMS_PER_PAGE,
+          onPageChange: setCurrentPage,
+        }}
+      />
     </div>
   )
 }

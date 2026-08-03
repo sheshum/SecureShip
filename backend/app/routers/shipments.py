@@ -29,9 +29,10 @@ async def list_shipments(
         List of shipments with total count
     """
     shipments = shipment_repo.list_all_shipments(limit=limit, offset=offset)
+    total = shipment_repo.count_shipments()
     return ShipmentListResponse(
         shipments=[ShipmentItem(**ship) for ship in shipments],
-        total=len(shipments),
+        total=total,
     )
 
 

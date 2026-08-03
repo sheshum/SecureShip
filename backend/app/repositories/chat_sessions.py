@@ -21,11 +21,18 @@ class ChatSessionRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
 
-    def list_sessions(self) -> list[ChatSession]:
+    def list_sessions(self, limit: int = 100, offset: int = 0) -> list[ChatSession]:
         with self._session_factory() as session:
             query = select(ChatSession)
             query = query.order_by(ChatSession.started_at.desc())
+            query = query.limit(limit).offset(offset)
             return session.scalars(query).all()
+
+    def count_sessions(self) -> int:
+        """Return total count of all sessions."""
+        with self._session_factory() as session:
+            from sqlalchemy import func
+            return session.scalar(select(func.count()).select_from(ChatSession)) or 0
 
     def create_session(self, now: datetime) -> ChatSession:
         with self._session_factory() as session:

@@ -27,6 +27,7 @@ class SessionItem(BaseModel):
 
 class SessionListResponse(BaseModel):
     sessions: list[SessionItem]
+    total: int
 
 
 class SessionCreateResponse(BaseModel):

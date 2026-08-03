@@ -1,10 +1,20 @@
+import { useState } from 'react'
 import { useListPackagesApiPackagesGet } from '../../api/generated/client'
 import type { PackageItem } from '../../api/generated/schemas'
 import { DataTable } from './DataTable'
 
+const ITEMS_PER_PAGE = 10
+
 export function PackagesTable() {
-  const { data: response, isLoading } = useListPackagesApiPackagesGet()
+  const [currentPage, setCurrentPage] = useState(1)
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE
+  
+  const { data: response, isLoading } = useListPackagesApiPackagesGet({
+    limit: ITEMS_PER_PAGE,
+    offset: offset,
+  })
   const data = (response?.data && 'packages' in response.data) ? response.data.packages : []
+  const total = (response?.data && 'total' in response.data) ? response.data.total : 0
 
   const columns = [
     {
@@ -50,7 +60,18 @@ export function PackagesTable() {
         <h2 className="text-lg font-semibold text-slate-900">Packages</h2>
         <p className="text-sm text-slate-500">All packages across all shipments</p>
       </div>
-      <DataTable data={data} columns={columns} isLoading={isLoading} emptyMessage="No packages found" />
+      <DataTable 
+        data={data} 
+        columns={columns} 
+        isLoading={isLoading} 
+        emptyMessage="No packages found"
+        pagination={{
+          currentPage,
+          totalItems: total,
+          itemsPerPage: ITEMS_PER_PAGE,
+          onPageChange: setCurrentPage,
+        }}
+      />
     </div>
   )
 }

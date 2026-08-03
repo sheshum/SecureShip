@@ -5,9 +5,8 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
-import type { SessionItem } from './sessionItem';
 
-export interface SessionListResponse {
-  sessions: SessionItem[];
-  total: number;
-}
+export type ListSessionsApiSessionsGetParams = {
+limit?: number;
+offset?: number;
+};
