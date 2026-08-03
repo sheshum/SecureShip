@@ -85,6 +85,30 @@ class ShipmentRepository:
 
             return session.scalars(stmt).all()
 
+    def list_all_shipments(self, limit: int = 100, offset: int = 0) -> list[dict]:
+        """List all shipments with pagination (admin view)."""
+        with self._session_factory() as session:
+            shipments = session.scalars(
+                select(Shipment)
+                .options(selectinload(Shipment.packages), selectinload(Shipment.customer))
+                .order_by(Shipment.last_update.desc())
+                .limit(limit)
+                .offset(offset)
+            ).all()
+            return [self._serialize_shipment_with_customer(ship) for ship in shipments]
+
+    def get_shipment_by_id(self, shipment_id: UUID) -> dict | None:
+        """Get single shipment by ID (admin view)."""
+        with self._session_factory() as session:
+            shipment = session.scalar(
+                select(Shipment)
+                .options(selectinload(Shipment.packages), selectinload(Shipment.customer))
+                .where(Shipment.id == shipment_id)
+            )
+            if shipment is None:
+                return None
+            return self._serialize_shipment_with_customer(shipment)
+
     @staticmethod
     def _serialize_customer(customer: Customer) -> dict:
         return {
@@ -95,6 +119,27 @@ class ShipmentRepository:
             "address": customer.address,
         }
 
+
+    @classmethod
+    def _serialize_shipment_with_customer(cls, shipment: Shipment) -> dict:
+        """Serialize shipment with customer name for admin views."""
+        customer_name = None
+        if shipment.customer:
+            customer_name = f"{shipment.customer.first_name} {shipment.customer.last_name}"
+        
+        return {
+            "id": str(shipment.id),
+            "customer_id": str(shipment.customer_id),
+            "tracking_number": shipment.tracking_number,
+            "status": shipment.status,
+            "carrier": shipment.carrier,
+            "origin": shipment.origin,
+            "destination": shipment.destination,
+            "estimated_delivery": shipment.estimated_delivery.isoformat(),
+            "last_update": shipment.last_update.isoformat(),
+            "customer_name": customer_name,
+            "package_count": len(shipment.packages) if shipment.packages else 0,
+        }
     @classmethod
     def _serialize_shipment(cls, shipment: Shipment) -> dict:
         return {

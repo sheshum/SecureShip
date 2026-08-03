@@ -15,6 +15,7 @@ from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.repositories.customers import CustomerRepository
+from app.repositories.packages import PackageRepository
 from app.repositories.session_verification import SessionVerificationRepository
 from app.repositories.shipments import ShipmentRepository
 from app.tools.escalate_to_human import EscalateToHumanTool
@@ -41,6 +42,10 @@ def get_llm_client(settings: Annotated[Settings, Depends(get_settings)]) -> LLMC
 
 def get_shipment_repository() -> ShipmentRepository:
     return ShipmentRepository()
+
+
+def get_package_repository() -> PackageRepository:
+    return PackageRepository()
 
 
 def get_chat_session_repository() -> ChatSessionRepository:

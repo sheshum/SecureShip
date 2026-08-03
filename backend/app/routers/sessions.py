@@ -8,9 +8,35 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.dependencies import get_chat_session_repository
 from app.repositories.chat_sessions import ChatSessionRepository
-from app.schemas.sessions import ChatSessionState, SessionItem, SessionUpdateRequest
+from app.schemas.sessions import ChatSessionState, SessionItem, SessionListResponse, SessionUpdateRequest
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
+
+
+@router.get("", response_model=SessionListResponse)
+async def list_sessions(
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> SessionListResponse:
+    """List all chat sessions.
+    
+    Args:
+        session_repo: Session repository dependency
+        
+    Returns:
+        List of all chat sessions
+    """
+    sessions_data = session_repo.list_sessions()
+    return SessionListResponse(
+        sessions=[
+            SessionItem(
+                id=s["id"],
+                state=ChatSessionState(s["state"]),
+                started_at=s["started_at"],
+                ended_at=s["ended_at"],
+            )
+            for s in sessions_data
+        ]
+    )
 
 
 @router.patch("/{session_id}", response_model=SessionItem)

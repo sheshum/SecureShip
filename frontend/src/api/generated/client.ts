@@ -28,8 +28,15 @@ import type {
   ChatRequest,
   ChatResponse,
   HTTPValidationError,
+  ListPackagesApiPackagesGetParams,
+  ListShipmentsApiShipmentsGetParams,
+  PackageItem,
+  PackageListResponse,
   SessionItem,
+  SessionListResponse,
   SessionUpdateRequest,
+  ShipmentItem,
+  ShipmentListResponse,
   VerifyCodeRequest,
   VerifyCodeResponse
 } from './schemas';
@@ -370,6 +377,126 @@ export const useVerifyCodeApiAuthVerifyCodePost = <TError = HTTPValidationError,
       return useMutation(getVerifyCodeApiAuthVerifyCodePostMutationOptions(options), queryClient);
     }
 
+export type listSessionsApiSessionsGetResponse200 = {
+  data: SessionListResponse
+  status: 200
+}
+
+export type listSessionsApiSessionsGetResponseSuccess = (listSessionsApiSessionsGetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listSessionsApiSessionsGetResponse = (listSessionsApiSessionsGetResponseSuccess)
+
+export const getListSessionsApiSessionsGetUrl = () => {
+
+
+
+
+  return `/api/sessions`
+}
+
+/**
+ * List all chat sessions.
+ *
+ * Args:
+ *     session_repo: Session repository dependency
+ *
+ * Returns:
+ *     List of all chat sessions
+ * @summary List Sessions
+ */
+export const listSessionsApiSessionsGet = async ( options?: Parameters<typeof customFetcher>[1]): Promise<listSessionsApiSessionsGetResponse> => {
+
+  return customFetcher<listSessionsApiSessionsGetResponse>(getListSessionsApiSessionsGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSessionsApiSessionsGetQueryKey = () => {
+    return [
+    `/api/sessions`
+    ] as const;
+    }
+
+
+export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSessionsApiSessionsGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSessionsApiSessionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>>
+export type ListSessionsApiSessionsGetQueryError = unknown
+
+
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Sessions
+ */
+
+export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListSessionsApiSessionsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export type updateSessionApiSessionsSessionIdPatchResponse200 = {
   data: SessionItem
   status: 200
@@ -472,4 +599,666 @@ export const useUpdateSessionApiSessionsSessionIdPatch = <TError = HTTPValidatio
       > => {
       return useMutation(getUpdateSessionApiSessionsSessionIdPatchMutationOptions(options), queryClient);
     }
+
+export type listPackagesApiPackagesGetResponse200 = {
+  data: PackageListResponse
+  status: 200
+}
+
+export type listPackagesApiPackagesGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listPackagesApiPackagesGetResponseSuccess = (listPackagesApiPackagesGetResponse200) & {
+  headers: Headers;
+};
+export type listPackagesApiPackagesGetResponseError = (listPackagesApiPackagesGetResponse422) & {
+  headers: Headers;
+};
+
+export type listPackagesApiPackagesGetResponse = (listPackagesApiPackagesGetResponseSuccess | listPackagesApiPackagesGetResponseError)
+
+export const getListPackagesApiPackagesGetUrl = (params?: ListPackagesApiPackagesGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/packages?${stringifiedParams}` : `/api/packages`
+}
+
+/**
+ * List all packages with pagination.
+ *
+ * Args:
+ *     limit: Maximum number of packages to return
+ *     offset: Number of packages to skip
+ *     package_repo: Package repository dependency
+ *
+ * Returns:
+ *     List of packages with total count
+ * @summary List Packages
+ */
+export const listPackagesApiPackagesGet = async (params?: ListPackagesApiPackagesGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listPackagesApiPackagesGetResponse> => {
+
+  return customFetcher<listPackagesApiPackagesGetResponse>(getListPackagesApiPackagesGetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPackagesApiPackagesGetQueryKey = (params?: ListPackagesApiPackagesGetParams,) => {
+    return [
+    `/api/packages`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPackagesApiPackagesGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPackagesApiPackagesGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>> = ({ signal }) => listPackagesApiPackagesGet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPackagesApiPackagesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>>
+export type ListPackagesApiPackagesGetQueryError = HTTPValidationError
+
+
+export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListPackagesApiPackagesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPackagesApiPackagesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPackagesApiPackagesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
+ params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPackagesApiPackagesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPackagesApiPackagesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
+ params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Packages
+ */
+
+export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
+ params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPackagesApiPackagesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getPackageApiPackagesPackageIdGetResponse200 = {
+  data: PackageItem
+  status: 200
+}
+
+export type getPackageApiPackagesPackageIdGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getPackageApiPackagesPackageIdGetResponseSuccess = (getPackageApiPackagesPackageIdGetResponse200) & {
+  headers: Headers;
+};
+export type getPackageApiPackagesPackageIdGetResponseError = (getPackageApiPackagesPackageIdGetResponse422) & {
+  headers: Headers;
+};
+
+export type getPackageApiPackagesPackageIdGetResponse = (getPackageApiPackagesPackageIdGetResponseSuccess | getPackageApiPackagesPackageIdGetResponseError)
+
+export const getGetPackageApiPackagesPackageIdGetUrl = (packageId: string,) => {
+
+
+
+
+  return `/api/packages/${packageId}`
+}
+
+/**
+ * Get single package by ID.
+ *
+ * Args:
+ *     package_id: UUID of the package to retrieve
+ *     package_repo: Package repository dependency
+ *
+ * Returns:
+ *     Package details
+ *
+ * Raises:
+ *     HTTPException: 404 if package not found
+ * @summary Get Package
+ */
+export const getPackageApiPackagesPackageIdGet = async (packageId: string, options?: Parameters<typeof customFetcher>[1]): Promise<getPackageApiPackagesPackageIdGetResponse> => {
+
+  return customFetcher<getPackageApiPackagesPackageIdGetResponse>(getGetPackageApiPackagesPackageIdGetUrl(packageId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPackageApiPackagesPackageIdGetQueryKey = (packageId: string,) => {
+    return [
+    `/api/packages/${packageId}`
+    ] as const;
+    }
+
+
+export const getGetPackageApiPackagesPackageIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPackageApiPackagesPackageIdGetQueryKey(packageId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>> = ({ signal }) => getPackageApiPackagesPackageIdGet(packageId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: packageId !== null && packageId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPackageApiPackagesPackageIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>>
+export type GetPackageApiPackagesPackageIdGetQueryError = HTTPValidationError
+
+
+export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
+ packageId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
+ packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
+ packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Package
+ */
+
+export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
+ packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPackageApiPackagesPackageIdGetQueryOptions(packageId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse200 = {
+  data: PackageListResponse
+  status: 200
+}
+
+export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponseSuccess = (listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse200) & {
+  headers: Headers;
+};
+export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponseError = (listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse422) & {
+  headers: Headers;
+};
+
+export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse = (listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponseSuccess | listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponseError)
+
+export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetUrl = (shipmentId: string,) => {
+
+
+
+
+  return `/api/packages/by-shipment/${shipmentId}`
+}
+
+/**
+ * List all packages for a specific shipment.
+ *
+ * Args:
+ *     shipment_id: UUID of the shipment
+ *     package_repo: Package repository dependency
+ *
+ * Returns:
+ *     List of packages for the shipment
+ * @summary List Packages By Shipment
+ */
+export const listPackagesByShipmentApiPackagesByShipmentShipmentIdGet = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse> => {
+
+  return customFetcher<listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse>(getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetUrl(shipmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryKey = (shipmentId: string,) => {
+    return [
+    `/api/packages/by-shipment/${shipmentId}`
+    ] as const;
+    }
+
+
+export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryKey(shipmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>> = ({ signal }) => listPackagesByShipmentApiPackagesByShipmentShipmentIdGet(shipmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: shipmentId !== null && shipmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>>
+export type ListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryError = HTTPValidationError
+
+
+export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Packages By Shipment
+ */
+
+export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryOptions(shipmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type listShipmentsApiShipmentsGetResponse200 = {
+  data: ShipmentListResponse
+  status: 200
+}
+
+export type listShipmentsApiShipmentsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listShipmentsApiShipmentsGetResponseSuccess = (listShipmentsApiShipmentsGetResponse200) & {
+  headers: Headers;
+};
+export type listShipmentsApiShipmentsGetResponseError = (listShipmentsApiShipmentsGetResponse422) & {
+  headers: Headers;
+};
+
+export type listShipmentsApiShipmentsGetResponse = (listShipmentsApiShipmentsGetResponseSuccess | listShipmentsApiShipmentsGetResponseError)
+
+export const getListShipmentsApiShipmentsGetUrl = (params?: ListShipmentsApiShipmentsGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shipments?${stringifiedParams}` : `/api/shipments`
+}
+
+/**
+ * List all shipments with pagination.
+ *
+ * Args:
+ *     limit: Maximum number of shipments to return
+ *     offset: Number of shipments to skip
+ *     shipment_repo: Shipment repository dependency
+ *
+ * Returns:
+ *     List of shipments with total count
+ * @summary List Shipments
+ */
+export const listShipmentsApiShipmentsGet = async (params?: ListShipmentsApiShipmentsGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listShipmentsApiShipmentsGetResponse> => {
+
+  return customFetcher<listShipmentsApiShipmentsGetResponse>(getListShipmentsApiShipmentsGetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListShipmentsApiShipmentsGetQueryKey = (params?: ListShipmentsApiShipmentsGetParams,) => {
+    return [
+    `/api/shipments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListShipmentsApiShipmentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListShipmentsApiShipmentsGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>> = ({ signal }) => listShipmentsApiShipmentsGet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListShipmentsApiShipmentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>>
+export type ListShipmentsApiShipmentsGetQueryError = HTTPValidationError
+
+
+export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListShipmentsApiShipmentsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
+ params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
+ params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Shipments
+ */
+
+export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
+ params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListShipmentsApiShipmentsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type getShipmentApiShipmentsShipmentIdGetResponse200 = {
+  data: ShipmentItem
+  status: 200
+}
+
+export type getShipmentApiShipmentsShipmentIdGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getShipmentApiShipmentsShipmentIdGetResponseSuccess = (getShipmentApiShipmentsShipmentIdGetResponse200) & {
+  headers: Headers;
+};
+export type getShipmentApiShipmentsShipmentIdGetResponseError = (getShipmentApiShipmentsShipmentIdGetResponse422) & {
+  headers: Headers;
+};
+
+export type getShipmentApiShipmentsShipmentIdGetResponse = (getShipmentApiShipmentsShipmentIdGetResponseSuccess | getShipmentApiShipmentsShipmentIdGetResponseError)
+
+export const getGetShipmentApiShipmentsShipmentIdGetUrl = (shipmentId: string,) => {
+
+
+
+
+  return `/api/shipments/${shipmentId}`
+}
+
+/**
+ * Get single shipment by ID.
+ *
+ * Args:
+ *     shipment_id: UUID of the shipment to retrieve
+ *     shipment_repo: Shipment repository dependency
+ *
+ * Returns:
+ *     Shipment details
+ *
+ * Raises:
+ *     HTTPException: 404 if shipment not found
+ * @summary Get Shipment
+ */
+export const getShipmentApiShipmentsShipmentIdGet = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<getShipmentApiShipmentsShipmentIdGetResponse> => {
+
+  return customFetcher<getShipmentApiShipmentsShipmentIdGetResponse>(getGetShipmentApiShipmentsShipmentIdGetUrl(shipmentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetShipmentApiShipmentsShipmentIdGetQueryKey = (shipmentId: string,) => {
+    return [
+    `/api/shipments/${shipmentId}`
+    ] as const;
+    }
+
+
+export const getGetShipmentApiShipmentsShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetShipmentApiShipmentsShipmentIdGetQueryKey(shipmentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>> = ({ signal }) => getShipmentApiShipmentsShipmentIdGet(shipmentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: shipmentId !== null && shipmentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetShipmentApiShipmentsShipmentIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>>
+export type GetShipmentApiShipmentsShipmentIdGetQueryError = HTTPValidationError
+
+
+export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Shipment
+ */
+
+export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetShipmentApiShipmentsShipmentIdGetQueryOptions(shipmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 

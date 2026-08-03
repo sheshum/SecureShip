@@ -1,7 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AdminSidebar } from '../components/Admin/AdminSidebar'
+import { PackagesTable } from '../components/Admin/PackagesTable'
+import { SessionsTable } from '../components/Admin/SessionsTable'
+import { ShipmentsTable } from '../components/Admin/ShipmentsTable'
+
+type AdminView = 'sessions' | 'shipments' | 'packages'
 
 export function AdminPage() {
   const navigate = useNavigate()
+  const [activeView, setActiveView] = useState<AdminView>('sessions')
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[url('/secure-ship-background.jpeg')] bg-cover bg-fixed bg-center px-2 py-3 sm:px-4 sm:py-4">
@@ -22,10 +30,17 @@ export function AdminPage() {
             </button>
           </header>
 
-          <div className="flex flex-1 items-center justify-center p-8">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-              <p className="mt-3 text-slate-600">Coming soon...</p>
+          <div className="flex flex-1 overflow-hidden">
+            {/* Sidebar */}
+            <aside className="w-64 border-r border-slate-200/80 p-4">
+              <AdminSidebar activeView={activeView} onNavigate={setActiveView} />
+            </aside>
+
+            {/* Main content */}
+            <div className="flex-1 overflow-y-auto">
+              {activeView === 'sessions' && <SessionsTable />}
+              {activeView === 'shipments' && <ShipmentsTable />}
+              {activeView === 'packages' && <PackagesTable />}
             </div>
           </div>
         </section>
