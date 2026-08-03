@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChatPanel } from '../components/ChatPanel'
-import { ChatCloseModal } from '../components/ChatCloseModal'
-import { OtpVerificationModal } from '../components/OtpVerificationModal'
+import { ChatPanel } from '../components/Chat/ChatPanel'
+import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
+import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
 import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost } from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
@@ -13,7 +13,7 @@ export function ChatPage() {
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [_sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
+  const [sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
@@ -142,6 +142,7 @@ export function ChatPage() {
           draft={draft}
           messages={messages}
           isLoading={chatMutation.isPending}
+          sessionState={sessionState}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
           onClose={() => setIsCloseModalOpen(true)}

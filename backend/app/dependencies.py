@@ -82,9 +82,11 @@ def get_request_identity_info_tool() -> RequestIdentityInfoTool:
     """Dependency that constructs RequestIdentityInfoTool (no dependencies needed)."""
     return RequestIdentityInfoTool()
 
-def get_escalate_to_human_tool() -> EscalateToHumanTool:
-    """Dependency that constructs EscalateToHumanTool (no dependencies needed)."""
-    return EscalateToHumanTool()
+def get_escalate_to_human_tool(
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> EscalateToHumanTool:
+    """Dependency that constructs EscalateToHumanTool with its dependencies."""
+    return EscalateToHumanTool(session_repo=session_repo)
 
 
 def get_tool_registry(
