@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal
@@ -15,6 +16,46 @@ from app.models import Customer, Package, Shipment
 class ShipmentRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
+
+    def create_shipment(self, **fields: object) -> dict:
+        with self._session_factory() as session:
+            shipment = Shipment(**fields, last_update=datetime.now(UTC))
+            session.add(shipment)
+            session.commit()
+            session.refresh(shipment, attribute_names=["packages", "customer"])
+            return self._serialize_shipment_with_customer(shipment)
+
+    def update_shipment(self, shipment_id: UUID, **updates: object) -> dict | None:
+        with self._session_factory() as session:
+            shipment = session.get(
+                Shipment, shipment_id, options=[selectinload(Shipment.packages), selectinload(Shipment.customer)]
+            )
+            if shipment is None:
+                return None
+            for key, value in updates.items():
+                setattr(shipment, key, value)
+            shipment.last_update = datetime.now(UTC)
+            session.commit()
+            session.refresh(shipment, attribute_names=["packages", "customer"])
+            return self._serialize_shipment_with_customer(shipment)
+
+    def delete_shipment(self, shipment_id: UUID) -> dict | None:
+        with self._session_factory() as session:
+            shipment = session.get(
+                Shipment, shipment_id, options=[selectinload(Shipment.packages), selectinload(Shipment.customer)]
+            )
+            if shipment is None:
+                return None
+            package_count = session.scalar(
+                select(func.count()).select_from(Package).where(Package.shipment_id == shipment_id)
+            )
+            if package_count:
+                msg = f"Cannot delete shipment: {package_count} package(s) still reference this shipment"
+                raise ValueError(msg)
+            serialized = self._serialize_shipment_with_customer(shipment)
+            session.delete(shipment)
+            session.commit()
+            return serialized
 
     def get_shipment_by_tracking_number_for_customer(
         self,
@@ -100,8 +141,32 @@ class ShipmentRepository:
     def count_shipments(self) -> int:
         """Return total count of all shipments."""
         with self._session_factory() as session:
-            from sqlalchemy import func
             return session.scalar(select(func.count()).select_from(Shipment)) or 0
+
+    def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:
+        """Get single shipment by tracking number, unscoped by customer (admin view)."""
+        with self._session_factory() as session:
+            shipment = session.scalar(
+                select(Shipment)
+                .options(selectinload(Shipment.packages), selectinload(Shipment.customer))
+                .where(Shipment.tracking_number == tracking_number)
+            )
+            if shipment is None:
+                return None
+            return self._serialize_shipment_with_customer(shipment)
+
+    def search_shipments(self, query: str, limit: int = 10) -> list[dict]:
+        """Partial, case-insensitive search by tracking number (admin view)."""
+        pattern = f"%{query}%"
+        with self._session_factory() as session:
+            shipments = session.scalars(
+                select(Shipment)
+                .options(selectinload(Shipment.packages), selectinload(Shipment.customer))
+                .where(Shipment.tracking_number.ilike(pattern))
+                .order_by(Shipment.last_update.desc())
+                .limit(limit)
+            ).all()
+            return [self._serialize_shipment_with_customer(ship) for ship in shipments]
 
     def get_shipment_by_id(self, shipment_id: UUID) -> dict | None:
         """Get single shipment by ID (admin view)."""

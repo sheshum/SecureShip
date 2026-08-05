@@ -27,19 +27,28 @@ import type {
 import type {
   ChatRequest,
   ChatResponse,
+  CustomerCreateRequest,
+  CustomerItem,
   CustomerListResponse,
+  CustomerUpdateRequest,
   HTTPValidationError,
   ListCustomersApiCustomersGetParams,
   ListPackagesApiPackagesGetParams,
   ListSessionsApiSessionsGetParams,
   ListShipmentsApiShipmentsGetParams,
+  PackageCreateRequest,
   PackageItem,
   PackageListResponse,
+  PackageUpdateRequest,
+  SearchCustomersApiCustomersSearchGetParams,
+  SearchShipmentsApiShipmentsSearchGetParams,
   SessionItem,
   SessionListResponse,
   SessionUpdateRequest,
+  ShipmentCreateRequest,
   ShipmentItem,
   ShipmentListResponse,
+  ShipmentUpdateRequest,
   VerifyCodeRequest,
   VerifyCodeResponse
 } from './schemas';
@@ -755,6 +764,97 @@ export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof 
 
 
 
+export type createPackageApiPackagesPostResponse201 = {
+  data: PackageItem
+  status: 201
+}
+
+export type createPackageApiPackagesPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createPackageApiPackagesPostResponseSuccess = (createPackageApiPackagesPostResponse201) & {
+  headers: Headers;
+};
+export type createPackageApiPackagesPostResponseError = (createPackageApiPackagesPostResponse422) & {
+  headers: Headers;
+};
+
+export type createPackageApiPackagesPostResponse = (createPackageApiPackagesPostResponseSuccess | createPackageApiPackagesPostResponseError)
+
+export const getCreatePackageApiPackagesPostUrl = () => {
+
+
+
+
+  return `/api/packages`
+}
+
+/**
+ * Create a new package, resolving its shipment by tracking number.
+ * @summary Create Package
+ */
+export const createPackageApiPackagesPost = async (packageCreateRequest: PackageCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createPackageApiPackagesPostResponse> => {
+
+  return customFetcher<createPackageApiPackagesPostResponse>(getCreatePackageApiPackagesPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(packageCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getCreatePackageApiPackagesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext> => {
+
+const mutationKey = ['createPackageApiPackagesPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, {data: PackageCreateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPackageApiPackagesPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePackageApiPackagesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createPackageApiPackagesPost>>>
+    export type CreatePackageApiPackagesPostMutationBody = PackageCreateRequest
+    export type CreatePackageApiPackagesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Package
+ */
+export const useCreatePackageApiPackagesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createPackageApiPackagesPost>>,
+        TError,
+        {data: PackageCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreatePackageApiPackagesPostMutationOptions(options), queryClient);
+    }
+
 export type getPackageApiPackagesPackageIdGetResponse200 = {
   data: PackageItem
   status: 200
@@ -885,6 +985,189 @@ export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<
 
 
 
+
+export type updatePackageApiPackagesPackageIdPatchResponse200 = {
+  data: PackageItem
+  status: 200
+}
+
+export type updatePackageApiPackagesPackageIdPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updatePackageApiPackagesPackageIdPatchResponseSuccess = (updatePackageApiPackagesPackageIdPatchResponse200) & {
+  headers: Headers;
+};
+export type updatePackageApiPackagesPackageIdPatchResponseError = (updatePackageApiPackagesPackageIdPatchResponse422) & {
+  headers: Headers;
+};
+
+export type updatePackageApiPackagesPackageIdPatchResponse = (updatePackageApiPackagesPackageIdPatchResponseSuccess | updatePackageApiPackagesPackageIdPatchResponseError)
+
+export const getUpdatePackageApiPackagesPackageIdPatchUrl = (packageId: string,) => {
+
+
+
+
+  return `/api/packages/${packageId}`
+}
+
+/**
+ * Update fields on an existing package.
+ * @summary Update Package
+ */
+export const updatePackageApiPackagesPackageIdPatch = async (packageId: string,
+    packageUpdateRequest: PackageUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updatePackageApiPackagesPackageIdPatchResponse> => {
+
+  return customFetcher<updatePackageApiPackagesPackageIdPatchResponse>(getUpdatePackageApiPackagesPackageIdPatchUrl(packageId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(packageUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdatePackageApiPackagesPackageIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext> => {
+
+const mutationKey = ['updatePackageApiPackagesPackageIdPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, {packageId: string;data: PackageUpdateRequest}> = (props) => {
+          const {packageId,data} = props ?? {};
+
+          return  updatePackageApiPackagesPackageIdPatch(packageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePackageApiPackagesPackageIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>>
+    export type UpdatePackageApiPackagesPackageIdPatchMutationBody = PackageUpdateRequest
+    export type UpdatePackageApiPackagesPackageIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Package
+ */
+export const useUpdatePackageApiPackagesPackageIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>,
+        TError,
+        {packageId: string;data: PackageUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdatePackageApiPackagesPackageIdPatchMutationOptions(options), queryClient);
+    }
+
+export type deletePackageApiPackagesPackageIdDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deletePackageApiPackagesPackageIdDeleteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type deletePackageApiPackagesPackageIdDeleteResponseSuccess = (deletePackageApiPackagesPackageIdDeleteResponse204) & {
+  headers: Headers;
+};
+export type deletePackageApiPackagesPackageIdDeleteResponseError = (deletePackageApiPackagesPackageIdDeleteResponse422) & {
+  headers: Headers;
+};
+
+export type deletePackageApiPackagesPackageIdDeleteResponse = (deletePackageApiPackagesPackageIdDeleteResponseSuccess | deletePackageApiPackagesPackageIdDeleteResponseError)
+
+export const getDeletePackageApiPackagesPackageIdDeleteUrl = (packageId: string,) => {
+
+
+
+
+  return `/api/packages/${packageId}`
+}
+
+/**
+ * Delete a package.
+ * @summary Delete Package
+ */
+export const deletePackageApiPackagesPackageIdDelete = async (packageId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deletePackageApiPackagesPackageIdDeleteResponse> => {
+
+  return customFetcher<deletePackageApiPackagesPackageIdDeleteResponse>(getDeletePackageApiPackagesPackageIdDeleteUrl(packageId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeletePackageApiPackagesPackageIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext> => {
+
+const mutationKey = ['deletePackageApiPackagesPackageIdDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, {packageId: string}> = (props) => {
+          const {packageId} = props ?? {};
+
+          return  deletePackageApiPackagesPackageIdDelete(packageId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePackageApiPackagesPackageIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>>
+
+    export type DeletePackageApiPackagesPackageIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Package
+ */
+export const useDeletePackageApiPackagesPackageIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>,
+        TError,
+        {packageId: string},
+        TContext
+      > => {
+      return useMutation(getDeletePackageApiPackagesPackageIdDeleteMutationOptions(options), queryClient);
+    }
 
 export type listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse200 = {
   data: PackageListResponse
@@ -1150,6 +1433,225 @@ export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeo
 
 
 
+export type createShipmentApiShipmentsPostResponse201 = {
+  data: ShipmentItem
+  status: 201
+}
+
+export type createShipmentApiShipmentsPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createShipmentApiShipmentsPostResponseSuccess = (createShipmentApiShipmentsPostResponse201) & {
+  headers: Headers;
+};
+export type createShipmentApiShipmentsPostResponseError = (createShipmentApiShipmentsPostResponse422) & {
+  headers: Headers;
+};
+
+export type createShipmentApiShipmentsPostResponse = (createShipmentApiShipmentsPostResponseSuccess | createShipmentApiShipmentsPostResponseError)
+
+export const getCreateShipmentApiShipmentsPostUrl = () => {
+
+
+
+
+  return `/api/shipments`
+}
+
+/**
+ * Create a new shipment.
+ * @summary Create Shipment
+ */
+export const createShipmentApiShipmentsPost = async (shipmentCreateRequest: ShipmentCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createShipmentApiShipmentsPostResponse> => {
+
+  return customFetcher<createShipmentApiShipmentsPostResponse>(getCreateShipmentApiShipmentsPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(shipmentCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateShipmentApiShipmentsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext> => {
+
+const mutationKey = ['createShipmentApiShipmentsPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, {data: ShipmentCreateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createShipmentApiShipmentsPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateShipmentApiShipmentsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>>
+    export type CreateShipmentApiShipmentsPostMutationBody = ShipmentCreateRequest
+    export type CreateShipmentApiShipmentsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Shipment
+ */
+export const useCreateShipmentApiShipmentsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>,
+        TError,
+        {data: ShipmentCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreateShipmentApiShipmentsPostMutationOptions(options), queryClient);
+    }
+
+export type searchShipmentsApiShipmentsSearchGetResponse200 = {
+  data: ShipmentItem[]
+  status: 200
+}
+
+export type searchShipmentsApiShipmentsSearchGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type searchShipmentsApiShipmentsSearchGetResponseSuccess = (searchShipmentsApiShipmentsSearchGetResponse200) & {
+  headers: Headers;
+};
+export type searchShipmentsApiShipmentsSearchGetResponseError = (searchShipmentsApiShipmentsSearchGetResponse422) & {
+  headers: Headers;
+};
+
+export type searchShipmentsApiShipmentsSearchGetResponse = (searchShipmentsApiShipmentsSearchGetResponseSuccess | searchShipmentsApiShipmentsSearchGetResponseError)
+
+export const getSearchShipmentsApiShipmentsSearchGetUrl = (params?: SearchShipmentsApiShipmentsSearchGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/shipments/search?${stringifiedParams}` : `/api/shipments/search`
+}
+
+/**
+ * Typeahead search for shipments by tracking number.
+ * @summary Search Shipments
+ */
+export const searchShipmentsApiShipmentsSearchGet = async (params?: SearchShipmentsApiShipmentsSearchGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<searchShipmentsApiShipmentsSearchGetResponse> => {
+
+  return customFetcher<searchShipmentsApiShipmentsSearchGetResponse>(getSearchShipmentsApiShipmentsSearchGetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchShipmentsApiShipmentsSearchGetQueryKey = (params?: SearchShipmentsApiShipmentsSearchGetParams,) => {
+    return [
+    `/api/shipments/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchShipmentsApiShipmentsSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchShipmentsApiShipmentsSearchGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>> = ({ signal }) => searchShipmentsApiShipmentsSearchGet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SearchShipmentsApiShipmentsSearchGetQueryResult = NonNullable<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>>
+export type SearchShipmentsApiShipmentsSearchGetQueryError = HTTPValidationError
+
+
+export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
+ params: undefined |  SearchShipmentsApiShipmentsSearchGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Search Shipments
+ */
+
+export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSearchShipmentsApiShipmentsSearchGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export type getShipmentApiShipmentsShipmentIdGetResponse200 = {
   data: ShipmentItem
   status: 200
@@ -1280,6 +1782,189 @@ export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnTy
 
 
 
+
+export type updateShipmentApiShipmentsShipmentIdPatchResponse200 = {
+  data: ShipmentItem
+  status: 200
+}
+
+export type updateShipmentApiShipmentsShipmentIdPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updateShipmentApiShipmentsShipmentIdPatchResponseSuccess = (updateShipmentApiShipmentsShipmentIdPatchResponse200) & {
+  headers: Headers;
+};
+export type updateShipmentApiShipmentsShipmentIdPatchResponseError = (updateShipmentApiShipmentsShipmentIdPatchResponse422) & {
+  headers: Headers;
+};
+
+export type updateShipmentApiShipmentsShipmentIdPatchResponse = (updateShipmentApiShipmentsShipmentIdPatchResponseSuccess | updateShipmentApiShipmentsShipmentIdPatchResponseError)
+
+export const getUpdateShipmentApiShipmentsShipmentIdPatchUrl = (shipmentId: string,) => {
+
+
+
+
+  return `/api/shipments/${shipmentId}`
+}
+
+/**
+ * Update fields on an existing shipment.
+ * @summary Update Shipment
+ */
+export const updateShipmentApiShipmentsShipmentIdPatch = async (shipmentId: string,
+    shipmentUpdateRequest: ShipmentUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updateShipmentApiShipmentsShipmentIdPatchResponse> => {
+
+  return customFetcher<updateShipmentApiShipmentsShipmentIdPatchResponse>(getUpdateShipmentApiShipmentsShipmentIdPatchUrl(shipmentId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(shipmentUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateShipmentApiShipmentsShipmentIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext> => {
+
+const mutationKey = ['updateShipmentApiShipmentsShipmentIdPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, {shipmentId: string;data: ShipmentUpdateRequest}> = (props) => {
+          const {shipmentId,data} = props ?? {};
+
+          return  updateShipmentApiShipmentsShipmentIdPatch(shipmentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShipmentApiShipmentsShipmentIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>>
+    export type UpdateShipmentApiShipmentsShipmentIdPatchMutationBody = ShipmentUpdateRequest
+    export type UpdateShipmentApiShipmentsShipmentIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Shipment
+ */
+export const useUpdateShipmentApiShipmentsShipmentIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>,
+        TError,
+        {shipmentId: string;data: ShipmentUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdateShipmentApiShipmentsShipmentIdPatchMutationOptions(options), queryClient);
+    }
+
+export type deleteShipmentApiShipmentsShipmentIdDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteShipmentApiShipmentsShipmentIdDeleteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type deleteShipmentApiShipmentsShipmentIdDeleteResponseSuccess = (deleteShipmentApiShipmentsShipmentIdDeleteResponse204) & {
+  headers: Headers;
+};
+export type deleteShipmentApiShipmentsShipmentIdDeleteResponseError = (deleteShipmentApiShipmentsShipmentIdDeleteResponse422) & {
+  headers: Headers;
+};
+
+export type deleteShipmentApiShipmentsShipmentIdDeleteResponse = (deleteShipmentApiShipmentsShipmentIdDeleteResponseSuccess | deleteShipmentApiShipmentsShipmentIdDeleteResponseError)
+
+export const getDeleteShipmentApiShipmentsShipmentIdDeleteUrl = (shipmentId: string,) => {
+
+
+
+
+  return `/api/shipments/${shipmentId}`
+}
+
+/**
+ * Delete a shipment. Fails with 409 if packages still reference it.
+ * @summary Delete Shipment
+ */
+export const deleteShipmentApiShipmentsShipmentIdDelete = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deleteShipmentApiShipmentsShipmentIdDeleteResponse> => {
+
+  return customFetcher<deleteShipmentApiShipmentsShipmentIdDeleteResponse>(getDeleteShipmentApiShipmentsShipmentIdDeleteUrl(shipmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteShipmentApiShipmentsShipmentIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext> => {
+
+const mutationKey = ['deleteShipmentApiShipmentsShipmentIdDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, {shipmentId: string}> = (props) => {
+          const {shipmentId} = props ?? {};
+
+          return  deleteShipmentApiShipmentsShipmentIdDelete(shipmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteShipmentApiShipmentsShipmentIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>>
+
+    export type DeleteShipmentApiShipmentsShipmentIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Shipment
+ */
+export const useDeleteShipmentApiShipmentsShipmentIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>,
+        TError,
+        {shipmentId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteShipmentApiShipmentsShipmentIdDeleteMutationOptions(options), queryClient);
+    }
 
 export type listCustomersApiCustomersGetResponse200 = {
   data: CustomerListResponse
@@ -1416,4 +2101,406 @@ export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeo
 
 
 
+
+export type createCustomerApiCustomersPostResponse201 = {
+  data: CustomerItem
+  status: 201
+}
+
+export type createCustomerApiCustomersPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createCustomerApiCustomersPostResponseSuccess = (createCustomerApiCustomersPostResponse201) & {
+  headers: Headers;
+};
+export type createCustomerApiCustomersPostResponseError = (createCustomerApiCustomersPostResponse422) & {
+  headers: Headers;
+};
+
+export type createCustomerApiCustomersPostResponse = (createCustomerApiCustomersPostResponseSuccess | createCustomerApiCustomersPostResponseError)
+
+export const getCreateCustomerApiCustomersPostUrl = () => {
+
+
+
+
+  return `/api/customers`
+}
+
+/**
+ * Create a new customer.
+ * @summary Create Customer
+ */
+export const createCustomerApiCustomersPost = async (customerCreateRequest: CustomerCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createCustomerApiCustomersPostResponse> => {
+
+  return customFetcher<createCustomerApiCustomersPostResponse>(getCreateCustomerApiCustomersPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(customerCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateCustomerApiCustomersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext> => {
+
+const mutationKey = ['createCustomerApiCustomersPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, {data: CustomerCreateRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCustomerApiCustomersPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCustomerApiCustomersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>>
+    export type CreateCustomerApiCustomersPostMutationBody = CustomerCreateRequest
+    export type CreateCustomerApiCustomersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Customer
+ */
+export const useCreateCustomerApiCustomersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCustomerApiCustomersPost>>,
+        TError,
+        {data: CustomerCreateRequest},
+        TContext
+      > => {
+      return useMutation(getCreateCustomerApiCustomersPostMutationOptions(options), queryClient);
+    }
+
+export type searchCustomersApiCustomersSearchGetResponse200 = {
+  data: CustomerItem[]
+  status: 200
+}
+
+export type searchCustomersApiCustomersSearchGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type searchCustomersApiCustomersSearchGetResponseSuccess = (searchCustomersApiCustomersSearchGetResponse200) & {
+  headers: Headers;
+};
+export type searchCustomersApiCustomersSearchGetResponseError = (searchCustomersApiCustomersSearchGetResponse422) & {
+  headers: Headers;
+};
+
+export type searchCustomersApiCustomersSearchGetResponse = (searchCustomersApiCustomersSearchGetResponseSuccess | searchCustomersApiCustomersSearchGetResponseError)
+
+export const getSearchCustomersApiCustomersSearchGetUrl = (params?: SearchCustomersApiCustomersSearchGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/customers/search?${stringifiedParams}` : `/api/customers/search`
+}
+
+/**
+ * Typeahead search for customers by first/last name or phone number.
+ * @summary Search Customers
+ */
+export const searchCustomersApiCustomersSearchGet = async (params?: SearchCustomersApiCustomersSearchGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<searchCustomersApiCustomersSearchGetResponse> => {
+
+  return customFetcher<searchCustomersApiCustomersSearchGetResponse>(getSearchCustomersApiCustomersSearchGetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchCustomersApiCustomersSearchGetQueryKey = (params?: SearchCustomersApiCustomersSearchGetParams,) => {
+    return [
+    `/api/customers/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchCustomersApiCustomersSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchCustomersApiCustomersSearchGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>> = ({ signal }) => searchCustomersApiCustomersSearchGet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SearchCustomersApiCustomersSearchGetQueryResult = NonNullable<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>>
+export type SearchCustomersApiCustomersSearchGetQueryError = HTTPValidationError
+
+
+export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
+ params: undefined |  SearchCustomersApiCustomersSearchGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Search Customers
+ */
+
+export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
+ params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSearchCustomersApiCustomersSearchGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type updateCustomerApiCustomersCustomerIdPatchResponse200 = {
+  data: CustomerItem
+  status: 200
+}
+
+export type updateCustomerApiCustomersCustomerIdPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type updateCustomerApiCustomersCustomerIdPatchResponseSuccess = (updateCustomerApiCustomersCustomerIdPatchResponse200) & {
+  headers: Headers;
+};
+export type updateCustomerApiCustomersCustomerIdPatchResponseError = (updateCustomerApiCustomersCustomerIdPatchResponse422) & {
+  headers: Headers;
+};
+
+export type updateCustomerApiCustomersCustomerIdPatchResponse = (updateCustomerApiCustomersCustomerIdPatchResponseSuccess | updateCustomerApiCustomersCustomerIdPatchResponseError)
+
+export const getUpdateCustomerApiCustomersCustomerIdPatchUrl = (customerId: string,) => {
+
+
+
+
+  return `/api/customers/${customerId}`
+}
+
+/**
+ * Update fields on an existing customer.
+ * @summary Update Customer
+ */
+export const updateCustomerApiCustomersCustomerIdPatch = async (customerId: string,
+    customerUpdateRequest: CustomerUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updateCustomerApiCustomersCustomerIdPatchResponse> => {
+
+  return customFetcher<updateCustomerApiCustomersCustomerIdPatchResponse>(getUpdateCustomerApiCustomersCustomerIdPatchUrl(customerId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(customerUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateCustomerApiCustomersCustomerIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext> => {
+
+const mutationKey = ['updateCustomerApiCustomersCustomerIdPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, {customerId: string;data: CustomerUpdateRequest}> = (props) => {
+          const {customerId,data} = props ?? {};
+
+          return  updateCustomerApiCustomersCustomerIdPatch(customerId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCustomerApiCustomersCustomerIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>>
+    export type UpdateCustomerApiCustomersCustomerIdPatchMutationBody = CustomerUpdateRequest
+    export type UpdateCustomerApiCustomersCustomerIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Customer
+ */
+export const useUpdateCustomerApiCustomersCustomerIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>,
+        TError,
+        {customerId: string;data: CustomerUpdateRequest},
+        TContext
+      > => {
+      return useMutation(getUpdateCustomerApiCustomersCustomerIdPatchMutationOptions(options), queryClient);
+    }
+
+export type deleteCustomerApiCustomersCustomerIdDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type deleteCustomerApiCustomersCustomerIdDeleteResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type deleteCustomerApiCustomersCustomerIdDeleteResponseSuccess = (deleteCustomerApiCustomersCustomerIdDeleteResponse204) & {
+  headers: Headers;
+};
+export type deleteCustomerApiCustomersCustomerIdDeleteResponseError = (deleteCustomerApiCustomersCustomerIdDeleteResponse422) & {
+  headers: Headers;
+};
+
+export type deleteCustomerApiCustomersCustomerIdDeleteResponse = (deleteCustomerApiCustomersCustomerIdDeleteResponseSuccess | deleteCustomerApiCustomersCustomerIdDeleteResponseError)
+
+export const getDeleteCustomerApiCustomersCustomerIdDeleteUrl = (customerId: string,) => {
+
+
+
+
+  return `/api/customers/${customerId}`
+}
+
+/**
+ * Delete a customer. Fails with 409 if shipments still reference it.
+ * @summary Delete Customer
+ */
+export const deleteCustomerApiCustomersCustomerIdDelete = async (customerId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deleteCustomerApiCustomersCustomerIdDeleteResponse> => {
+
+  return customFetcher<deleteCustomerApiCustomersCustomerIdDeleteResponse>(getDeleteCustomerApiCustomersCustomerIdDeleteUrl(customerId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteCustomerApiCustomersCustomerIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext> => {
+
+const mutationKey = ['deleteCustomerApiCustomersCustomerIdDelete'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, {customerId: string}> = (props) => {
+          const {customerId} = props ?? {};
+
+          return  deleteCustomerApiCustomersCustomerIdDelete(customerId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCustomerApiCustomersCustomerIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>>
+
+    export type DeleteCustomerApiCustomersCustomerIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Customer
+ */
+export const useDeleteCustomerApiCustomersCustomerIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>,
+        TError,
+        {customerId: string},
+        TContext
+      > => {
+      return useMutation(getDeleteCustomerApiCustomersCustomerIdDeleteMutationOptions(options), queryClient);
+    }
 

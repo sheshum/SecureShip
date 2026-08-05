@@ -1,20 +1,77 @@
 import { useState } from 'react'
-import { useListPackagesApiPackagesGet } from '../../api/generated/client'
+import {
+  useCreatePackageApiPackagesPost,
+  useDeletePackageApiPackagesPackageIdDelete,
+  useListPackagesApiPackagesGet,
+  useUpdatePackageApiPackagesPackageIdPatch,
+} from '../../api/generated/client'
 import type { PackageItem } from '../../api/generated/schemas'
 import { DataTable } from './DataTable'
+import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { PackageFormModal, type PackageFormValues } from './PackageFormModal'
 
 const ITEMS_PER_PAGE = 10
 
 export function PackagesTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
-  
-  const { data: response, isLoading } = useListPackagesApiPackagesGet({
+
+  const [formState, setFormState] = useState<{ row?: PackageItem } | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [deletingRow, setDeletingRow] = useState<PackageItem | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const { data: response, isLoading, refetch } = useListPackagesApiPackagesGet({
     limit: ITEMS_PER_PAGE,
     offset: offset,
   })
   const data = (response?.data && 'packages' in response.data) ? response.data.packages : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
+
+  const createMutation = useCreatePackageApiPackagesPost()
+  const updateMutation = useUpdatePackageApiPackagesPackageIdPatch()
+  const deleteMutation = useDeletePackageApiPackagesPackageIdDelete()
+
+  const handleSubmit = async (values: PackageFormValues) => {
+    setFormError(null)
+    try {
+      if (formState?.row) {
+        await updateMutation.mutateAsync({
+          packageId: formState.row.id,
+          data: {
+            description: values.description,
+            weight_kg: values.weight_kg,
+            declared_value: values.declared_value,
+          },
+        })
+      } else {
+        await createMutation.mutateAsync({
+          data: {
+            tracking_number: values.tracking_number,
+            description: values.description,
+            weight_kg: values.weight_kg,
+            declared_value: values.declared_value,
+          },
+        })
+      }
+      setFormState(null)
+      await refetch()
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deletingRow) return
+    setDeleteError(null)
+    try {
+      await deleteMutation.mutateAsync({ packageId: deletingRow.id })
+      setDeletingRow(null)
+      await refetch()
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
 
   const columns = [
     {
@@ -52,18 +109,58 @@ export function PackagesTable() {
       key: 'declared_value',
       accessor: (row: PackageItem) => `$${parseFloat(row.declared_value).toFixed(2)}`,
     },
+    {
+      header: 'Actions',
+      key: 'actions',
+      accessor: (row: PackageItem) => (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null)
+              setFormState({ row })
+            }}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteError(null)
+              setDeletingRow(row)
+            }}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
   ]
 
   return (
     <div className="p-6">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Packages</h2>
-        <p className="text-sm text-slate-500">All packages across all shipments</p>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Packages</h2>
+          <p className="text-sm text-slate-500">All packages across all shipments</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setFormError(null)
+            setFormState({})
+          }}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          + Add Package
+        </button>
       </div>
-      <DataTable 
-        data={data} 
-        columns={columns} 
-        isLoading={isLoading} 
+      <DataTable
+        data={data}
+        columns={columns}
+        isLoading={isLoading}
         emptyMessage="No packages found"
         pagination={{
           currentPage,
@@ -71,6 +168,24 @@ export function PackagesTable() {
           itemsPerPage: ITEMS_PER_PAGE,
           onPageChange: setCurrentPage,
         }}
+      />
+
+      <PackageFormModal
+        isOpen={formState !== null}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        errorMessage={formError}
+        initialValues={formState?.row}
+        onSubmit={handleSubmit}
+        onClose={() => setFormState(null)}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deletingRow !== null}
+        isDeleting={deleteMutation.isPending}
+        errorMessage={deleteError}
+        resourceLabel={deletingRow ? `package ${deletingRow.id.substring(0, 8)}...` : 'package'}
+        onConfirm={handleDelete}
+        onClose={() => setDeletingRow(null)}
       />
     </div>
   )

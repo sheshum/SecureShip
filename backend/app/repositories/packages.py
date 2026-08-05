@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal
@@ -15,6 +15,35 @@ from app.models import Package
 class PackageRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
+
+    def create_package(self, **fields: object) -> dict:
+        with self._session_factory() as session:
+            package = Package(**fields)
+            session.add(package)
+            session.commit()
+            session.refresh(package, attribute_names=["shipment"])
+            return self._serialize_package(package)
+
+    def update_package(self, package_id: UUID, **updates: object) -> dict | None:
+        with self._session_factory() as session:
+            package = session.get(Package, package_id, options=[selectinload(Package.shipment)])
+            if package is None:
+                return None
+            for key, value in updates.items():
+                setattr(package, key, value)
+            session.commit()
+            session.refresh(package, attribute_names=["shipment"])
+            return self._serialize_package(package)
+
+    def delete_package(self, package_id: UUID) -> dict | None:
+        with self._session_factory() as session:
+            package = session.get(Package, package_id, options=[selectinload(Package.shipment)])
+            if package is None:
+                return None
+            serialized = self._serialize_package(package)
+            session.delete(package)
+            session.commit()
+            return serialized
 
     def list_packages(self, limit: int = 100, offset: int = 0) -> list[dict]:
         """List all packages with pagination (admin view)."""
@@ -30,7 +59,6 @@ class PackageRepository:
     def count_packages(self) -> int:
         """Return total count of all packages."""
         with self._session_factory() as session:
-            from sqlalchemy import func
             return session.scalar(select(func.count()).select_from(Package)) or 0
 
     def get_package(self, package_id: UUID) -> dict | None:

@@ -7,7 +7,12 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.dependencies import get_shipment_repository, require_admin_auth
 from app.repositories.shipments import ShipmentRepository
-from app.schemas.shipments import ShipmentItem, ShipmentListResponse
+from app.schemas.shipments import (
+    ShipmentCreateRequest,
+    ShipmentItem,
+    ShipmentListResponse,
+    ShipmentUpdateRequest,
+)
 
 router = APIRouter(
     prefix="/api/shipments",
@@ -40,6 +45,19 @@ async def list_shipments(
     )
 
 
+@router.get("/search", response_model=list[ShipmentItem])
+async def search_shipments(
+    q: str = "",
+    limit: int = 10,
+    shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
+) -> list[ShipmentItem]:
+    """Typeahead search for shipments by tracking number."""
+    if len(q.strip()) < 2:
+        return []
+    results = shipment_repo.search_shipments(q.strip(), limit=limit)
+    return [ShipmentItem(**shipment) for shipment in results]
+
+
 @router.get("/{shipment_id}", response_model=ShipmentItem)
 async def get_shipment(
     shipment_id: UUID,
@@ -61,3 +79,43 @@ async def get_shipment(
     if shipment is None:
         raise HTTPException(status_code=404, detail=f"Shipment {shipment_id} not found")
     return ShipmentItem(**shipment)
+
+
+@router.post("", response_model=ShipmentItem, status_code=201)
+async def create_shipment(
+    request: ShipmentCreateRequest,
+    shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
+) -> ShipmentItem:
+    """Create a new shipment."""
+    shipment = shipment_repo.create_shipment(**request.model_dump())
+    return ShipmentItem(**shipment)
+
+
+@router.patch("/{shipment_id}", response_model=ShipmentItem)
+async def update_shipment(
+    shipment_id: UUID,
+    request: ShipmentUpdateRequest,
+    shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
+) -> ShipmentItem:
+    """Update fields on an existing shipment."""
+    updates = request.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    shipment = shipment_repo.update_shipment(shipment_id, **updates)
+    if shipment is None:
+        raise HTTPException(status_code=404, detail=f"Shipment {shipment_id} not found")
+    return ShipmentItem(**shipment)
+
+
+@router.delete("/{shipment_id}", status_code=204)
+async def delete_shipment(
+    shipment_id: UUID,
+    shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
+) -> None:
+    """Delete a shipment. Fails with 409 if packages still reference it."""
+    try:
+        shipment = shipment_repo.delete_shipment(shipment_id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    if shipment is None:
+        raise HTTPException(status_code=404, detail=f"Shipment {shipment_id} not found")

@@ -17,11 +17,20 @@ export async function customFetcher<T>(url: string, options: RequestInit): Promi
 
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(text || `HTTP ${response.status}`)
+    let message = text || `HTTP ${response.status}`
+    try {
+      const parsed = JSON.parse(text)
+      if (typeof parsed?.detail === 'string') {
+        message = parsed.detail
+      }
+    } catch {
+      // response body wasn't JSON; fall back to raw text
+    }
+    throw new Error(message)
   }
 
-  const data = await response.json()
-  
+  const data = response.status === 204 ? undefined : await response.json()
+
   // Wrap in Orval-expected format for mutations
   return {
     data,

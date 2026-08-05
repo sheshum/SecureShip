@@ -18,3 +18,16 @@ class PackageItem(BaseModel):
 class PackageListResponse(BaseModel):
     packages: list[PackageItem]
     total: int
+
+
+class PackageCreateRequest(BaseModel):
+    tracking_number: str
+    description: str
+    weight_kg: Decimal
+    declared_value: Decimal
+
+
+class PackageUpdateRequest(BaseModel):
+    description: str | None = None
+    weight_kg: Decimal | None = None
+    declared_value: Decimal | None = None
