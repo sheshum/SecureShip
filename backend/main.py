@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.dependencies import get_settings
-from app.routers import auth, chat, health, packages, sessions, shipments
+from app.routers import auth, chat, customers, health, packages, sessions, shipments
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +37,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions.router)
     app.include_router(packages.router)
     app.include_router(shipments.router)
+    app.include_router(customers.router)
 
     return app
 

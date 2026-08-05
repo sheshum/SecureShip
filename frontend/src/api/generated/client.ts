@@ -27,7 +27,9 @@ import type {
 import type {
   ChatRequest,
   ChatResponse,
+  CustomerListResponse,
   HTTPValidationError,
+  ListCustomersApiCustomersGetParams,
   ListPackagesApiPackagesGetParams,
   ListSessionsApiSessionsGetParams,
   ListShipmentsApiShipmentsGetParams,
@@ -1267,6 +1269,142 @@ export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnTy
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetShipmentApiShipmentsShipmentIdGetQueryOptions(shipmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type listCustomersApiCustomersGetResponse200 = {
+  data: CustomerListResponse
+  status: 200
+}
+
+export type listCustomersApiCustomersGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listCustomersApiCustomersGetResponseSuccess = (listCustomersApiCustomersGetResponse200) & {
+  headers: Headers;
+};
+export type listCustomersApiCustomersGetResponseError = (listCustomersApiCustomersGetResponse422) & {
+  headers: Headers;
+};
+
+export type listCustomersApiCustomersGetResponse = (listCustomersApiCustomersGetResponseSuccess | listCustomersApiCustomersGetResponseError)
+
+export const getListCustomersApiCustomersGetUrl = (params?: ListCustomersApiCustomersGetParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/customers?${stringifiedParams}` : `/api/customers`
+}
+
+/**
+ * List all customers with pagination.
+ *
+ * Args:
+ *     limit: Maximum number of customers to return
+ *     offset: Number of customers to skip
+ *     customer_repo: Customer repository dependency
+ *
+ * Returns:
+ *     List of customers with total count
+ * @summary List Customers
+ */
+export const listCustomersApiCustomersGet = async (params?: ListCustomersApiCustomersGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listCustomersApiCustomersGetResponse> => {
+
+  return customFetcher<listCustomersApiCustomersGetResponse>(getListCustomersApiCustomersGetUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCustomersApiCustomersGetQueryKey = (params?: ListCustomersApiCustomersGetParams,) => {
+    return [
+    `/api/customers`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListCustomersApiCustomersGetQueryOptions = <TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCustomersApiCustomersGetQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>> = ({ signal }) => listCustomersApiCustomersGet(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCustomersApiCustomersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>>
+export type ListCustomersApiCustomersGetQueryError = HTTPValidationError
+
+
+export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListCustomersApiCustomersGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCustomersApiCustomersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCustomersApiCustomersGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
+ params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCustomersApiCustomersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCustomersApiCustomersGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
+ params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Customers
+ */
+
+export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
+ params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCustomersApiCustomersGetQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

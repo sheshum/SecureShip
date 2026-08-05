@@ -1,13 +1,16 @@
 import { resolveApiUrl } from '../url'
+import { getAccessToken } from '../authToken'
 
 export async function customFetcher<T>(url: string, options: RequestInit): Promise<T> {
   const requestUrl = resolveApiUrl(url)
+  const token = await getAccessToken()
 
   let response: Response
   response = await fetch(requestUrl, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers ?? {}),
     },
   })

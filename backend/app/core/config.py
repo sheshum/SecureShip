@@ -60,3 +60,16 @@ class Settings(BaseSettings):
         default="console",
         validation_alias=AliasChoices("SMS_PROVIDER"),
     )
+
+    # Auth0 tenant domain + API audience used to protect the admin dashboard's
+    # backend routes (see dependencies.py::require_admin_auth). Unset by
+    # default so the rest of the app (public chat/auth flow) keeps working
+    # without Auth0 configured.
+    auth0_domain: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("AUTH0_DOMAIN"),
+    )
+    auth0_audience: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("AUTH0_AUDIENCE"),
+    )

@@ -15,6 +15,20 @@ class CustomerRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
 
+    def list_all_customers(self, limit: int = 100, offset: int = 0) -> list[dict]:
+        with self._session_factory() as session:
+            customers = session.scalars(
+                select(Customer)
+                .order_by(Customer.last_name, Customer.first_name)
+                .limit(limit)
+                .offset(offset)
+            ).all()
+            return [self._serialize_customer(customer) for customer in customers]
+
+    def count_customers(self) -> int:
+        with self._session_factory() as session:
+            return session.scalar(select(func.count()).select_from(Customer)) or 0
+
     def list_customers_by_name(self, first_name: str, last_name: str) -> list[dict]:
         with self._session_factory() as session:
             customers = session.scalars(

@@ -6,14 +6,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_chat_session_repository
+from app.dependencies import get_chat_session_repository, require_admin_auth
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.sessions import ChatSessionState, SessionItem, SessionListResponse, SessionUpdateRequest
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 
-@router.get("", response_model=SessionListResponse)
+@router.get("", response_model=SessionListResponse, dependencies=[Depends(require_admin_auth)])
 async def list_sessions(
     limit: int = 100,
     offset: int = 0,

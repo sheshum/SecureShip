@@ -7,7 +7,8 @@ nowhere else, so swapping providers never touches business logic or routes.
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import Depends
+from fastapi import Depends, Request
+from fastapi_plugin import Auth0FastAPI
 
 from app.agent import SYSTEM_PROMPT, Agent
 from app.core.config import Settings
@@ -142,3 +143,18 @@ def get_agent(
         tool_registry=tool_registry,
         system_prompt=SYSTEM_PROMPT,
     )
+
+
+@lru_cache
+def get_auth0_client() -> Auth0FastAPI:
+    settings = get_settings()
+    return Auth0FastAPI(domain=settings.auth0_domain, audience=settings.auth0_audience)
+
+
+async def require_admin_auth(request: Request) -> dict:
+    """Route dependency gating admin-only endpoints behind a valid Auth0 access token.
+
+    Built lazily (via get_auth0_client) so the app still boots and the public
+    chat/auth flow keeps working when AUTH0_DOMAIN/AUTH0_AUDIENCE are unset.
+    """
+    return await get_auth0_client().require_auth()(request)

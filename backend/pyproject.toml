@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.18.5",
+    "auth0-fastapi-api>=1.0.0b8",
     "faker>=40.35.0",
     "fastapi[standard]>=0.139.2",
     "litellm>=1.93.0",

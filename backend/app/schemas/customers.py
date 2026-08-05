@@ -1,0 +1,18 @@
+"""Customer schemas for API responses."""
+
+from uuid import UUID
+
+from pydantic import BaseModel
+
+
+class CustomerItem(BaseModel):
+    id: UUID
+    first_name: str
+    last_name: str
+    phone_number: str
+    address: str
+
+
+class CustomerListResponse(BaseModel):
+    customers: list[CustomerItem]
+    total: int

@@ -5,11 +5,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_package_repository
+from app.dependencies import get_package_repository, require_admin_auth
 from app.repositories.packages import PackageRepository
 from app.schemas.packages import PackageItem, PackageListResponse
 
-router = APIRouter(prefix="/api/packages", tags=["packages"])
+router = APIRouter(
+    prefix="/api/packages",
+    tags=["packages"],
+    dependencies=[Depends(require_admin_auth)],
+)
 
 
 @router.get("", response_model=PackageListResponse)

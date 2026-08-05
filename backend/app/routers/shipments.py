@@ -5,11 +5,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.dependencies import get_shipment_repository
+from app.dependencies import get_shipment_repository, require_admin_auth
 from app.repositories.shipments import ShipmentRepository
 from app.schemas.shipments import ShipmentItem, ShipmentListResponse
 
-router = APIRouter(prefix="/api/shipments", tags=["shipments"])
+router = APIRouter(
+    prefix="/api/shipments",
+    tags=["shipments"],
+    dependencies=[Depends(require_admin_auth)],
+)
 
 
 @router.get("", response_model=ShipmentListResponse)
