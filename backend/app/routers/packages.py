@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_package_repository, get_shipment_repository, require_admin_auth
 from app.repositories.packages import PackageRepository
@@ -26,20 +26,22 @@ router = APIRouter(
 async def list_packages(
     limit: int = 100,
     offset: int = 0,
+    q: Annotated[str | None, Query()] = None,
     package_repo: Annotated[PackageRepository, Depends(get_package_repository)] = None,
 ) -> PackageListResponse:
     """List all packages with pagination.
-    
+
     Args:
         limit: Maximum number of packages to return
         offset: Number of packages to skip
+        q: Optional search query (description)
         package_repo: Package repository dependency
-        
+
     Returns:
         List of packages with total count
     """
-    packages = package_repo.list_packages(limit=limit, offset=offset)
-    total = package_repo.count_packages()
+    packages = package_repo.list_packages(limit=limit, offset=offset, q=q)
+    total = package_repo.count_packages(q=q)
     return PackageListResponse(
         packages=[PackageItem(**pkg) for pkg in packages],
         total=total,

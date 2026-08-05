@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useCreatePackageApiPackagesPost,
   useDeletePackageApiPackagesPackageIdDelete,
@@ -6,15 +6,23 @@ import {
   useUpdatePackageApiPackagesPackageIdPatch,
 } from '../../api/generated/client'
 import type { PackageItem } from '../../api/generated/schemas'
+import { useDebounce } from '../../lib/useDebounce'
 import { DataTable } from './DataTable'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { PackageFormModal, type PackageFormValues } from './PackageFormModal'
+import { TableSearchInput } from './TableSearchInput'
 
 const ITEMS_PER_PAGE = 10
 
 export function PackagesTable() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery])
 
   const [formState, setFormState] = useState<{ row?: PackageItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -23,7 +31,8 @@ export function PackagesTable() {
 
   const { data: response, isLoading, refetch } = useListPackagesApiPackagesGet({
     limit: ITEMS_PER_PAGE,
-    offset: offset,
+    offset,
+    q: debouncedQuery || undefined,
   })
   const data = (response?.data && 'packages' in response.data) ? response.data.packages : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -146,16 +155,23 @@ export function PackagesTable() {
           <h2 className="text-lg font-semibold text-slate-900">Packages</h2>
           <p className="text-sm text-slate-500">All packages across all shipments</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setFormError(null)
-            setFormState({})
-          }}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          + Add Package
-        </button>
+        <div className="flex items-center gap-3">
+          <TableSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search packages…"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null)
+              setFormState({})
+            }}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Add Package
+          </button>
+        </div>
       </div>
       <DataTable
         data={data}

@@ -66,19 +66,38 @@ class CustomerRepository:
             session.commit()
             return serialized
 
-    def list_all_customers(self, limit: int = 100, offset: int = 0) -> list[dict]:
+    def list_all_customers(self, limit: int = 100, offset: int = 0, q: str | None = None) -> list[dict]:
         with self._session_factory() as session:
-            customers = session.scalars(
-                select(Customer)
-                .order_by(Customer.last_name, Customer.first_name)
-                .limit(limit)
-                .offset(offset)
-            ).all()
+            stmt = select(Customer).order_by(Customer.last_name, Customer.first_name)
+            if q is not None:
+                pattern = f"%{q}%"
+                stmt = stmt.where(
+                    or_(
+                        Customer.first_name.ilike(pattern),
+                        Customer.last_name.ilike(pattern),
+                        func.concat(Customer.first_name, " ", Customer.last_name).ilike(pattern),
+                        Customer.phone_number.ilike(pattern),
+                        Customer.address.ilike(pattern),
+                    )
+                )
+            customers = session.scalars(stmt.limit(limit).offset(offset)).all()
             return [self._serialize_customer(customer) for customer in customers]
 
-    def count_customers(self) -> int:
+    def count_customers(self, q: str | None = None) -> int:
         with self._session_factory() as session:
-            return session.scalar(select(func.count()).select_from(Customer)) or 0
+            query = select(func.count()).select_from(Customer)
+            if q is not None:
+                pattern = f"%{q}%"
+                query = query.where(
+                    or_(
+                        Customer.first_name.ilike(pattern),
+                        Customer.last_name.ilike(pattern),
+                        func.concat(Customer.first_name, " ", Customer.last_name).ilike(pattern),
+                        Customer.phone_number.ilike(pattern),
+                        Customer.address.ilike(pattern),
+                    )
+                )
+            return session.scalar(query) or 0
 
     def search_customers(self, query: str, limit: int = 10) -> list[dict]:
         """Partial, case-insensitive search by first/last name or phone number."""

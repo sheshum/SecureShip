@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_customer_repository, require_admin_auth
 from app.repositories.customers import CustomerRepository
@@ -25,6 +25,7 @@ router = APIRouter(
 async def list_customers(
     limit: int = 100,
     offset: int = 0,
+    q: Annotated[str | None, Query()] = None,
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)] = None,
 ) -> CustomerListResponse:
     """List all customers with pagination.
@@ -32,13 +33,14 @@ async def list_customers(
     Args:
         limit: Maximum number of customers to return
         offset: Number of customers to skip
+        q: Optional search query (name, phone, address)
         customer_repo: Customer repository dependency
 
     Returns:
         List of customers with total count
     """
-    customers = customer_repo.list_all_customers(limit=limit, offset=offset)
-    total = customer_repo.count_customers()
+    customers = customer_repo.list_all_customers(limit=limit, offset=offset, q=q)
+    total = customer_repo.count_customers(q=q)
     return CustomerListResponse(
         customers=[CustomerItem(**customer) for customer in customers],
         total=total,

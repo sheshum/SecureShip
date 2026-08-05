@@ -45,21 +45,22 @@ class PackageRepository:
             session.commit()
             return serialized
 
-    def list_packages(self, limit: int = 100, offset: int = 0) -> list[dict]:
+    def list_packages(self, limit: int = 100, offset: int = 0, q: str | None = None) -> list[dict]:
         """List all packages with pagination (admin view)."""
         with self._session_factory() as session:
-            packages = session.scalars(
-                select(Package)
-                .options(selectinload(Package.shipment))
-                .limit(limit)
-                .offset(offset)
-            ).all()
+            stmt = select(Package).options(selectinload(Package.shipment))
+            if q is not None:
+                stmt = stmt.where(Package.description.ilike(f"%{q}%"))
+            packages = session.scalars(stmt.limit(limit).offset(offset)).all()
             return [self._serialize_package(pkg) for pkg in packages]
 
-    def count_packages(self) -> int:
+    def count_packages(self, q: str | None = None) -> int:
         """Return total count of all packages."""
         with self._session_factory() as session:
-            return session.scalar(select(func.count()).select_from(Package)) or 0
+            query = select(func.count()).select_from(Package)
+            if q is not None:
+                query = query.where(Package.description.ilike(f"%{q}%"))
+            return session.scalar(query) or 0
 
     def get_package(self, package_id: UUID) -> dict | None:
         """Get single package by ID (admin view)."""

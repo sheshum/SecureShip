@@ -11,4 +11,5 @@ export type ListShipmentsApiShipmentsGetParams = {
 limit?: number;
 offset?: number;
 status?: ShipmentStatus | null;
+q?: string | null;
 };

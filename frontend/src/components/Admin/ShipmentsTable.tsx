@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useCreateShipmentApiShipmentsPost,
   useDeleteShipmentApiShipmentsShipmentIdDelete,
@@ -7,10 +7,12 @@ import {
 } from '../../api/generated/client'
 import type { ShipmentItem } from '../../api/generated/schemas'
 import { ShipmentStatus } from '../../api/generated/schemas'
+import { useDebounce } from '../../lib/useDebounce'
 import { DataTable } from './DataTable'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { ShipmentFormModal, type ShipmentFormValues } from './ShipmentFormModal'
 import { TableFilterSelect } from './TableFilterSelect'
+import { TableSearchInput } from './TableSearchInput'
 
 const ITEMS_PER_PAGE = 10
 
@@ -30,7 +32,13 @@ const statusColors: Record<string, string> = {
 export function ShipmentsTable() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState<ShipmentStatus | ''>('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery])
 
   const handleFilterChange = (value: string) => {
     setFilterStatus(value as ShipmentStatus | '')
@@ -44,8 +52,9 @@ export function ShipmentsTable() {
 
   const { data: response, isLoading, refetch } = useListShipmentsApiShipmentsGet({
     limit: ITEMS_PER_PAGE,
-    offset: offset,
+    offset,
     status: filterStatus || undefined,
+    q: debouncedQuery || undefined,
   })
   const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -191,6 +200,11 @@ export function ShipmentsTable() {
           <p className="text-sm text-slate-500">All shipments across all customers</p>
         </div>
         <div className="flex items-center gap-3">
+          <TableSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search shipments…"
+          />
           <TableFilterSelect
             value={filterStatus}
             onChange={handleFilterChange}

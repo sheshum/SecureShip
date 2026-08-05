@@ -6,7 +6,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import SessionLocal
@@ -128,7 +128,7 @@ class ShipmentRepository:
             return session.scalars(stmt).all()
 
     def list_all_shipments(
-        self, limit: int = 100, offset: int = 0, status: ShipmentStatus | None = None
+        self, limit: int = 100, offset: int = 0, status: ShipmentStatus | None = None, q: str | None = None
     ) -> list[dict]:
         """List all shipments with pagination (admin view)."""
         with self._session_factory() as session:
@@ -139,15 +139,31 @@ class ShipmentRepository:
             )
             if status is not None:
                 stmt = stmt.where(Shipment.status == status)
+            if q is not None:
+                pattern = f"%{q}%"
+                stmt = stmt.where(
+                    or_(
+                        Shipment.tracking_number.ilike(pattern),
+                        Shipment.carrier.ilike(pattern),
+                    )
+                )
             shipments = session.scalars(stmt.limit(limit).offset(offset)).all()
             return [self._serialize_shipment_with_customer(ship) for ship in shipments]
 
-    def count_shipments(self, status: ShipmentStatus | None = None) -> int:
+    def count_shipments(self, status: ShipmentStatus | None = None, q: str | None = None) -> int:
         """Return total count of shipments, optionally filtered by status."""
         with self._session_factory() as session:
             query = select(func.count()).select_from(Shipment)
             if status is not None:
                 query = query.where(Shipment.status == status)
+            if q is not None:
+                pattern = f"%{q}%"
+                query = query.where(
+                    or_(
+                        Shipment.tracking_number.ilike(pattern),
+                        Shipment.carrier.ilike(pattern),
+                    )
+                )
             return session.scalar(query) or 0
 
     def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:

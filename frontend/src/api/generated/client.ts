@@ -669,6 +669,7 @@ export const getListPackagesApiPackagesGetUrl = (params?: ListPackagesApiPackage
  * Args:
  *     limit: Maximum number of packages to return
  *     offset: Number of packages to skip
+ *     q: Optional search query (description)
  *     package_repo: Package repository dependency
  *
  * Returns:
@@ -1339,6 +1340,7 @@ export const getListShipmentsApiShipmentsGetUrl = (params?: ListShipmentsApiShip
  *     limit: Maximum number of shipments to return
  *     offset: Number of shipments to skip
  *     status: Optional filter by shipment status
+ *     q: Optional search query (tracking number, carrier)
  *     shipment_repo: Shipment repository dependency
  *
  * Returns:
@@ -2008,6 +2010,7 @@ export const getListCustomersApiCustomersGetUrl = (params?: ListCustomersApiCust
  * Args:
  *     limit: Maximum number of customers to return
  *     offset: Number of customers to skip
+ *     q: Optional search query (name, phone, address)
  *     customer_repo: Customer repository dependency
  *
  * Returns:

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useCreateCustomerApiCustomersPost,
   useDeleteCustomerApiCustomersCustomerIdDelete,
@@ -6,15 +6,23 @@ import {
   useUpdateCustomerApiCustomersCustomerIdPatch,
 } from '../../api/generated/client'
 import type { CustomerItem } from '../../api/generated/schemas'
+import { useDebounce } from '../../lib/useDebounce'
 import { CustomerFormModal, type CustomerFormValues } from './CustomerFormModal'
 import { DataTable } from './DataTable'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { TableSearchInput } from './TableSearchInput'
 
 const ITEMS_PER_PAGE = 10
 
 export function CustomersTable() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+  const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedQuery])
 
   const [formState, setFormState] = useState<{ row?: CustomerItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -23,7 +31,8 @@ export function CustomersTable() {
 
   const { data: response, isLoading, refetch } = useListCustomersApiCustomersGet({
     limit: ITEMS_PER_PAGE,
-    offset: offset,
+    offset,
+    q: debouncedQuery || undefined,
   })
   const data = (response?.data && 'customers' in response.data) ? response.data.customers : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -121,16 +130,23 @@ export function CustomersTable() {
           <h2 className="text-lg font-semibold text-slate-900">Customers</h2>
           <p className="text-sm text-slate-500">All registered customers</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setFormError(null)
-            setFormState({})
-          }}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          + Add Customer
-        </button>
+        <div className="flex items-center gap-3">
+          <TableSearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search customers…"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null)
+              setFormState({})
+            }}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Add Customer
+          </button>
+        </div>
       </div>
       <DataTable
         data={data}
