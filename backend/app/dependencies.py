@@ -7,7 +7,7 @@ nowhere else, so swapping providers never touches business logic or routes.
 from functools import lru_cache
 from typing import Annotated, Any
 
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi_plugin import Auth0FastAPI
 
 from app.agent import SYSTEM_PROMPT, Agent
@@ -157,4 +157,7 @@ async def require_admin_auth(request: Request) -> dict:
     Built lazily (via get_auth0_client) so the app still boots and the public
     chat/auth flow keeps working when AUTH0_DOMAIN/AUTH0_AUDIENCE are unset.
     """
-    return await get_auth0_client().require_auth()(request)
+    claims = await get_auth0_client().require_auth()(request)
+    if "admin:all" not in claims.get("permissions", []):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return claims

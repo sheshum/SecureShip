@@ -26,15 +26,7 @@ function ChatHeader({ onClose }: ChatHeaderProps) {
   return (
     <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
       <div className="flex items-center gap-2">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5 text-sky-500"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M12 2L9.5 8.5L3 9l5.5 4.5L7 21l5-3.5L17 21l-1.5-7.5L21 9l-6.5-.5z" />
-          <path d="M12 0l-1.5 4L8 4.5l3 2.5L10 11l2-1.5L14 11l-1-4 3-2.5-2.5-.5z" opacity="0.6" />
-        </svg>
+        <img src="/Logo_icon_only.png" alt="" className="h-10 w-12" />
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-slate-700">SecureShip Assistant</p>
       </div>
       <button

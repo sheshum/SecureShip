@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { WelcomePage } from './pages/WelcomePage'
 import { ChatPage } from './pages/ChatPage'
 import { AdminPage } from './pages/AdminPage'
@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/Auth/ProtectedRoute'
 import { RedirectIfAuthenticated } from './components/Auth/RedirectIfAuthenticated'
 import { Auth0ProviderWithNavigate } from './auth/Auth0ProviderWithNavigate'
 import { Auth0TokenBridge } from './auth/Auth0TokenBridge'
+import { AppRoutes } from './lib/routes'
 
 function App() {
   return (
@@ -13,7 +14,7 @@ function App() {
       <Auth0TokenBridge />
       <Routes>
         <Route
-          path="/"
+          path={AppRoutes.Home}
           element={
             <RedirectIfAuthenticated>
               <WelcomePage />
@@ -21,7 +22,7 @@ function App() {
           }
         />
         <Route
-          path="/chat"
+          path={AppRoutes.Chat}
           element={
             <RedirectIfAuthenticated>
               <ChatPage />
@@ -29,13 +30,14 @@ function App() {
           }
         />
         <Route
-          path="/admin"
+          path={AppRoutes.Dashboard}
           element={
             <ProtectedRoute>
               <AdminPage />
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<Navigate to={AppRoutes.Home} replace />} />
       </Routes>
     </Auth0ProviderWithNavigate>
   )

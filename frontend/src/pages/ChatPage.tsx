@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AppRoutes } from '../lib/routes'
 import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
@@ -102,7 +103,7 @@ export function ChatPage() {
 
   const handleCloseSession = async () => {
     if (!sessionId) {
-      navigate('/')
+      navigate(AppRoutes.Home)
       return
     }
 
@@ -124,7 +125,7 @@ export function ChatPage() {
       }
 
       // Successfully closed - navigate home
-      navigate('/')
+      navigate(AppRoutes.Home)
     } catch (error) {
       console.error('Failed to close session:', error)
       setCloseError(error instanceof Error ? error.message : 'Failed to close session. Please try again.')

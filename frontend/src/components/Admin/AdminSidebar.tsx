@@ -9,17 +9,17 @@ interface AdminSidebarProps {
 
 const navItems: { value: AdminView; label: string }[] = [
   { value: 'sessions', label: 'Chat Sessions' },
+  { value: 'customers', label: 'Customers' },
   { value: 'shipments', label: 'Shipments' },
   { value: 'packages', label: 'Packages' },
-  { value: 'customers', label: 'Customers' },
 ]
 
 export function AdminSidebar({ activeView, onNavigate, userEmail, onLogout }: AdminSidebarProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Branding */}
-      <div className="border-b border-slate-200 px-4 py-6">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">SECURESHIP</h1>
+      <div className="border-b border-slate-200 px-4 py-3">
+        <img src="/Logo3_wide.png" alt="SecureShipAI" className="h-16 w-auto" />
       </div>
 
       {/* Navigation */}
@@ -46,8 +46,11 @@ export function AdminSidebar({ activeView, onNavigate, userEmail, onLogout }: Ad
         <button
           type="button"
           onClick={onLogout}
-          className="w-full rounded-lg px-4 py-2.5 text-left text-m font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-slate-900"
         >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+          </svg>
           Log out
         </button>
       </div>
