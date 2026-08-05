@@ -23,6 +23,8 @@ class SessionItem(BaseModel):
     state: ChatSessionState
     started_at: datetime
     ended_at: datetime | None
+    customer_id: UUID | None = None
+    customer_name: str | None = None
 
 
 class SessionListResponse(BaseModel):

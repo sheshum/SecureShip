@@ -12,4 +12,6 @@ export interface SessionItem {
   state: ChatSessionState;
   started_at: string;
   ended_at: string | null;
+  customer_id?: string | null;
+  customer_name?: string | null;
 }

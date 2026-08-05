@@ -10,4 +10,5 @@ export type ListCustomersApiCustomersGetParams = {
 limit?: number;
 offset?: number;
 q?: string | null;
+customer_id?: string | null;
 };

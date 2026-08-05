@@ -66,7 +66,9 @@ class CustomerRepository:
             session.commit()
             return serialized
 
-    def list_all_customers(self, limit: int = 100, offset: int = 0, q: str | None = None) -> list[dict]:
+    def list_all_customers(
+        self, limit: int = 100, offset: int = 0, q: str | None = None, customer_id: UUID | None = None
+    ) -> list[dict]:
         with self._session_factory() as session:
             stmt = select(Customer).order_by(Customer.last_name, Customer.first_name)
             if q is not None:
@@ -80,10 +82,12 @@ class CustomerRepository:
                         Customer.address.ilike(pattern),
                     )
                 )
+            if customer_id is not None:
+                stmt = stmt.where(Customer.id == customer_id)
             customers = session.scalars(stmt.limit(limit).offset(offset)).all()
             return [self._serialize_customer(customer) for customer in customers]
 
-    def count_customers(self, q: str | None = None) -> int:
+    def count_customers(self, q: str | None = None, customer_id: UUID | None = None) -> int:
         with self._session_factory() as session:
             query = select(func.count()).select_from(Customer)
             if q is not None:
@@ -97,6 +101,8 @@ class CustomerRepository:
                         Customer.address.ilike(pattern),
                     )
                 )
+            if customer_id is not None:
+                query = query.where(Customer.id == customer_id)
             return session.scalar(query) or 0
 
     def search_customers(self, query: str, limit: int = 10) -> list[dict]:

@@ -26,6 +26,7 @@ async def list_customers(
     limit: int = 100,
     offset: int = 0,
     q: Annotated[str | None, Query()] = None,
+    customer_id: Annotated[UUID | None, Query()] = None,
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)] = None,
 ) -> CustomerListResponse:
     """List all customers with pagination.
@@ -34,13 +35,14 @@ async def list_customers(
         limit: Maximum number of customers to return
         offset: Number of customers to skip
         q: Optional search query (name, phone, address)
+        customer_id: Optional filter by exact customer UUID
         customer_repo: Customer repository dependency
 
     Returns:
         List of customers with total count
     """
-    customers = customer_repo.list_all_customers(limit=limit, offset=offset, q=q)
-    total = customer_repo.count_customers(q=q)
+    customers = customer_repo.list_all_customers(limit=limit, offset=offset, q=q, customer_id=customer_id)
+    total = customer_repo.count_customers(q=q, customer_id=customer_id)
     return CustomerListResponse(
         customers=[CustomerItem(**customer) for customer in customers],
         total=total,

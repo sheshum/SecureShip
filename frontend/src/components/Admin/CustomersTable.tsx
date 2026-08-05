@@ -14,7 +14,12 @@ import { TableSearchInput } from './TableSearchInput'
 
 const ITEMS_PER_PAGE = 10
 
-export function CustomersTable() {
+type CustomersTableProps = {
+  initialCustomerId?: string
+  onNavigateToShipments?: (customerId: string) => void
+}
+
+export function CustomersTable({ initialCustomerId, onNavigateToShipments }: CustomersTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedQuery = useDebounce(searchQuery, 300)
@@ -33,6 +38,7 @@ export function CustomersTable() {
     limit: ITEMS_PER_PAGE,
     offset,
     q: debouncedQuery || undefined,
+    customer_id: initialCustomerId || undefined,
   })
   const data = (response?.data && 'customers' in response.data) ? response.data.customers : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -98,6 +104,15 @@ export function CustomersTable() {
       key: 'actions',
       accessor: (row: CustomerItem) => (
         <div className="flex gap-2">
+          {onNavigateToShipments && (
+            <button
+              type="button"
+              onClick={() => onNavigateToShipments(row.id)}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+            >
+              Shipments →
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -130,24 +145,31 @@ export function CustomersTable() {
           <h2 className="text-lg font-semibold text-slate-900">Customers</h2>
           <p className="text-sm text-slate-500">All registered customers</p>
         </div>
-        <div className="flex items-center gap-3">
-          <TableSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search customers…"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setFormError(null)
-              setFormState({})
-            }}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            + Add Customer
-          </button>
-        </div>
+        {!initialCustomerId && (
+          <div className="flex items-center gap-3">
+            <TableSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search customers…"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setFormError(null)
+                setFormState({})
+              }}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              + Add Customer
+            </button>
+          </div>
+        )}
       </div>
+      {initialCustomerId && (
+        <div className="mb-3 flex items-center rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800">
+          <span>Showing customer from session</span>
+        </div>
+      )}
       <DataTable
         data={data}
         columns={columns}

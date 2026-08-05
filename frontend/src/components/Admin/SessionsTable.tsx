@@ -12,7 +12,11 @@ const SESSION_STATE_OPTIONS = Object.values(ChatSessionState).map((state) => ({
   label: state.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
 }))
 
-export function SessionsTable() {
+type SessionsTableProps = {
+  onNavigateToCustomers?: (customerId: string) => void
+}
+
+export function SessionsTable({ onNavigateToCustomers }: SessionsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterState, setFilterState] = useState<ChatSessionState | ''>('')
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
@@ -39,6 +43,11 @@ export function SessionsTable() {
       ),
     },
     {
+      header: 'Customer',
+      key: 'customer_name',
+      accessor: (row: SessionItem) => row.customer_name ?? '—',
+    },
+    {
       header: 'State',
       key: 'state',
       accessor: (row: SessionItem) => (
@@ -56,6 +65,22 @@ export function SessionsTable() {
       header: 'Ended',
       key: 'ended_at',
       accessor: (row: SessionItem) => (row.ended_at ? new Date(row.ended_at).toLocaleString() : '—'),
+    },
+    {
+      header: 'Actions',
+      key: 'actions',
+      accessor: (row: SessionItem) =>
+        row.customer_id ? (
+          <button
+            type="button"
+            onClick={() => onNavigateToCustomers?.(row.customer_id!)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+          >
+            View Customer →
+          </button>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        ),
     },
   ]
 

@@ -14,15 +14,24 @@ import { TableSearchInput } from './TableSearchInput'
 
 const ITEMS_PER_PAGE = 10
 
-export function PackagesTable() {
+type PackagesTableProps = {
+  initialShipmentId?: string
+}
+
+export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
+  const [shipmentIdFilter, setShipmentIdFilter] = useState<string | undefined>(initialShipmentId)
   const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedQuery])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [shipmentIdFilter])
 
   const [formState, setFormState] = useState<{ row?: PackageItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -33,6 +42,7 @@ export function PackagesTable() {
     limit: ITEMS_PER_PAGE,
     offset,
     q: debouncedQuery || undefined,
+    shipment_id: shipmentIdFilter || undefined,
   })
   const data = (response?.data && 'packages' in response.data) ? response.data.packages : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -155,24 +165,38 @@ export function PackagesTable() {
           <h2 className="text-lg font-semibold text-slate-900">Packages</h2>
           <p className="text-sm text-slate-500">All packages across all shipments</p>
         </div>
-        <div className="flex items-center gap-3">
-          <TableSearchInput
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search packages…"
-          />
+        {!shipmentIdFilter && (
+          <div className="flex items-center gap-3">
+            <TableSearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search packages…"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setFormError(null)
+                setFormState({})
+              }}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              + Add Package
+            </button>
+          </div>
+        )}
+      </div>
+      {shipmentIdFilter && (
+        <div className="mb-3 flex items-center rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800">
+          <span>Filtered by shipment</span>
           <button
             type="button"
-            onClick={() => {
-              setFormError(null)
-              setFormState({})
-            }}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            onClick={() => setShipmentIdFilter(undefined)}
+            className="ml-auto text-xs font-semibold text-sky-700 transition hover:text-sky-900"
           >
-            + Add Package
+            Clear ×
           </button>
         </div>
-      </div>
+      )}
       <DataTable
         data={data}
         columns={columns}

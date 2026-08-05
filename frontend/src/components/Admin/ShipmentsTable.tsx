@@ -29,16 +29,26 @@ const statusColors: Record<string, string> = {
   exception: 'bg-orange-100 text-orange-800',
 }
 
-export function ShipmentsTable() {
+type ShipmentsTableProps = {
+  initialCustomerId?: string
+  onNavigateToPackages?: (shipmentId: string) => void
+}
+
+export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: ShipmentsTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterStatus, setFilterStatus] = useState<ShipmentStatus | ''>('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [customerIdFilter, setCustomerIdFilter] = useState<string | undefined>(initialCustomerId)
   const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
   useEffect(() => {
     setCurrentPage(1)
   }, [debouncedQuery])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [customerIdFilter])
 
   const handleFilterChange = (value: string) => {
     setFilterStatus(value as ShipmentStatus | '')
@@ -55,6 +65,7 @@ export function ShipmentsTable() {
     offset,
     status: filterStatus || undefined,
     q: debouncedQuery || undefined,
+    customer_id: customerIdFilter || undefined,
   })
   const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -167,6 +178,15 @@ export function ShipmentsTable() {
       key: 'actions',
       accessor: (row: ShipmentItem) => (
         <div className="flex gap-2">
+          {onNavigateToPackages && (
+            <button
+              type="button"
+              onClick={() => onNavigateToPackages(row.id)}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+            >
+              Packages →
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -223,6 +243,18 @@ export function ShipmentsTable() {
           </button>
         </div>
       </div>
+      {customerIdFilter && (
+        <div className="mb-3 flex items-center rounded-lg bg-sky-50 px-3 py-2 text-sm text-sky-800">
+          <span>Filtered by customer</span>
+          <button
+            type="button"
+            onClick={() => setCustomerIdFilter(undefined)}
+            className="ml-auto text-xs font-semibold text-sky-700 transition hover:text-sky-900"
+          >
+            Clear ×
+          </button>
+        </div>
+      )}
       <DataTable
         data={data}
         columns={columns}

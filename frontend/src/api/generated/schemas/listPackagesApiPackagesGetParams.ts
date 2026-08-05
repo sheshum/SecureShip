@@ -10,4 +10,5 @@ export type ListPackagesApiPackagesGetParams = {
 limit?: number;
 offset?: number;
 q?: string | null;
+shipment_id?: string | null;
 };

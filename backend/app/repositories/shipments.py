@@ -128,7 +128,12 @@ class ShipmentRepository:
             return session.scalars(stmt).all()
 
     def list_all_shipments(
-        self, limit: int = 100, offset: int = 0, status: ShipmentStatus | None = None, q: str | None = None
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        status: ShipmentStatus | None = None,
+        q: str | None = None,
+        customer_id: UUID | None = None,
     ) -> list[dict]:
         """List all shipments with pagination (admin view)."""
         with self._session_factory() as session:
@@ -147,10 +152,17 @@ class ShipmentRepository:
                         Shipment.carrier.ilike(pattern),
                     )
                 )
+            if customer_id is not None:
+                stmt = stmt.where(Shipment.customer_id == customer_id)
             shipments = session.scalars(stmt.limit(limit).offset(offset)).all()
             return [self._serialize_shipment_with_customer(ship) for ship in shipments]
 
-    def count_shipments(self, status: ShipmentStatus | None = None, q: str | None = None) -> int:
+    def count_shipments(
+        self,
+        status: ShipmentStatus | None = None,
+        q: str | None = None,
+        customer_id: UUID | None = None,
+    ) -> int:
         """Return total count of shipments, optionally filtered by status."""
         with self._session_factory() as session:
             query = select(func.count()).select_from(Shipment)
@@ -164,6 +176,8 @@ class ShipmentRepository:
                         Shipment.carrier.ilike(pattern),
                     )
                 )
+            if customer_id is not None:
+                query = query.where(Shipment.customer_id == customer_id)
             return session.scalar(query) or 0
 
     def get_shipment_by_tracking_number(self, tracking_number: str) -> dict | None:

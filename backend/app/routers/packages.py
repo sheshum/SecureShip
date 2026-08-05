@@ -27,6 +27,7 @@ async def list_packages(
     limit: int = 100,
     offset: int = 0,
     q: Annotated[str | None, Query()] = None,
+    shipment_id: Annotated[UUID | None, Query()] = None,
     package_repo: Annotated[PackageRepository, Depends(get_package_repository)] = None,
 ) -> PackageListResponse:
     """List all packages with pagination.
@@ -35,13 +36,14 @@ async def list_packages(
         limit: Maximum number of packages to return
         offset: Number of packages to skip
         q: Optional search query (description)
+        shipment_id: Optional filter by shipment UUID
         package_repo: Package repository dependency
 
     Returns:
         List of packages with total count
     """
-    packages = package_repo.list_packages(limit=limit, offset=offset, q=q)
-    total = package_repo.count_packages(q=q)
+    packages = package_repo.list_packages(limit=limit, offset=offset, q=q, shipment_id=shipment_id)
+    total = package_repo.count_packages(q=q, shipment_id=shipment_id)
     return PackageListResponse(
         packages=[PackageItem(**pkg) for pkg in packages],
         total=total,

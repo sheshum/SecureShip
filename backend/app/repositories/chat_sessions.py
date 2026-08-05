@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db import SessionLocal
 from app.models import ChatSession
@@ -25,7 +25,7 @@ class ChatSessionRepository:
         self, limit: int = 100, offset: int = 0, state: ChatSessionState | None = None
     ) -> list[ChatSession]:
         with self._session_factory() as session:
-            query = select(ChatSession)
+            query = select(ChatSession).options(joinedload(ChatSession.customer))
             if state is not None:
                 query = query.where(ChatSession.state == state)
             query = query.order_by(ChatSession.started_at.desc())

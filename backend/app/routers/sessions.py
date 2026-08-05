@@ -40,6 +40,10 @@ async def list_sessions(
                 state=ChatSessionState(s.state),
                 started_at=s.started_at,
                 ended_at=s.ended_at,
+                customer_id=s.customer_id,
+                customer_name=(
+                    f"{s.customer.first_name} {s.customer.last_name}" if s.customer else None
+                ),
             )
             for s in sessions_data
         ],

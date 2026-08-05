@@ -12,4 +12,5 @@ limit?: number;
 offset?: number;
 status?: ShipmentStatus | null;
 q?: string | null;
+customer_id?: string | null;
 };
