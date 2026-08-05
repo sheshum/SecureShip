@@ -5,12 +5,13 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { ShipmentStatus } from './shipmentStatus';
 
 export interface ShipmentItem {
   id: string;
   customer_id: string;
   tracking_number: string;
-  status: string;
+  status: ShipmentStatus;
   carrier: string;
   origin: string;
   destination: string;

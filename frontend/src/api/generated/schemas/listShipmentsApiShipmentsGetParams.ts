@@ -5,8 +5,10 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { ShipmentStatus } from './shipmentStatus';
 
 export type ListShipmentsApiShipmentsGetParams = {
 limit?: number;
 offset?: number;
+status?: ShipmentStatus | null;
 };

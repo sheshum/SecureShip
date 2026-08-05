@@ -1,21 +1,25 @@
 """Shipment schemas for API responses."""
 
 from datetime import date, datetime
-from typing import Literal
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.models import SHIPMENT_STATUSES
 
-ShipmentStatus = Literal[*SHIPMENT_STATUSES]
+class ShipmentStatus(StrEnum):
+    LABEL_CREATED = "label_created"
+    IN_TRANSIT = "in_transit"
+    OUT_FOR_DELIVERY = "out_for_delivery"
+    DELIVERED = "delivered"
+    EXCEPTION = "exception"
 
 
 class ShipmentItem(BaseModel):
     id: UUID
     customer_id: UUID
     tracking_number: str
-    status: str
+    status: ShipmentStatus
     carrier: str
     origin: str
     destination: str

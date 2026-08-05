@@ -5,11 +5,11 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
-import type { ShipmentUpdateRequestStatus } from './shipmentUpdateRequestStatus';
+import type { ShipmentStatus } from './shipmentStatus';
 
 export interface ShipmentUpdateRequest {
   tracking_number?: string | null;
-  status?: ShipmentUpdateRequestStatus;
+  status?: ShipmentStatus | null;
   carrier?: string | null;
   origin?: string | null;
   destination?: string | null;

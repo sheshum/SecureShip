@@ -5,16 +5,19 @@ import {
   useListShipmentsApiShipmentsGet,
   useUpdateShipmentApiShipmentsShipmentIdPatch,
 } from '../../api/generated/client'
-import type {
-  ShipmentCreateRequestStatus,
-  ShipmentItem,
-  ShipmentUpdateRequestStatus,
-} from '../../api/generated/schemas'
+import type { ShipmentItem } from '../../api/generated/schemas'
+import { ShipmentStatus } from '../../api/generated/schemas'
 import { DataTable } from './DataTable'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { ShipmentFormModal, type ShipmentFormValues } from './ShipmentFormModal'
+import { TableFilterSelect } from './TableFilterSelect'
 
 const ITEMS_PER_PAGE = 10
+
+const SHIPMENT_STATUS_OPTIONS = Object.values(ShipmentStatus).map((status) => ({
+  value: status,
+  label: status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+}))
 
 const statusColors: Record<string, string> = {
   delivered: 'bg-green-100 text-green-800',
@@ -26,7 +29,13 @@ const statusColors: Record<string, string> = {
 
 export function ShipmentsTable() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [filterStatus, setFilterStatus] = useState<ShipmentStatus | ''>('')
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
+
+  const handleFilterChange = (value: string) => {
+    setFilterStatus(value as ShipmentStatus | '')
+    setCurrentPage(1)
+  }
 
   const [formState, setFormState] = useState<{ row?: ShipmentItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -36,6 +45,7 @@ export function ShipmentsTable() {
   const { data: response, isLoading, refetch } = useListShipmentsApiShipmentsGet({
     limit: ITEMS_PER_PAGE,
     offset: offset,
+    status: filterStatus || undefined,
   })
   const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
   const total = (response?.data && 'total' in response.data) ? response.data.total : 0
@@ -52,7 +62,7 @@ export function ShipmentsTable() {
           shipmentId: formState.row.id,
           data: {
             tracking_number: values.tracking_number,
-            status: values.status as ShipmentUpdateRequestStatus,
+            status: values.status as ShipmentStatus,
             carrier: values.carrier,
             origin: values.origin,
             destination: values.destination,
@@ -64,7 +74,7 @@ export function ShipmentsTable() {
           data: {
             customer_id: values.customer_id,
             tracking_number: values.tracking_number,
-            status: values.status as ShipmentCreateRequestStatus,
+            status: values.status as ShipmentStatus,
             carrier: values.carrier,
             origin: values.origin,
             destination: values.destination,
@@ -180,16 +190,24 @@ export function ShipmentsTable() {
           <h2 className="text-lg font-semibold text-slate-900">Shipments</h2>
           <p className="text-sm text-slate-500">All shipments across all customers</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setFormError(null)
-            setFormState({})
-          }}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-        >
-          + Add Shipment
-        </button>
+        <div className="flex items-center gap-3">
+          <TableFilterSelect
+            value={filterStatus}
+            onChange={handleFilterChange}
+            options={SHIPMENT_STATUS_OPTIONS}
+            allLabel="All statuses"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null)
+              setFormState({})
+            }}
+            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            + Add Shipment
+          </button>
+        </div>
       </div>
       <DataTable
         data={data}

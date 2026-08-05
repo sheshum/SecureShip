@@ -5,8 +5,10 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { ChatSessionState } from './chatSessionState';
 
 export type ListSessionsApiSessionsGetParams = {
 limit?: number;
 offset?: number;
+state?: ChatSessionState | null;
 };

@@ -429,6 +429,7 @@ export const getListSessionsApiSessionsGetUrl = (params?: ListSessionsApiSession
  * Args:
  *     limit: Maximum number of sessions to return
  *     offset: Number of sessions to skip
+ *     state: Optional filter by session state
  *     session_repo: Session repository dependency
  *
  * Returns:
@@ -1337,6 +1338,7 @@ export const getListShipmentsApiShipmentsGetUrl = (params?: ListShipmentsApiShip
  * Args:
  *     limit: Maximum number of shipments to return
  *     offset: Number of shipments to skip
+ *     status: Optional filter by shipment status
  *     shipment_repo: Shipment repository dependency
  *
  * Returns:

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_chat_session_repository, require_admin_auth
 from app.repositories.chat_sessions import ChatSessionRepository
@@ -17,20 +17,22 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 async def list_sessions(
     limit: int = 100,
     offset: int = 0,
+    state: Annotated[ChatSessionState | None, Query()] = None,
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)] = None,
 ) -> SessionListResponse:
     """List all chat sessions with pagination.
-    
+
     Args:
         limit: Maximum number of sessions to return
         offset: Number of sessions to skip
+        state: Optional filter by session state
         session_repo: Session repository dependency
-        
+
     Returns:
         List of chat sessions
     """
-    sessions_data = session_repo.list_sessions(limit=limit, offset=offset)
-    total = session_repo.count_sessions()
+    sessions_data = session_repo.list_sessions(limit=limit, offset=offset, state=state)
+    total = session_repo.count_sessions(state=state)
     return SessionListResponse(
         sessions=[
             SessionItem(

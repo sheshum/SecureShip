@@ -91,6 +91,10 @@ export function CustomerFormModal({
               value={values.phone_number}
               onChange={(event) => setValues({ ...values, phone_number: event.target.value })}
               required
+              pattern="\+[1-9]\d{1,11}"
+              title="Phone number must be in E.164 format, e.g. +14556801189"
+              placeholder="+14556801189"
+              maxLength={13}
               disabled={isSubmitting}
               className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 focus:border-sky-400 focus:outline-none"
             />

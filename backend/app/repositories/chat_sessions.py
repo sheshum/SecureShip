@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -21,18 +21,24 @@ class ChatSessionRepository:
     def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
 
-    def list_sessions(self, limit: int = 100, offset: int = 0) -> list[ChatSession]:
+    def list_sessions(
+        self, limit: int = 100, offset: int = 0, state: ChatSessionState | None = None
+    ) -> list[ChatSession]:
         with self._session_factory() as session:
             query = select(ChatSession)
+            if state is not None:
+                query = query.where(ChatSession.state == state)
             query = query.order_by(ChatSession.started_at.desc())
             query = query.limit(limit).offset(offset)
             return session.scalars(query).all()
 
-    def count_sessions(self) -> int:
-        """Return total count of all sessions."""
+    def count_sessions(self, state: ChatSessionState | None = None) -> int:
+        """Return total count of sessions, optionally filtered by state."""
         with self._session_factory() as session:
-            from sqlalchemy import func
-            return session.scalar(select(func.count()).select_from(ChatSession)) or 0
+            query = select(func.count()).select_from(ChatSession)
+            if state is not None:
+                query = query.where(ChatSession.state == state)
+            return session.scalar(query) or 0
 
     def create_session(self, now: datetime) -> ChatSession:
         with self._session_factory() as session:

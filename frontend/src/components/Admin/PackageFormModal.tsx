@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { useSearchShipmentsApiShipmentsSearchGet } from '../../api/generated/client'
 import type { PackageItem } from '../../api/generated/schemas'
 
 export type PackageFormValues = {
@@ -35,6 +36,11 @@ export function PackageFormModal({
   const [values, setValues] = useState<PackageFormValues>(EMPTY_VALUES)
   const isEdit = Boolean(initialValues)
 
+  const [shipmentQuery, setShipmentQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [showShipmentResults, setShowShipmentResults] = useState(false)
+  const [shipmentSelectionError, setShipmentSelectionError] = useState<string | null>(null)
+
   useEffect(() => {
     if (isOpen) {
       setValues(
@@ -47,8 +53,22 @@ export function PackageFormModal({
             }
           : EMPTY_VALUES,
       )
+      setShipmentQuery('')
+      setShowShipmentResults(false)
+      setShipmentSelectionError(null)
     }
   }, [isOpen, initialValues])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(shipmentQuery.trim()), 300)
+    return () => clearTimeout(timeout)
+  }, [shipmentQuery])
+
+  const { data: shipmentSearchResponse } = useSearchShipmentsApiShipmentsSearchGet(
+    { q: debouncedQuery, limit: 10 },
+    { query: { enabled: !isEdit && debouncedQuery.length >= 2 } },
+  )
+  const shipmentResults = Array.isArray(shipmentSearchResponse?.data) ? shipmentSearchResponse.data : []
 
   if (!isOpen) {
     return null
@@ -56,6 +76,11 @@ export function PackageFormModal({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!isEdit && !values.tracking_number) {
+      setShipmentSelectionError('Select a shipment from the search results')
+      return
+    }
+    setShipmentSelectionError(null)
     await onSubmit(values)
   }
 
@@ -72,21 +97,57 @@ export function PackageFormModal({
         <h3 className="text-lg font-semibold text-slate-900">{isEdit ? 'Edit Package' : 'Add Package'}</h3>
 
         <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
-          <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
+          <label className="relative flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
             Shipment
             {isEdit ? (
               <span className="min-h-11 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2.5 text-sm font-normal normal-case tracking-normal text-slate-600">
                 {values.tracking_number || '—'}
               </span>
             ) : (
-              <input
-                value={values.tracking_number}
-                onChange={(event) => setValues({ ...values, tracking_number: event.target.value })}
-                required
-                disabled={isSubmitting}
-                placeholder="Tracking number"
-                className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 focus:border-sky-400 focus:outline-none disabled:bg-slate-100"
-              />
+              <>
+                <input
+                  value={shipmentQuery}
+                  onChange={(event) => {
+                    setShipmentQuery(event.target.value)
+                    setValues({ ...values, tracking_number: '' })
+                    setShowShipmentResults(true)
+                  }}
+                  onFocus={() => setShowShipmentResults(true)}
+                  required
+                  disabled={isSubmitting}
+                  placeholder="Search by tracking number"
+                  autoComplete="off"
+                  className="min-h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal normal-case tracking-normal text-slate-900 focus:border-sky-400 focus:outline-none disabled:bg-slate-100"
+                />
+                {showShipmentResults && shipmentResults.length > 0 ? (
+                  <ul className="absolute top-full z-10 mt-1 w-full rounded-xl border border-slate-200 bg-white shadow-lg">
+                    {shipmentResults.map((shipment) => (
+                      <li key={shipment.id}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setValues({ ...values, tracking_number: shipment.tracking_number })
+                            setShipmentQuery(shipment.tracking_number)
+                            setShowShipmentResults(false)
+                          }}
+                          className="flex w-full flex-col gap-0.5 px-3 py-2 text-left text-sm font-normal normal-case tracking-normal text-slate-900 hover:bg-slate-100"
+                        >
+                          <span className="font-semibold">{shipment.tracking_number}</span>
+                          <span className="text-xs text-slate-500">
+                            {shipment.carrier} · {shipment.status.replace(/_/g, ' ')} · {shipment.origin} →{' '}
+                            {shipment.destination}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {shipmentSelectionError ? (
+                  <span className="text-xs font-normal normal-case tracking-normal text-rose-700">
+                    {shipmentSelectionError}
+                  </span>
+                ) : null}
+              </>
             )}
           </label>
 

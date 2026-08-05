@@ -3,7 +3,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import get_shipment_repository, require_admin_auth
 from app.repositories.shipments import ShipmentRepository
@@ -11,6 +11,7 @@ from app.schemas.shipments import (
     ShipmentCreateRequest,
     ShipmentItem,
     ShipmentListResponse,
+    ShipmentStatus,
     ShipmentUpdateRequest,
 )
 
@@ -25,20 +26,22 @@ router = APIRouter(
 async def list_shipments(
     limit: int = 100,
     offset: int = 0,
+    status: Annotated[ShipmentStatus | None, Query()] = None,
     shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
 ) -> ShipmentListResponse:
     """List all shipments with pagination.
-    
+
     Args:
         limit: Maximum number of shipments to return
         offset: Number of shipments to skip
+        status: Optional filter by shipment status
         shipment_repo: Shipment repository dependency
-        
+
     Returns:
         List of shipments with total count
     """
-    shipments = shipment_repo.list_all_shipments(limit=limit, offset=offset)
-    total = shipment_repo.count_shipments()
+    shipments = shipment_repo.list_all_shipments(limit=limit, offset=offset, status=status)
+    total = shipment_repo.count_shipments(status=status)
     return ShipmentListResponse(
         shipments=[ShipmentItem(**ship) for ship in shipments],
         total=total,
