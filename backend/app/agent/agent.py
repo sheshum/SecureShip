@@ -3,7 +3,7 @@
 import json
 
 from app.agent.result import AgentResult
-from app.agent.session import AgentSession
+from app.agent.session import AgentSession, SessionStateRefresher
 from app.llm.base import LLMClient, LLMMessage
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
@@ -44,7 +44,7 @@ class Agent:
         self.tool_registry = tool_registry
         self.system_prompt = system_prompt
 
-    def resolve_available_tools(self, session_state: ChatSessionState) -> list[ToolSpec]:
+    def _resolve_available_tools(self, session_state: ChatSessionState) -> list[ToolSpec]:
         """Resolve available tools based on session state.
 
         Args:
@@ -64,18 +64,27 @@ class Agent:
                 self.tool_registry["escalate_to_human"].schema,
             ]
         else:
-            return [t.schema for t in self.tool_registry.values()]
+            return [t.schema for t in self.tool_registry.values() if t.name not in ["request_identity_info", "verify_identity"]]
+
+    def _build_messages(self, session: AgentSession, prompt: str) -> list[LLMMessage]:
+        messages = [LLMMessage(role="system", content=self.system_prompt)]
+        for msg in session.history:
+            messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
+        messages.append(LLMMessage(role="user", content=prompt))
+        return messages
 
     async def execute_turn(
         self,
         prompt: str,
         session: AgentSession,
+        state_refresher: SessionStateRefresher,
     ) -> AgentResult:
         """Execute one conversational turn with agentic loop.
 
         Args:
             prompt: User's message
             session: Immutable session snapshot (state, history, etc.)
+            state_refresher: Callable that returns fresh (state, customer_id) from the store.
 
         Returns:
             AgentResult with final reply and full message list
@@ -90,18 +99,20 @@ class Agent:
             state=session.state,
         )
     
-        available_tools = self.resolve_available_tools(session.state)
-
-        messages = [LLMMessage(role="system", content=self.system_prompt)]
-
-        for msg in session.history:
-            messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
-
-        messages.append(LLMMessage(role="user", content=prompt))
-
+        available_tools = self._resolve_available_tools(session.state)
+        messages = self._build_messages(session, prompt)
         tool_calls_made = 0
 
         while True:
+            log_console(
+                "Agent Turn",
+                {
+                    "session_id": str(session.session_id),
+                    "customer_id": session.customer_id,
+                    "state": session.state,
+                    "messages_count": len(messages),
+                },
+            )
             completion = await self.llm_client.plan_chat_turn(
                 messages=messages,
                 tools=available_tools if available_tools else None,
@@ -129,7 +140,6 @@ class Agent:
             if not completion.tool_calls:
                 break  # Done - no more tool calls
 
-            # Log tool calls
             log_console(
                 "Tool Calls",
                 [
@@ -161,6 +171,14 @@ class Agent:
                         tool_call_id=tool_call.id,
                     )
                 )
+
+            fresh_state, fresh_customer_id = await state_refresher(session.session_id)
+            auth_context = AuthContext(
+                session_id=session.session_id,
+                customer_id=fresh_customer_id,
+                state=fresh_state,
+            )
+            available_tools = self._resolve_available_tools(fresh_state)
 
         return AgentResult(
             reply=completion.content or "",

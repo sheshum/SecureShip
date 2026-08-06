@@ -1,9 +1,16 @@
 """Agent session: immutable snapshot of session state for one turn."""
 
 from dataclasses import dataclass
+from typing import Protocol
 from uuid import UUID
 
 from app.schemas.sessions import ChatSessionState
+
+
+class SessionStateRefresher(Protocol):
+    """Fetches current (state, customer_id) for a session from the store."""
+
+    async def __call__(self, session_id: UUID) -> tuple[ChatSessionState, int | None]: ...
 
 
 @dataclass(frozen=True)

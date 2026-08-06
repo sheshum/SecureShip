@@ -90,7 +90,7 @@ class VerifyIdentityTool:
         Returns:
             ToolResult with neutral success or failure message (enumeration-proof)
         """
-        if context.state != ChatSessionState.ANONYMOUS:
+        if context.state != ChatSessionState.ANONYMOUS and context.state != ChatSessionState.COLLECTING_IDENTITY:
             # This should never happen (dispatch_tool_call checks verification)
             log_console(
                 f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}"

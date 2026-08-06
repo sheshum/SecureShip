@@ -62,10 +62,17 @@ async def chat(
     )
 
     # 3. Execute agent turn (pure orchestration, no DB)
+    async def _refresh_state(session_id: UUID) -> tuple[ChatSessionState, int | None]:
+        s = session_repo.get_session(session_id)
+        if s is None:
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+        return (s.state, s.customer_id)
+
     try:
         result = await agent.execute_turn(
             prompt=request.prompt,
             session=agent_session,
+            state_refresher=_refresh_state,
         )
     except LLMError as exc:
         raise HTTPException(
