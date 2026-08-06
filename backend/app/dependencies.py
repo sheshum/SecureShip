@@ -25,7 +25,7 @@ from app.tools.escalate_to_human import EscalateToHumanTool
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
 from app.tools.tool_registry import TOOL_REGISTRY, get_tool_metadata, register_tool
-from app.tools.verify_identity import VerifyIdentityTool
+from app.tools.start_identity_verification import StartIdentityVerificationTool
 
 
 @lru_cache
@@ -62,15 +62,15 @@ def get_session_verification_repository() -> SessionVerificationRepository:
 
 
 
-def get_verify_identity_tool(
+def get_start_identity_verification_tool(
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
     verification_repo: Annotated[
         SessionVerificationRepository, Depends(get_session_verification_repository)
     ],
-) -> VerifyIdentityTool:
-    """Dependency that constructs VerifyIdentityTool with its dependencies."""
-    return VerifyIdentityTool(
+) -> StartIdentityVerificationTool:
+    """Dependency that constructs StartIdentityVerificationTool with its dependencies."""
+    return StartIdentityVerificationTool(
         customer_repo=customer_repo,
         session_repo=session_repo,
         verification_repo=verification_repo,
@@ -98,7 +98,7 @@ def get_escalate_to_human_tool(
 
 
 def get_tool_registry(
-    verify_identity_tool: Annotated[VerifyIdentityTool, Depends(get_verify_identity_tool)],
+    verify_identity_tool: Annotated[StartIdentityVerificationTool, Depends(get_start_identity_verification_tool)],
     lookup_shipments_tool: Annotated[LookupShipmentsTool, Depends(get_lookup_shipments_tool)],
     request_identity_info_tool: Annotated[
         RequestIdentityInfoTool, Depends(get_request_identity_info_tool)

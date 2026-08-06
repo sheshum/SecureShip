@@ -18,12 +18,12 @@ from app.tools.result import ToolResult, ToolStatus
 from app.tools.tool_registry import tool
 from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code, log_console
 
-VERIFY_IDENTITY_SCHEMA = {
+START_IDENTITY_VERIFICATION_SCHEMA = {
     "type": "function",
     "function": {
-        "name": "verify_identity",
+        "name": "start_identity_verification",
         "description": (
-            "Verify a customer's identity using their first name, last name, "
+            "Initializes a customer's identity verification using their first name, last name, "
             "and phone number. If the information matches a customer in our system, "
             "a verification code will be sent to their phone number. "
             "The customer must then provide this code to complete verification."
@@ -51,11 +51,11 @@ VERIFY_IDENTITY_SCHEMA = {
 
 
 @tool(
-    name="verify_identity",
-    schema=VERIFY_IDENTITY_SCHEMA,
+    name="start_identity_verification",
+    schema=START_IDENTITY_VERIFICATION_SCHEMA,
     requires_verification=False,
 )
-class VerifyIdentityTool:
+class StartIdentityVerificationTool:
     """Tool for verifying customer identity and sending OTP codes.
 
     Dependencies are injected via constructor to enable proper testing
@@ -93,7 +93,7 @@ class VerifyIdentityTool:
         if context.state != ChatSessionState.ANONYMOUS and context.state != ChatSessionState.COLLECTING_IDENTITY:
             # This should never happen (dispatch_tool_call checks verification)
             log_console(
-                f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}"
+                f"start_identity_verification: session {context.session_id} is not ANONYMOUS, state={context.state}"
             )
             return ToolResult(
                 status=ToolStatus.ERROR,
@@ -104,7 +104,7 @@ class VerifyIdentityTool:
         customer = self.customer_repo.find_by_identity(first_name, last_name, phone_number)
 
         log_console(
-            "verify identity: got customer match: "
+            "start_identity_verification: got customer match: "
             + (f"customer_id={customer.id}" if customer else "no match")
         )
 
@@ -120,7 +120,7 @@ class VerifyIdentityTool:
         expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
         log_console(
-            f"verify_identity: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}"
+            f"start_identity_verification: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}"
         )
         self.verification_repo.create(
             session_id=context.session_id,
@@ -139,6 +139,11 @@ class VerifyIdentityTool:
         # The model learns "code sent" but never learns the code itself
         return ToolResult(
             status=ToolStatus.SUCCESS,
-            message="If that information matches our records, a verification code will be sent to your phone shortly.",
+            action_required="CODE_VERIFICATION",
+            message=(
+                "Identity verification initiated. "
+                "A verification code has been sent to the provided phone number. "
+                "Code verification is NOT handled by agent."
+            ),
             data={"verification_status": "code_sent"},
         )

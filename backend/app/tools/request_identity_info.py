@@ -67,7 +67,7 @@ class RequestIdentityInfoTool:
         return ToolResult(
             status=ToolStatus.NEEDS_USER_INPUT,
             action_required="COLLECT_IDENTITY_INFO",
-            message="Please provide your first name, last name, and phone number to begin the verification process.",
+            message="User must provide their first name, last name, and phone number to begin the verification process.",
             data={
                 "required_fields": ["first_name", "last_name", "phone_number"],
             }

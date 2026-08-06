@@ -60,11 +60,11 @@ class Agent:
             ]
         elif session_state == ChatSessionState.COLLECTING_IDENTITY:
             return [
-                self.tool_registry["verify_identity"].schema,
+                self.tool_registry["start_identity_verification"].schema,
                 self.tool_registry["escalate_to_human"].schema,
             ]
         else:
-            return [t.schema for t in self.tool_registry.values() if t.name not in ["request_identity_info", "verify_identity"]]
+            return [t.schema for t in self.tool_registry.values() if t.name not in ["request_identity_info", "start_identity_verification"]]
 
     def _build_messages(self, session: AgentSession, prompt: str) -> list[LLMMessage]:
         messages = [LLMMessage(role="system", content=self.system_prompt)]
