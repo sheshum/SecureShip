@@ -52,10 +52,26 @@ function ChatHeader({ onClose }: ChatHeaderProps) {
   )
 }
 
+// function AiAvatar() {
+//   return (
+//     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
+//       <img src="/ai_avatar.svg" alt="" className="h-5 w-5" aria-hidden="true" />
+//     </span>
+//   )
+// }
+
+function HumanAvatar() {
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+      <img src="/human_avatar.svg" alt="" className="h-5 w-5" aria-hidden="true" />
+    </span>
+  )
+}
+
 function EscalationBanner() {
   return (
     <div className="mx-4 mt-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:mx-6">
-      <span className="text-xl">👤</span>
+      <HumanAvatar />
       <div className="flex-1">
         <p className="text-sm font-semibold text-amber-900">Connected to Human Support</p>
         <p className="mt-0.5 text-xs text-amber-700">You are talking to a customer service representative.</p>
@@ -67,9 +83,10 @@ function EscalationBanner() {
 type MessageListProps = {
   messages: Message[]
   isLoading: boolean
+  isEscalated: boolean
 }
 
-function MessageList({ messages, isLoading }: MessageListProps) {
+function MessageList({ messages, isLoading, isEscalated }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -81,17 +98,22 @@ function MessageList({ messages, isLoading }: MessageListProps) {
       {messages.map((message, index) => (
         <div
           key={index}
-          className={`rounded-lg px-4 py-3 ${
-            message.role === 'user'
-              ? 'ml-auto max-w-[80%] bg-sky-100 text-sky-900'
-              : 'mr-auto max-w-[80%] bg-white text-slate-900 shadow-sm'
-          }`}
+          className={`flex max-w-[80%] items-start gap-2 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
         >
-          {message.role === 'user' ? (
-            <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-          ) : (
-            <MessageContent content={message.content} />
-          )}
+          {/* {message.role !== 'user' && (isEscalated ? <HumanAvatar /> : <AiAvatar />)} */}
+          <div
+            className={`rounded-lg px-4 py-3 ${
+              message.role === 'user'
+                ? 'bg-sky-100 text-sky-900'
+                : 'bg-white text-slate-900 shadow-sm'
+            }`}
+          >
+            {message.role === 'user' ? (
+              <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+            ) : (
+              <MessageContent content={message.content} />
+            )}
+          </div>
         </div>
       ))}
       {isLoading && (
@@ -132,7 +154,7 @@ export function ChatPanel({
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         {hasMessages ? (
-          <MessageList messages={messages} isLoading={isLoading} />
+          <MessageList messages={messages} isLoading={isLoading} isEscalated={isEscalated} />
         ) : (
           <div className="flex flex-1 flex-col justify-center">
             <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/80 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">
