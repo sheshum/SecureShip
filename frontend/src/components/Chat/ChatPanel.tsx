@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ChatInput } from './ChatInput'
 import { MessageContent } from './MessageContent'
-import type { ChatSessionState } from '../../api/generated/schemas/chatSessionState'
+import { ChatSessionState } from '../../api/generated/schemas'
 
 type Message = {
   role: 'user' | 'assistant'
@@ -119,7 +119,7 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const hasMessages = messages.length > 0
-  const isEscalated = sessionState === 'escalated_to_human'
+  const isEscalated = sessionState === ChatSessionState.escalated_to_human
   const starterPrompts = [
     'Where is my shipment right now?',
     'When will my package be delivered?',
