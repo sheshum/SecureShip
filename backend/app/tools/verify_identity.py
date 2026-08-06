@@ -14,7 +14,7 @@ from app.repositories.session_verification import SessionVerificationRepository
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
 from app.services.sms_mock import send_mock_sms
-from app.tools.result import ToolResult
+from app.tools.result import ToolResult, ToolStatus
 from app.tools.tool_registry import tool
 from app.tools.utils import OTP_EXPIRY_MINUTES, generate_otp, hash_code, log_console
 
@@ -96,7 +96,7 @@ class VerifyIdentityTool:
                 f"verify_identity: session {context.session_id} is not ANONYMOUS, state={context.state}"
             )
             return ToolResult(
-                success=False,
+                status=ToolStatus.ERROR,
                 message="Already verified. Identity verification cannot be performed in the current session state.",
             )
 
@@ -110,7 +110,7 @@ class VerifyIdentityTool:
 
         if customer is None:
             # No match - but we return success=True (enumeration-proof)
-            return ToolResult(success=True, message="Identity verification failed.")
+            return ToolResult(status=ToolStatus.SUCCESS, message="Identity verification failed.")
 
         # Match found - generate and send OTP
         code = generate_otp()
@@ -138,7 +138,7 @@ class VerifyIdentityTool:
         # Return SAME neutral message as failure case (SEC-13)
         # The model learns "code sent" but never learns the code itself
         return ToolResult(
-            success=True,
+            status=ToolStatus.SUCCESS,
             message="If that information matches our records, a verification code will be sent to your phone shortly.",
             data={"verification_status": "code_sent"},
         )

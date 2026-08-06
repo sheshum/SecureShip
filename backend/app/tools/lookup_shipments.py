@@ -3,7 +3,7 @@ from typing import Any
 from app.models import Shipment
 from app.repositories.shipments import ShipmentRepository
 from app.services.auth_context import AuthContext
-from app.tools.result import ToolResult
+from app.tools.result import ToolResult, ToolStatus
 from app.tools.tool_registry import tool
 
 LOOKUP_SHIPMENTS_SCHEMA = {
@@ -61,7 +61,7 @@ class LookupShipmentsTool:
         if context.customer_id is None:
             # This should never happen (dispatch_tool_call checks verification),
             # but fail closed defensively.
-            return ToolResult(success=True, message="No shipments found", data={"shipments": []})
+            return ToolResult(status=ToolStatus.SUCCESS, message="No shipments found", data={"shipments": []})
 
         # Use repository to query shipments
         shipments = self.shipment_repo.list_shipments_for_customer(
@@ -79,7 +79,7 @@ class LookupShipmentsTool:
         )
 
         return ToolResult(
-            success=True,
+            status=ToolStatus.SUCCESS,
             message=message,
             data={"shipments": [_serialize_shipment(shipment) for shipment in shipments]},
         )

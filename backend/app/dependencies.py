@@ -84,9 +84,11 @@ def get_lookup_shipments_tool(
     return LookupShipmentsTool(shipment_repo=shipment_repo)
 
 
-def get_request_identity_info_tool() -> RequestIdentityInfoTool:
-    """Dependency that constructs RequestIdentityInfoTool (no dependencies needed)."""
-    return RequestIdentityInfoTool()
+def get_request_identity_info_tool(
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> RequestIdentityInfoTool:
+    """Dependency that constructs RequestIdentityInfoTool with its dependencies."""
+    return RequestIdentityInfoTool(session_repo=session_repo)
 
 def get_escalate_to_human_tool(
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],

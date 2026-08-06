@@ -6,49 +6,57 @@ machine-readable responses that the LLM can reliably parse.
 
 from dataclasses import dataclass
 from typing import Any
+from enum import Enum
 
+class ToolStatus(str, Enum):
+    SUCCESS = "success"
+    NEEDS_USER_INPUT = "needs_user_input"
+    ERROR = "error"
 
 @dataclass
 class ToolResult:
     """Structured response from an LLM tool execution.
 
     Attributes:
-        success: True if the tool executed successfully, False on error
+        status: ToolStatus indicating the result of the tool execution
         message: Human-readable message for the LLM to interpret
         data: Optional structured data payload (dict) for complex responses
 
     Example:
         # Simple success
-        ToolResult(success=True, message="Operation completed")
+        ToolResult(status=ToolStatus.SUCCESS, message="Operation completed")
 
         # Success with data
         ToolResult(
-            success=True,
+            status=ToolStatus.SUCCESS,
             message="Found 2 shipments",
             data={"shipments": [...]}
         )
 
         # Error
         ToolResult(
-            success=False,
+            status=ToolStatus.ERROR,
             message="Invalid session state"
         )
     """
 
-    success: bool
+    status: ToolStatus
     message: str
+    action_required: str | None = None
     data: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to JSON-serializable dict for LLM consumption.
 
         Returns:
-            Dict with 'success', 'message', and optionally 'data' fields
+            Dict with 'status', 'message', 'action_required', and optionally 'data' fields
         """
         result: dict[str, Any] = {
-            "success": self.success,
+            "status": self.status.value,
             "message": self.message,
         }
+        if self.action_required is not None:
+            result["action_required"] = self.action_required
         if self.data is not None:
             result["data"] = self.data
         return result

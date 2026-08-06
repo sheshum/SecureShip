@@ -7,7 +7,7 @@ human review, ensuring that the customer receives appropriate assistance.
 
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.sessions import ChatSessionState
-from app.tools.result import ToolResult
+from app.tools.result import ToolResult, ToolStatus
 from app.tools.tool_registry import tool
 from app.services.auth_context import AuthContext
 
@@ -20,10 +20,17 @@ ESCALATE_TO_HUMAN_SCHEMA = {
     "function": {
         "name": "escalate_to_human",
         "description": (
-            "Escalate the current customer issue to a human operator. "
-            "This should be used when the LLM cannot adequately handle the request, "
-            "when the issue requires human judgment or intervention, "
-            "or if the customer explicitly requests to speak with a human."
+            "Escalate the current customer issue to a human operator.\n\n"
+            "Use this tool ONLY when:\n\n"
+            "- The customer explicitly asks to speak to a human agent.\n"
+            "- The customer explicitly requests escalation.\n"
+            "- The conversation cannot continue because it requires human judgment or a manual business action that no available tool can perform.\n\n"
+            "Do NOT use this tool:\n\n"
+            "- Because identity verification is required.\n"
+            "- Because the customer has not yet provided required information.\n"
+            "- Because another tool is temporarily unavailable.\n"
+            "- Because additional information must first be collected.\n"
+            "- As a substitute for the normal support workflow."
         ),
         "parameters": {
             "type": "object",
@@ -82,13 +89,10 @@ class EscalateToHumanTool:
         # Here you would implement the logic to log the escalation request,
         # notify a human operator, or take any other necessary actions.
         # For this example, we'll just return a success message.
-        mock_request_id = "REQ-123456"  # In a real implementation, this would be a unique identifier for the escalation request
         return ToolResult(
-            success=True,
-            message=f"The issue has been escalated to a human operator. A representative will review your request shortly. Your request id: {mock_request_id}. "
-                    "Thank you for your patience.",
+            status=ToolStatus.SUCCESS,
+            message="The issue has been escalated to a human operator.",
             data={
                 "issue_description": issue_description,
-                "issue_id": mock_request_id  # In a real implementation, this would be a unique identifier for the escalation request
             }
         )

@@ -44,6 +44,28 @@ class Agent:
         self.tool_registry = tool_registry
         self.system_prompt = system_prompt
 
+    def resolve_available_tools(self, session_state: ChatSessionState) -> list[ToolSpec]:
+        """Resolve available tools based on session state.
+
+        Args:
+            session_state: Current session state
+
+        Returns:
+            List of available ToolSpec instances
+        """
+        if session_state == ChatSessionState.ANONYMOUS:
+            return [
+                self.tool_registry["request_identity_info"].schema,
+                self.tool_registry["escalate_to_human"].schema,
+            ]
+        elif session_state == ChatSessionState.COLLECTING_IDENTITY:
+            return [
+                self.tool_registry["verify_identity"].schema,
+                self.tool_registry["escalate_to_human"].schema,
+            ]
+        else:
+            return [t.schema for t in self.tool_registry.values()]
+
     async def execute_turn(
         self,
         prompt: str,
@@ -67,15 +89,9 @@ class Agent:
             customer_id=session.customer_id,
             state=session.state,
         )
+    
+        available_tools = self.resolve_available_tools(session.state)
 
-        # Force verify_identity tool for unverified sessions
-        tool_choice = (
-            ["verify_identity"]
-            if session.state != ChatSessionState.VERIFIED
-            else None
-        )
-
-        # Construct message list: system + history + new user message
         messages = [LLMMessage(role="system", content=self.system_prompt)]
 
         for msg in session.history:
@@ -83,15 +99,13 @@ class Agent:
 
         messages.append(LLMMessage(role="user", content=prompt))
 
-        available_tools = [t.schema for t in self.tool_registry.values()]
         tool_calls_made = 0
 
-        # Agentic loop: LLM → tool calls → dispatch → repeat
         while True:
             completion = await self.llm_client.plan_chat_turn(
                 messages=messages,
                 tools=available_tools if available_tools else None,
-                tool_choice=tool_choice,
+                tool_choice="auto",
             )
 
             log_console(
@@ -124,7 +138,6 @@ class Agent:
                 ],
             )
 
-            # Execute tool calls
             for tool_call in completion.tool_calls:
                 tool_calls_made += 1
                 try:
@@ -132,7 +145,6 @@ class Agent:
                 except json.JSONDecodeError:
                     tool_args = {}
 
-                # Dispatch tool call (enforces verification gate)
                 tool_result = await dispatch_tool_call(
                     context=auth_context,
                     fn_name=tool_call.name,
@@ -140,7 +152,6 @@ class Agent:
                     tool_registry=self.tool_registry,
                 )
 
-                # Log tool result
                 log_console(f"Tool Result: {tool_call.name}", tool_result)
 
                 messages.append(
