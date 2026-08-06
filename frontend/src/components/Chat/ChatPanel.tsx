@@ -58,7 +58,7 @@ function EscalationBanner() {
       <span className="text-xl">👤</span>
       <div className="flex-1">
         <p className="text-sm font-semibold text-amber-900">Connected to Human Support</p>
-        <p className="mt-0.5 text-xs text-amber-700">A customer service representative will assist you shortly.</p>
+        <p className="mt-0.5 text-xs text-amber-700">You are talking to a customer service representative.</p>
       </div>
     </div>
   )
@@ -110,7 +110,7 @@ export function ChatPanel({
   onSubmit,
   onClose,
 }: ChatPanelProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const hasMessages = messages.length > 0
   const isEscalated = sessionState === 'escalated_to_human'
   const starterPrompts = [

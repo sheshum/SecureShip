@@ -4,7 +4,7 @@ type ChatInputProps = {
   value: string
   onChange: (value: string) => void
   onSubmit: () => void
-  inputRef?: RefObject<HTMLInputElement | null>
+  inputRef?: RefObject<HTMLTextAreaElement | null>
 }
 
 export function ChatInput({ value, onChange, onSubmit, inputRef }: ChatInputProps) {
@@ -27,13 +27,13 @@ export function ChatInput({ value, onChange, onSubmit, inputRef }: ChatInputProp
         Ask about your shipment
       </label>
       <p id="chat-message-hint" className="sr-only">
-        Press Shift plus Enter to send your message.
+        Press Shift plus Enter to send your message. Press Enter to add a new line.
       </p>
-      <div className="flex items-center rounded-full border border-slate-200 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2">
-        <input
+      <div className="flex items-end rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2">
+        <textarea
           ref={inputRef}
           id="chat-message"
-          type="text"
+          rows={1}
           value={value}
           onChange={(event) => onChange(event.target.value)}
           aria-describedby="chat-message-hint"
@@ -41,16 +41,11 @@ export function ChatInput({ value, onChange, onSubmit, inputRef }: ChatInputProp
             if (event.key === 'Enter' && event.shiftKey) {
               event.preventDefault()
               handleSubmit()
-              return
-            }
-
-            if (event.key === 'Enter') {
-              event.preventDefault()
             }
           }}
           placeholder="Ask about your shipment details"
           autoComplete="off"
-          className="h-12 flex-1 rounded-full border-none bg-transparent px-4 text-base text-slate-900 outline-none placeholder:text-slate-400"
+          className="max-h-48 min-h-12 flex-1 resize-none overflow-y-auto rounded-lg border-none bg-transparent px-4 py-3 text-base text-slate-900 outline-none placeholder:text-slate-400"
         />
         <button
           type="button"
