@@ -46,7 +46,6 @@ export function ChatPage() {
         setSessionId(response.data.session_id)
         setSessionState(response.data.state)
 
-        // Open OTP modal if verification is required
         if (response.data.verification_required) {
           setIsOtpModalOpen(true)
           setOtpError(null)
@@ -111,7 +110,6 @@ export function ChatPage() {
     setIsClosingSession(true)
 
     try {
-      // Call PATCH /api/sessions/{sessionId} with ended_at to close session
       const url = resolveApiUrl(`/api/sessions/${sessionId}`)
       const response = await fetch(url, {
         method: 'PATCH',
@@ -124,7 +122,6 @@ export function ChatPage() {
         throw new Error(errorData.detail || 'Failed to close session')
       }
 
-      // Successfully closed - navigate home
       navigate(AppRoutes.Home)
     } catch (error) {
       console.error('Failed to close session:', error)

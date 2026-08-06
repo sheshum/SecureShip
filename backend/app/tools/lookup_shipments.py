@@ -56,32 +56,41 @@ class LookupShipmentsTool:
             ToolResult with shipment data, or empty array if no matches found
             (neutral response, no enumeration leak)
         """
-        # Epic D2: customer_id comes from auth context (server-side, verified),
-        # NEVER from tool arguments or LLM output.
         if context.customer_id is None:
-            # This should never happen (dispatch_tool_call checks verification),
-            # but fail closed defensively.
-            return ToolResult(status=ToolStatus.SUCCESS, message="No shipments found", data={"shipments": []})
+            return ToolResult(
+                status=ToolStatus.SUCCESS,
+                message="No shipments found",
+                data={
+                    "lookup_result": "NOT_FOUND",
+                    "tracking_number": tracking_number,
+                }
+            )
 
-        # Use repository to query shipments
         shipments = self.shipment_repo.list_shipments_for_customer(
             customer_id=context.customer_id,
             tracking_number=tracking_number,
         )
 
-        # Epic D2: Empty array if no match (neutral, doesn't reveal whether
-        # the tracking number exists for OTHER customers)
+        if len(shipments) == 0:
+            return ToolResult(
+                status=ToolStatus.SUCCESS,
+                message="No shipments found",
+                data={
+                    "lookup_result": "NOT_FOUND",
+                    "tracking_number": tracking_number,
+                }
+            )
+
         shipment_count = len(shipments)
-        message = (
-            f"Found {shipment_count} shipment{'s' if shipment_count != 1 else ''}"
-            if shipment_count > 0
-            else "No shipments found"
-        )
+        message = f"Found {shipment_count} shipment{'s' if shipment_count != 1 else ''}"
 
         return ToolResult(
             status=ToolStatus.SUCCESS,
             message=message,
-            data={"shipments": [_serialize_shipment(shipment) for shipment in shipments]},
+            data={
+                "lookup_result": [_serialize_shipment(shipment) for shipment in shipments],
+                "tracking_number": tracking_number,
+            },
         )
 
 

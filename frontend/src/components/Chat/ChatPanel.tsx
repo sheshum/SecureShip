@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { ChatInput } from './ChatInput'
 import { MessageContent } from './MessageContent'
 import type { ChatSessionState } from '../../api/generated/schemas/chatSessionState'
@@ -70,6 +70,12 @@ type MessageListProps = {
 }
 
 function MessageList({ messages, isLoading }: MessageListProps) {
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isLoading])
+
   return (
     <div className="mb-4 flex flex-1 flex-col gap-3 overflow-y-auto">
       {messages.map((message, index) => (
@@ -97,6 +103,7 @@ function MessageList({ messages, isLoading }: MessageListProps) {
           </div>
         </div>
       )}
+      <div ref={bottomRef} />
     </div>
   )
 }
@@ -123,8 +130,6 @@ export function ChatPanel({
     <section className="flex min-h-[calc(100svh-4.5rem)] w-full flex-col rounded-[1.6rem] border border-white/70 bg-white/84 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
       <ChatHeader onClose={onClose} />
 
-      {isEscalated && <EscalationBanner />}
-
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         {hasMessages ? (
           <MessageList messages={messages} isLoading={isLoading} />
@@ -150,6 +155,8 @@ export function ChatPanel({
             </div>
           </div>
         )}
+
+        {isEscalated && <EscalationBanner />}
 
         <div className="mt-5 border-t border-slate-200/80 pt-4 sm:pt-5">
           <ChatInput
