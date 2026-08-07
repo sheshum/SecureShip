@@ -20,17 +20,9 @@ ESCALATE_TO_HUMAN_SCHEMA = {
     "function": {
         "name": "escalate_to_human",
         "description": (
-            "Escalate the current customer issue to a human operator.\n\n"
-            "Use this tool ONLY when:\n\n"
-            "- The customer explicitly asks to speak to a human agent.\n"
-            "- The customer explicitly requests escalation.\n"
-            "- The conversation cannot continue because it requires human judgment or a manual business action that no available tool can perform.\n\n"
-            "Do NOT use this tool:\n\n"
-            "- Because identity verification is required.\n"
-            "- Because the customer has not yet provided required information.\n"
-            "- Because another tool is temporarily unavailable.\n"
-            "- Because additional information must first be collected.\n"
-            "- As a substitute for the normal support workflow."
+            "Use only when the customer explicitly asks for a human or the request cannot be "
+            "handled with the other tools. Do not use for verification issues, missing "
+            "information, or normal workflow steps."
         ),
         "parameters": {
             "type": "object",

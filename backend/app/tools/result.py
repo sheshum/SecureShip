@@ -10,7 +10,6 @@ from enum import Enum
 
 class ToolStatus(str, Enum):
     SUCCESS = "success"
-    NEEDS_USER_INPUT = "needs_user_input"
     ERROR = "error"
 
 @dataclass

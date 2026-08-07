@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.agent.prompts import VERIFICATION_EXHAUSTED_NOTE, VERIFICATION_SUCCEEDED_NOTE
 from app.dependencies import (
     get_chat_session_repository,
     get_session_verification_repository,
@@ -16,6 +17,15 @@ from app.schemas.sessions import ChatSessionState
 from app.schemas.verification import VerifyCodeRequest, VerifyCodeResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+def _record_transcript_note(
+    session_repo: ChatSessionRepository, session_id, content: str
+) -> None:
+    session_repo.append_messages(
+        session_id,
+        [{"role": "system", "content": content, "tool_call_id": None, "tool_calls": None}],
+    )
 
 
 @router.post("/verify-code", response_model=VerifyCodeResponse)
@@ -67,6 +77,7 @@ async def verify_code(
         session_repo.update_session(
             request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
         )
+        _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
     if verification.attempts >= 3:
@@ -74,6 +85,7 @@ async def verify_code(
         session_repo.update_session(
             request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
         )
+        _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
     code_hash = hashlib.sha256(request.code.encode()).hexdigest()
@@ -98,6 +110,7 @@ async def verify_code(
             session_repo.update_session(
                 request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
             )
+            _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
             return VerifyCodeResponse(result="expired", attempts_remaining=0)
 
         return VerifyCodeResponse(result="incorrect", attempts_remaining=attempts_remaining)
@@ -108,5 +121,6 @@ async def verify_code(
         state=ChatSessionState.VERIFIED,
         customer_id=verification.matched_customer_id,
     )
+    _record_transcript_note(session_repo, request.session_id, VERIFICATION_SUCCEEDED_NOTE)
 
     return VerifyCodeResponse(result="verified", attempts_remaining=None)

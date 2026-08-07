@@ -80,7 +80,9 @@ async def chat(
             detail="The assistant is temporarily unavailable. Please try again.",
         ) from exc
 
-    # 4. Persist transcript (skip system prompt - it's ephemeral)
+    # 4. Persist transcript. Index 0 is Agent's ephemeral SYSTEM_PROMPT; every
+    # other role (including later `system` messages injected by auth.py) is
+    # part of the LLM-visible history and must be preserved.
     serialized_messages = [
         {
             "role": msg.role,
@@ -93,7 +95,7 @@ async def chat(
             if msg.tool_calls
             else None,
         }
-        for msg in result.messages[1:]  # Skip system prompt
+        for msg in result.messages[1:]
     ]
     session_repo.set_conversation_messages(chat_session.id, serialized_messages)
 

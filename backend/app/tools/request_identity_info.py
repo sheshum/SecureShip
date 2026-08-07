@@ -14,14 +14,11 @@ REQUEST_IDENTITY_INFO_SCHEMA = {
     "function": {
         "name": "request_identity_info",
         "description": (
-            "Start the identity verification workflow for an unverified customer. "
-            "Call this tool when the user requests customer-specific information "
-            "(for example shipment status, orders, account details) and their identity "
-            "has not been verified yet. "
-            "This is the required first step before accessing protected customer data. "
-            "After calling this tool, wait for the user to provide the requested "
-            "identity information. Do not attempt to access customer data or call "
-            "other customer data tools until verification is completed."
+            "Signal that identity information (first name, last name, phone number) "
+            "must be collected from the customer before verification can start. "
+            "Call this exactly once at the beginning of the verification workflow, "
+            "before the customer has provided those fields. Do not call this after "
+            "the customer has provided the fields — call start_identity_verification instead."
         ),
         "parameters": {
             "type": "object",
@@ -40,8 +37,8 @@ class RequestIdentityInfoTool:
     """Tool for requesting user identity verification.
 
     This tool is public (doesn't require verification) and returns a message
-    explaining that the user needs to verify their identity to access
-    customer data. It sets the tool status to NEEDS_USER_INPUT.
+    the assistant should relay verbatim, asking the customer for the three
+    identity fields.
     """
 
     def __init__(self, session_repo: ChatSessionRepository):
@@ -65,10 +62,9 @@ class RequestIdentityInfoTool:
             state=ChatSessionState.COLLECTING_IDENTITY,
         )
         return ToolResult(
-            status=ToolStatus.NEEDS_USER_INPUT,
-            action_required="COLLECT_IDENTITY_INFO",
-            message="User must provide their first name, last name, and phone number to begin the verification process.",
-            data={
-                "required_fields": ["first_name", "last_name", "phone_number"],
-            }
+            status=ToolStatus.SUCCESS,
+            message=(
+                "To help you with shipment information, I need to verify your identity. "
+                "Could you please share your first name, last name, and phone number?"
+            ),
         )

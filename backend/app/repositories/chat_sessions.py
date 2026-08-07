@@ -46,7 +46,7 @@ class ChatSessionRepository:
                 state=ChatSessionState.ANONYMOUS,
                 started_at=now,
                 ended_at=None,
-                transcript={"version": 2, "messages": []},
+                transcript={"messages": []},
             )
             session.add(chat_session)
             session.commit()
@@ -93,10 +93,31 @@ class ChatSessionRepository:
             if chat_session is None:
                 return None
 
-            chat_session.transcript = {
-                "version": 2,
-                "messages": messages,
-            }
+            chat_session.transcript = {"messages": messages}
+
+            session.commit()
+            session.refresh(chat_session)
+            return chat_session
+
+    def append_messages(
+        self, session_id: UUID, messages: list[dict[str, Any]]
+    ) -> ChatSession | None:
+        """Append messages to the transcript.
+
+        Used by non-agent code paths (e.g. /api/auth/verify-code) to record
+        out-of-band events into the LLM-visible transcript.
+        """
+        if not messages:
+            return self.get_session(session_id)
+
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+
+            transcript = self._normalize_transcript(chat_session.transcript)
+            transcript["messages"].extend(messages)
+            chat_session.transcript = transcript
 
             session.commit()
             session.refresh(chat_session)
@@ -164,10 +185,12 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
-    def get_conversation_messages(self, session_id: UUID) -> list[dict[str, str]]:
+    def get_conversation_messages(self, session_id: UUID) -> list[dict[str, Any]]:
         """Get conversation history for LLM context.
 
-        Returns only user/assistant messages, excluding system prompts and tool-role messages.
+        Returns user, assistant, tool, and system messages with their full shape
+        (including `tool_calls` on assistant messages and `tool_call_id` on tool
+        results) so the LLM sees a coherent tool-call thread across turns.
         """
         chat_session = self.get_session(session_id)
         if chat_session is None:
@@ -178,33 +201,34 @@ class ChatSessionRepository:
         if not isinstance(messages, list):
             return []
 
-        conversation: list[dict[str, str]] = []
+        conversation: list[dict[str, Any]] = []
         for msg in messages:
             if not isinstance(msg, dict):
                 continue
 
             role = str(msg.get("role") or "").strip()
-            content = str(msg.get("content") or "").strip()
-
-            # Only include user/assistant messages for conversation context
-            if role not in {"user", "assistant"} or not content:
+            if role not in {"user", "assistant", "tool", "system"}:
                 continue
 
-            conversation.append({"role": role, "content": content})
+            conversation.append(
+                {
+                    "role": role,
+                    "content": msg.get("content") or "",
+                    "tool_call_id": msg.get("tool_call_id"),
+                    "tool_calls": msg.get("tool_calls"),
+                }
+            )
 
         return conversation
 
     @staticmethod
     def _normalize_transcript(transcript: dict[str, Any] | None) -> dict[str, Any]:
-        """Normalize transcript to v2 format."""
+        """Normalize transcript to {"messages": [...]} shape."""
         if not isinstance(transcript, dict):
-            return {"version": 2, "messages": []}
+            return {"messages": []}
 
         messages = transcript.get("messages")
         if not isinstance(messages, list):
             messages = []
 
-        return {
-            "version": 2,
-            "messages": list(messages),
-        }
+        return {"messages": list(messages)}

@@ -5,7 +5,7 @@ nowhere else, so swapping providers never touches business logic or routes.
 """
 
 from functools import lru_cache
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 from fastapi_plugin import Auth0FastAPI
@@ -24,7 +24,7 @@ from app.tools.escalate_to_human import EscalateToHumanTool
 # Tool dependencies - tools are constructed per-request with their dependencies
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
-from app.tools.tool_registry import TOOL_REGISTRY, get_tool_metadata, register_tool
+from app.tools.tool_registry import ToolSpec, get_tool_metadata
 from app.tools.start_identity_verification import StartIdentityVerificationTool
 
 
@@ -106,38 +106,33 @@ def get_tool_registry(
     escalate_to_human_tool: Annotated[
         EscalateToHumanTool, Depends(get_escalate_to_human_tool)
     ],
-) -> dict[str, Any]:
-    """Dependency that builds and returns the tool registry with all tools.
+) -> dict[str, ToolSpec]:
+    """Build a fresh tool registry for this request.
 
-    This is called per-request, ensuring tools are freshly constructed with
-    their dependencies via FastAPI DI. Returns the TOOL_REGISTRY dict after
-    populating it with the current tool instances.
+    Tools are constructed per-request via FastAPI DI (so each gets its own
+    repository instances). We return a plain local dict — no shared/global
+    state — which is what the dispatcher looks tools up in.
     """
-    # Clear the registry (in case of hot reload)
-    TOOL_REGISTRY.clear()
-
-    # Register each tool with its metadata from the @tool decorator
+    registry: dict[str, ToolSpec] = {}
     for tool_instance in [
         verify_identity_tool,
         lookup_shipments_tool,
         request_identity_info_tool,
         escalate_to_human_tool,
     ]:
-        tool_class = type(tool_instance)
-        name, schema, requires_verification = get_tool_metadata(tool_class)
-        register_tool(
+        name, schema, requires_verification = get_tool_metadata(type(tool_instance))
+        registry[name] = ToolSpec(
             name=name,
             schema=schema,
             handler=tool_instance,
             requires_verification=requires_verification,
         )
-
-    return TOOL_REGISTRY
+    return registry
 
 
 def get_agent(
     llm_client: Annotated[LLMClient, Depends(get_llm_client)],
-    tool_registry: Annotated[dict, Depends(get_tool_registry)],
+    tool_registry: Annotated[dict[str, ToolSpec], Depends(get_tool_registry)],
 ) -> Agent:
     """Construct Agent with injected dependencies."""
     return Agent(

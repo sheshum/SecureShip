@@ -11,8 +11,11 @@ LOOKUP_SHIPMENTS_SCHEMA = {
     "function": {
         "name": "lookup_shipments",
         "description": (
-            "Look up shipments for the customer. Can retrieve all "
-            "shipments or filter by a specific tracking number."
+            "Look up shipments for the verified customer. Omit tracking_number to return "
+            "all of the customer's shipments, or pass a specific tracking_number to filter. "
+            "When the customer provides multiple tracking numbers, call this tool once per "
+            'tracking number in the same turn. If data.lookup_result is "NOT_FOUND", tell '
+            "the customer you could not locate a shipment with the provided information."
         ),
         "parameters": {
             "type": "object",

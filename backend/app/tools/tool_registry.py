@@ -1,6 +1,7 @@
-"""Every tool the model can call registers itself here, declaring up front
-whether it requires a verified session. This registry — not the handler
-bodies — is what Epic F3 points to.
+"""Every tool the model can call declares up front, via the @tool decorator,
+whether it requires a verified session. The dispatcher reads this at call time
+(via dict lookup) — the registry itself is a plain dict built per-request in
+app.dependencies.get_tool_registry, so there is no shared mutable state.
 """
 
 from collections.abc import Callable
@@ -30,38 +31,6 @@ class ToolSpec:
     schema: dict[str, Any]
     handler: ToolHandler
     requires_verification: bool
-
-
-# Global tool registry - maps tool names to their specifications
-TOOL_REGISTRY: dict[str, ToolSpec] = {}
-
-
-def register_tool(
-    name: str,
-    schema: dict[str, Any],
-    handler: ToolHandler,
-    requires_verification: bool,
-) -> None:
-    """Register a tool handler with its schema and verification requirement.
-
-    No default for requires_verification, on purpose: every tool author
-    has to make an explicit choice. This is a load-bearing design decision
-    for Epic F — forgetting to register means the tool doesn't exist,
-    and forgetting the verification flag is a loud error, not a silent leak.
-
-    Note: With FastAPI DI, handlers are now constructed per-request via
-    dependency injection. This function is called from get_tool_registry()
-    with freshly constructed tool instances.
-    """
-    if name in TOOL_REGISTRY:
-        raise ValueError(f"Tool '{name}' is already registered")
-
-    TOOL_REGISTRY[name] = ToolSpec(
-        name=name,
-        schema=schema,
-        handler=handler,
-        requires_verification=requires_verification,
-    )
 
 
 # Type variable for decorator

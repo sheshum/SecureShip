@@ -1,15 +1,20 @@
 """Agent: orchestrates agentic loop over LLM + tools."""
 
 import json
+from typing import Any
 
 from app.agent.result import AgentResult
 from app.agent.session import AgentSession, SessionStateRefresher
-from app.llm.base import LLMClient, LLMMessage
+from app.llm.base import LLMClient, LLMMessage, ToolCall
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
 from app.services.dispatch import dispatch_tool_call
 from app.tools.tool_registry import ToolSpec
 from app.tools.utils import log_console
+
+# Hard ceiling on tool-call iterations per turn. Identity -> verify -> lookup
+# -> answer is at most 3-4 hops; anything past this is a runaway loop.
+MAX_ITERATIONS = 6
 
 
 class Agent:
@@ -44,32 +49,83 @@ class Agent:
         self.tool_registry = tool_registry
         self.system_prompt = system_prompt
 
-    def _resolve_available_tools(self, session_state: ChatSessionState) -> list[ToolSpec]:
-        """Resolve available tools based on session state.
+    def _resolve_available_tools(self, session_state: ChatSessionState) -> list[dict[str, Any]]:
+        """Tool schemas the model may see for this state.
 
-        Args:
-            session_state: Current session state
-
-        Returns:
-            List of available ToolSpec instances
+        Invariant: any tool with requires_verification=True is only exposed when
+        state == VERIFIED. Intermediate states (CODE_SENT / AWAITING_CODE) expose
+        only escalate so the model doesn't waste a turn calling a gated tool.
         """
         if session_state == ChatSessionState.ANONYMOUS:
             return [
                 self.tool_registry["request_identity_info"].schema,
                 self.tool_registry["escalate_to_human"].schema,
             ]
-        elif session_state == ChatSessionState.COLLECTING_IDENTITY:
+        if session_state == ChatSessionState.COLLECTING_IDENTITY:
             return [
                 self.tool_registry["start_identity_verification"].schema,
                 self.tool_registry["escalate_to_human"].schema,
             ]
-        else:
-            return [t.schema for t in self.tool_registry.values() if t.name not in ["request_identity_info", "start_identity_verification"]]
+        if session_state in {
+            ChatSessionState.CODE_SENT,
+            ChatSessionState.AWAITING_CODE,
+        }:
+            # Waiting on the OTP UI; nothing useful the model can do except escalate.
+            return [self.tool_registry["escalate_to_human"].schema]
+        if session_state == ChatSessionState.CODE_EXPIRED:
+            return [
+                self.tool_registry["request_identity_info"].schema,
+                self.tool_registry["escalate_to_human"].schema,
+            ]
+        if session_state == ChatSessionState.VERIFIED:
+            return [
+                self.tool_registry["lookup_shipments"].schema,
+                self.tool_registry["escalate_to_human"].schema,
+            ]
+        # ESCALATED_TO_HUMAN and any future terminal states.
+        return []
+
+    @staticmethod
+    def _resolve_tool_choice(
+        session_state: ChatSessionState, *, is_first_iteration: bool
+    ) -> str:
+        """Force a tool call on the first LLM call for gated states.
+
+        Uses "required" (not a specific tool) so the model can still pick
+        escalate_to_human from the exposed list if the user asks for one.
+        Subsequent iterations use "auto" so the model can respond after
+        consuming the tool's result rather than re-invoking it.
+        """
+        if not is_first_iteration:
+            return "auto"
+        if session_state in {
+            ChatSessionState.ANONYMOUS,
+            ChatSessionState.COLLECTING_IDENTITY,
+        }:
+            return "required"
+        return "auto"
 
     def _build_messages(self, session: AgentSession, prompt: str) -> list[LLMMessage]:
-        messages = [LLMMessage(role="system", content=self.system_prompt)]
+        messages: list[LLMMessage] = [LLMMessage(role="system", content=self.system_prompt)]
         for msg in session.history:
-            messages.append(LLMMessage(role=msg["role"], content=msg["content"]))
+            raw_tool_calls = msg.get("tool_calls") or ()
+            tool_calls = tuple(
+                ToolCall(
+                    id=str(tc.get("id", "")),
+                    name=str(tc.get("name", "")),
+                    arguments=str(tc.get("arguments", "")),
+                )
+                for tc in raw_tool_calls
+                if isinstance(tc, dict)
+            )
+            messages.append(
+                LLMMessage(
+                    role=msg["role"],
+                    content=msg.get("content") or "",
+                    tool_call_id=msg.get("tool_call_id"),
+                    tool_calls=tool_calls,
+                )
+            )
         messages.append(LLMMessage(role="user", content=prompt))
         return messages
 
@@ -98,25 +154,29 @@ class Agent:
             customer_id=session.customer_id,
             state=session.state,
         )
-    
-        available_tools = self._resolve_available_tools(session.state)
+
+        current_state = session.state
+        available_tools = self._resolve_available_tools(current_state)
         messages = self._build_messages(session, prompt)
         tool_calls_made = 0
+        completion = None
 
-        while True:
+        for iteration in range(MAX_ITERATIONS):
             log_console(
                 "Agent Turn",
                 {
                     "session_id": str(session.session_id),
-                    "customer_id": session.customer_id,
-                    "state": session.state,
+                    "customer_id": auth_context.customer_id,
+                    "state": current_state,
+                    "iteration": iteration,
                     "messages_count": len(messages),
                 },
             )
+            tool_choice = self._resolve_tool_choice(current_state, is_first_iteration=iteration == 0)
             completion = await self.llm_client.plan_chat_turn(
                 messages=messages,
                 tools=available_tools if available_tools else None,
-                tool_choice="auto",
+                tool_choice=tool_choice,
             )
 
             log_console(
@@ -178,10 +238,22 @@ class Agent:
                 customer_id=fresh_customer_id,
                 state=fresh_state,
             )
+            current_state = fresh_state
             available_tools = self._resolve_available_tools(fresh_state)
+        else:
+            # Loop exhausted without a terminal (tool-call-free) response.
+            log_console(
+                "Agent loop exhausted",
+                {"session_id": str(session.session_id), "iterations": MAX_ITERATIONS},
+            )
+            return AgentResult(
+                reply="Sorry, I couldn't complete that request. Please try again.",
+                messages=messages,
+                tool_calls_made=tool_calls_made,
+            )
 
         return AgentResult(
-            reply=completion.content or "",
+            reply=(completion.content if completion else "") or "",
             messages=messages,
             tool_calls_made=tool_calls_made,
         )

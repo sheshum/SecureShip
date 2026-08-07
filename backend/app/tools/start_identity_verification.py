@@ -23,10 +23,12 @@ START_IDENTITY_VERIFICATION_SCHEMA = {
     "function": {
         "name": "start_identity_verification",
         "description": (
-            "Initializes a customer's identity verification using their first name, last name, "
-            "and phone number. If the information matches a customer in our system, "
-            "a verification code will be sent to their phone number. "
-            "The customer must then provide this code to complete verification."
+            "Send an OTP to the customer's phone based on the identity fields they provided. "
+            "Only call this once you have collected all three fields (first name, last name, "
+            "phone number) from the customer in chat. The OTP is delivered to the customer's "
+            "phone and entered by the customer in a separate verification UI — you do not "
+            "receive it, do not ask for it, and do not confirm it. After this tool succeeds, "
+            "tell the customer a code was sent and wait for their next message."
         ),
         "parameters": {
             "type": "object",
@@ -108,9 +110,15 @@ class StartIdentityVerificationTool:
             + (f"customer_id={customer.id}" if customer else "no match")
         )
 
+
+        neutral_message = (
+            "Identity verification workflow completed. "
+            "If the information matches a customer, a code has been sent."
+        )
+
         if customer is None:
             # No match - but we return success=True (enumeration-proof)
-            return ToolResult(status=ToolStatus.SUCCESS, message="Identity verification failed.")
+            return ToolResult(status=ToolStatus.SUCCESS, message=neutral_message)
 
         # Match found - generate and send OTP
         code = generate_otp()
@@ -139,11 +147,5 @@ class StartIdentityVerificationTool:
         # The model learns "code sent" but never learns the code itself
         return ToolResult(
             status=ToolStatus.SUCCESS,
-            action_required="CODE_VERIFICATION",
-            message=(
-                "Identity verification initiated. "
-                "A verification code has been sent to the provided phone number. "
-                "Code verification is NOT handled by agent."
-            ),
-            data={"verification_status": "code_sent"},
+            message=neutral_message,
         )
