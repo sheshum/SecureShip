@@ -112,13 +112,11 @@ class StartIdentityVerificationTool:
 
 
         neutral_message = (
-            "Identity verification workflow completed. "
-            "If the information matches a customer, a code has been sent."
+            "Identity verification failed."
         )
 
         if customer is None:
-            # No match - but we return success=True (enumeration-proof)
-            return ToolResult(status=ToolStatus.SUCCESS, message=neutral_message)
+            return ToolResult(status=ToolStatus.ERROR, message=neutral_message)
 
         # Match found - generate and send OTP
         code = generate_otp()
