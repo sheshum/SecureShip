@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+STAGED_FILES="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [[ -z "$STAGED_FILES" ]]; then
+  echo "pre-commit: no staged files to lint"
+  exit 0
+fi
+
+frontend_targets=()
+backend_targets=()
+migration_targets=()
+
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
+
+  case "$path" in
+    frontend/*)
+      rel_path="${path#frontend/}"
+      if [[ "$rel_path" == src/api/generated/* ]]; then
+        continue
+      fi
+      frontend_targets+=("$rel_path")
+      ;;
+    backend/alembic/versions/*.py)
+      migration_targets+=("${path#backend/}")
+      ;;
+    backend/*)
+      backend_targets+=("${path#backend/}")
+      ;;
+  esac
+done <<< "$STAGED_FILES"
+
+if [[ ${#frontend_targets[@]} -gt 0 ]]; then
+  echo "pre-commit: running frontend oxlint on staged files"
+  (
+    cd frontend
+    npm run lint -- "${frontend_targets[@]}"
+  )
+fi
+
+if [[ ${#backend_targets[@]} -gt 0 ]]; then
+  echo "pre-commit: running backend ruff check on staged files"
+  (
+    cd backend
+    uv run ruff check "${backend_targets[@]}"
+  )
+fi
+
+if [[ ${#migration_targets[@]} -gt 0 ]]; then
+  echo "pre-commit: running backend migration sanity checks"
+  (
+    cd backend
+    uv run ruff check --select F,E9 "${migration_targets[@]}"
+  )
+fi
+
+if [[ ${#frontend_targets[@]} -eq 0 && ${#backend_targets[@]} -eq 0 && ${#migration_targets[@]} -eq 0 ]]; then
+  echo "pre-commit: no frontend/backend staged files to lint"
+fi
