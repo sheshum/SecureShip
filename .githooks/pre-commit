@@ -23,13 +23,22 @@ while IFS= read -r path; do
       if [[ "$rel_path" == src/api/generated/* ]]; then
         continue
       fi
-      frontend_targets+=("$rel_path")
+      case "$rel_path" in
+        *.js|*.jsx|*.mjs|*.cjs|*.ts|*.tsx|*.mts|*.cts)
+          frontend_targets+=("$rel_path")
+          ;;
+      esac
       ;;
     backend/alembic/versions/*.py)
       migration_targets+=("${path#backend/}")
       ;;
     backend/*)
-      backend_targets+=("${path#backend/}")
+      rel_backend_path="${path#backend/}"
+      case "$rel_backend_path" in
+        *.py|*.pyi)
+          backend_targets+=("$rel_backend_path")
+          ;;
+      esac
       ;;
   esac
 done <<< "$STAGED_FILES"
