@@ -3,8 +3,7 @@
 import hashlib
 import json
 import logging
-import random
-from typing import Any
+import secrets
 
 # OTP configuration constants
 OTP_LENGTH = 6
@@ -14,7 +13,7 @@ MAX_VERIFICATION_ATTEMPTS = 3
 
 def generate_otp() -> str:
     """Generate a random 6-digit OTP code."""
-    return "".join(str(random.randint(0, 9)) for _ in range(OTP_LENGTH))
+    return "".join(str(secrets.randbelow(10)) for _ in range(OTP_LENGTH))
 
 
 def hash_code(code: str) -> str:
@@ -27,7 +26,7 @@ def hash_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
-def log_console(message: str, data: Any = None, level: str = "INFO") -> None:
+def log_console(message: str, data: object | None = None, level: str = "INFO") -> None:
     """Print a log message with optional data to console.
 
     Args:

@@ -5,13 +5,13 @@ handle a customer's request or issue. It allows the LLM to flag the conversation
 human review, ensuring that the customer receives appropriate assistance.
 """
 
+from logging import getLogger
+
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.sessions import ChatSessionState
+from app.services.auth_context import AuthContext
 from app.tools.result import ToolResult, ToolStatus
 from app.tools.tool_registry import tool
-from app.services.auth_context import AuthContext
-
-from logging import getLogger
 
 logger = getLogger(__name__)
 
@@ -70,7 +70,11 @@ class EscalateToHumanTool:
             ToolResult indicating that the escalation has been logged and will be reviewed by a human operator.
         """
         # Update session state to ESCALATED_TO_HUMAN
-        logger.info(f"Escalating session {context.session_id} to human operator. Issue: {issue_description}")
+        logger.info(
+            "Escalating session %s to human operator. Issue: %s",
+            context.session_id,
+            issue_description,
+        )
         self.session_repo.update_session(context.session_id, state=ChatSessionState.ESCALATED_TO_HUMAN)
 
         # Here you would implement the logic to log the escalation request,

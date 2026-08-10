@@ -1,5 +1,6 @@
 """Session state transition validation logic."""
 
+from typing import ClassVar
 from uuid import UUID
 
 from app.schemas.sessions import ChatSessionState
@@ -16,7 +17,7 @@ class SessionStateValidator:
     """
 
     # Valid state transitions (from_state, to_state)
-    VALID_TRANSITIONS = {
+    VALID_TRANSITIONS: ClassVar[set[tuple[ChatSessionState, ChatSessionState]]] = {
         # Initial flow: anonymous -> identity verification
         (ChatSessionState.ANONYMOUS, ChatSessionState.CODE_SENT),
         (ChatSessionState.ANONYMOUS, ChatSessionState.COLLECTING_IDENTITY),
@@ -85,17 +86,14 @@ class SessionStateValidator:
             ValueError: If state invariants are violated
         """
         # VERIFIED state MUST have customer_id set
-        if state == ChatSessionState.VERIFIED:
-            if customer_id is None:
-                raise ValueError("VERIFIED state requires customer_id to be set")
+        if state == ChatSessionState.VERIFIED and customer_id is None:
+            raise ValueError("VERIFIED state requires customer_id to be set")
 
         # CODE_EXPIRED should have customer_id cleared (warning only in practice,
         # but we enforce it here for consistency)
-        if state == ChatSessionState.CODE_EXPIRED:
-            if customer_id is not None:
-                raise ValueError("CODE_EXPIRED state should have customer_id cleared")
+        if state == ChatSessionState.CODE_EXPIRED and customer_id is not None:
+            raise ValueError("CODE_EXPIRED state should have customer_id cleared")
 
         # ANONYMOUS should have no customer association
-        if state == ChatSessionState.ANONYMOUS:
-            if customer_id is not None:
-                raise ValueError("ANONYMOUS state should have customer_id cleared")
+        if state == ChatSessionState.ANONYMOUS and customer_id is not None:
+            raise ValueError("ANONYMOUS state should have customer_id cleared")

@@ -5,11 +5,11 @@ machine-readable responses that the LLM can reliably parse.
 """
 
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
-from enum import Enum
 
 
-class ToolStatus(str, Enum):
+class ToolStatus(StrEnum):
     SUCCESS = "success"
     ERROR = "error"
 

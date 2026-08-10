@@ -24,8 +24,8 @@ from app.tools.escalate_to_human import EscalateToHumanTool
 # Tool dependencies - tools are constructed per-request with their dependencies
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
-from app.tools.tool_registry import ToolSpec, get_tool_metadata
 from app.tools.start_identity_verification import StartIdentityVerificationTool
+from app.tools.tool_registry import ToolSpec, get_tool_metadata
 
 
 @lru_cache

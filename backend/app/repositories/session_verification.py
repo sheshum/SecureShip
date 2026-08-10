@@ -9,6 +9,7 @@ from collections.abc import Callable
 from datetime import datetime
 from uuid import UUID
 
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -67,8 +68,6 @@ class SessionVerificationRepository:
             SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
-            from sqlalchemy import select
-
             stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             return session.scalar(stmt)
 
@@ -82,8 +81,6 @@ class SessionVerificationRepository:
             Updated SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
-            from sqlalchemy import select
-
             stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             verification = session.scalar(stmt)
             if verification is None:
@@ -105,8 +102,6 @@ class SessionVerificationRepository:
             Updated SessionVerification record if found, None otherwise
         """
         with self._session_factory() as session:
-            from sqlalchemy import select
-
             stmt = select(SessionVerification).where(SessionVerification.session_id == session_id)
             verification = session.scalar(stmt)
             if verification is None:
@@ -124,8 +119,6 @@ class SessionVerificationRepository:
             session_id: The chat session ID
         """
         with self._session_factory() as session:
-            from sqlalchemy import delete
-
             stmt = delete(SessionVerification).where(SessionVerification.session_id == session_id)
             session.execute(stmt)
             session.commit()

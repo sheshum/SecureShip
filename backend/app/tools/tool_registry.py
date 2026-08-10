@@ -1,4 +1,5 @@
-"""Every tool the model can call declares up front, via the @tool decorator,
+"""Every tool the model can call declares up front, via the @tool decorator.
+
 whether it requires a verified session. The dispatcher reads this at call time
 (via dict lookup) — the registry itself is a plain dict built per-request in
 app.dependencies.get_tool_registry, so there is no shared mutable state.
@@ -91,8 +92,9 @@ def get_tool_metadata(tool_class: type) -> tuple[str, dict[str, Any], bool]:
         name = tool_class._tool_name  # type: ignore
         schema = tool_class._tool_schema  # type: ignore
         requires_verification = tool_class._tool_requires_verification  # type: ignore
-        return name, schema, requires_verification
     except AttributeError as e:
         raise AttributeError(
             f"Tool class {tool_class.__name__} must be decorated with @tool. Missing attribute: {e}"
         ) from e
+    else:
+        return name, schema, requires_verification

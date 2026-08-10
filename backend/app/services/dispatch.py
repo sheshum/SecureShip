@@ -1,4 +1,5 @@
-"""The ONLY code path allowed to invoke a tool handler. This is Epic F3's
+"""The ONLY code path allowed to invoke a tool handler.
+
 single auditable checkpoint: if this function isn't the one that ran,
 the tool didn't run. Nothing else in the codebase calls a handler directly.
 """

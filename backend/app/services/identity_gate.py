@@ -1,4 +1,6 @@
-"""The verification predicate itself. Kept separate from the registry/dispatcher
+"""The verification predicate itself.
+
+Kept separate from the registry/dispatcher
 so "what does verified mean" and "who gets asked this question" stay
 two small, independently-testable pieces.
 """

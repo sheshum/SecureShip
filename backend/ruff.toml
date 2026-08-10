@@ -142,6 +142,12 @@ ignore = [
     "S101",
     # Allow datetime.now() without timezone (FastAPI handles this)
     "DTZ005",
+    # Exception message style rules are overly noisy for this codebase
+    "EM101",
+    "EM102",
+    "TRY003",
+    # Decorator metadata API accepts a legitimate positional boolean parameter
+    "FBT001",
     "COM812"  # may cause conflicts when used with the formatter: `COM812`. To avoid unexpected behavior, we recommend disabling this rule
 ]
 

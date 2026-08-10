@@ -79,8 +79,7 @@ class LiteLLMClient(LLMClient):
             return tool_choice
 
         # Convert string or list to OpenAI format
-        tool_name = tool_choice if isinstance(tool_choice, str) else tool_choice[0]
-        return tool_name
+        return tool_choice if isinstance(tool_choice, str) else tool_choice[0]
 
     @staticmethod
     def _serialize_messages(messages: Sequence[LLMMessage]) -> list[dict[str, Any]]:
@@ -105,13 +104,13 @@ class LiteLLMClient(LLMClient):
         return serialized_messages
 
     @staticmethod
-    def _tool_call_id(tool_call: Any) -> str:
+    def _tool_call_id(tool_call: object) -> str:
         if isinstance(tool_call, dict):
             return str(tool_call.get("id", ""))
         return str(getattr(tool_call, "id", ""))
 
     @staticmethod
-    def _tool_call_name(tool_call: Any) -> str:
+    def _tool_call_name(tool_call: object) -> str:
         if isinstance(tool_call, dict):
             function = tool_call.get("function", {})
             return str(function.get("name", ""))
@@ -119,7 +118,7 @@ class LiteLLMClient(LLMClient):
         return str(getattr(function, "name", ""))
 
     @staticmethod
-    def _tool_call_arguments(tool_call: Any) -> str:
+    def _tool_call_arguments(tool_call: object) -> str:
         if isinstance(tool_call, dict):
             function = tool_call.get("function", {})
             return str(function.get("arguments", ""))

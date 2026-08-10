@@ -92,7 +92,10 @@ class StartIdentityVerificationTool:
         Returns:
             ToolResult with neutral success or failure message (enumeration-proof)
         """
-        if context.state != ChatSessionState.ANONYMOUS and context.state != ChatSessionState.COLLECTING_IDENTITY:
+        if context.state not in {
+            ChatSessionState.ANONYMOUS,
+            ChatSessionState.COLLECTING_IDENTITY,
+        }:
             # This should never happen (dispatch_tool_call checks verification)
             log_console(
                 f"start_identity_verification: session {context.session_id} is not ANONYMOUS, state={context.state}"
@@ -123,7 +126,8 @@ class StartIdentityVerificationTool:
         expires_at = now + timedelta(minutes=OTP_EXPIRY_MINUTES)
 
         log_console(
-            f"start_identity_verification: generated OTP code={code} (hashed) for customer_id={customer.id}, expires_at={expires_at.isoformat()}"
+            f"start_identity_verification: generated OTP code={code} (hashed) "
+            f"for customer_id={customer.id}, expires_at={expires_at.isoformat()}"
         )
         self.verification_repo.create(
             session_id=context.session_id,
