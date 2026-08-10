@@ -26,7 +26,7 @@ export function WelcomePage() {
             <button
               type="button"
               onClick={() => navigate(AppRoutes.Chat)}
-              className="rounded-lg bg-slate-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
+              className="rounded-lg bg-slate-700 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
             >
               Start new chat
             </button>
