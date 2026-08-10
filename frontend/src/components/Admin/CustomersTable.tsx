@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   useCreateCustomerApiCustomersPost,
   useDeleteCustomerApiCustomersCustomerIdDelete,
@@ -19,15 +19,84 @@ type CustomersTableProps = {
   onNavigateToShipments?: (customerId: string) => void
 }
 
+function buildCustomerColumns({
+  onNavigateToShipments,
+  onEdit,
+  onDelete,
+}: {
+  onNavigateToShipments?: (customerId: string) => void
+  onEdit: (row: CustomerItem) => void
+  onDelete: (row: CustomerItem) => void
+}) {
+  return [
+    {
+      header: 'First Name',
+      key: 'first_name',
+      accessor: (row: CustomerItem) => row.first_name,
+    },
+    {
+      header: 'Last Name',
+      key: 'last_name',
+      accessor: (row: CustomerItem) => row.last_name,
+    },
+    {
+      header: 'Phone Number',
+      key: 'phone_number',
+      accessor: (row: CustomerItem) => row.phone_number,
+    },
+    {
+      header: 'Address',
+      key: 'address',
+      accessor: (row: CustomerItem) => (
+        <span className="max-w-xs truncate" title={row.address}>
+          {row.address}
+        </span>
+      ),
+    },
+    {
+      header: 'Actions',
+      key: 'actions',
+      accessor: (row: CustomerItem) => (
+        <div className="flex gap-2">
+          {onNavigateToShipments && (
+            <button
+              type="button"
+              onClick={() => onNavigateToShipments(row.id)}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+            >
+              Shipments →
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onEdit(row)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(row)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ]
+}
+
 export function CustomersTable({ initialCustomerId, onNavigateToShipments }: CustomersTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
-  useEffect(() => {
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
     setCurrentPage(1)
-  }, [debouncedQuery])
+  }
 
   const [formState, setFormState] = useState<{ row?: CustomerItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -74,69 +143,17 @@ export function CustomersTable({ initialCustomerId, onNavigateToShipments }: Cus
     }
   }
 
-  const columns = [
-    {
-      header: 'First Name',
-      key: 'first_name',
-      accessor: (row: CustomerItem) => row.first_name,
+  const columns = buildCustomerColumns({
+    onNavigateToShipments,
+    onEdit: (row) => {
+      setFormError(null)
+      setFormState({ row })
     },
-    {
-      header: 'Last Name',
-      key: 'last_name',
-      accessor: (row: CustomerItem) => row.last_name,
+    onDelete: (row) => {
+      setDeleteError(null)
+      setDeletingRow(row)
     },
-    {
-      header: 'Phone Number',
-      key: 'phone_number',
-      accessor: (row: CustomerItem) => row.phone_number,
-    },
-    {
-      header: 'Address',
-      key: 'address',
-      accessor: (row: CustomerItem) => (
-        <span className="max-w-xs truncate" title={row.address}>
-          {row.address}
-        </span>
-      ),
-    },
-    {
-      header: 'Actions',
-      key: 'actions',
-      accessor: (row: CustomerItem) => (
-        <div className="flex gap-2">
-          {onNavigateToShipments && (
-            <button
-              type="button"
-              onClick={() => onNavigateToShipments(row.id)}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
-            >
-              Shipments →
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setFormError(null)
-              setFormState({ row })
-            }}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDeleteError(null)
-              setDeletingRow(row)
-            }}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ]
+  })
 
   return (
     <div className="p-6">
@@ -149,7 +166,7 @@ export function CustomersTable({ initialCustomerId, onNavigateToShipments }: Cus
           <div className="flex items-center gap-3">
             <TableSearchInput
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={handleSearchChange}
               placeholder="Search customers…"
             />
             <button
@@ -173,6 +190,7 @@ export function CustomersTable({ initialCustomerId, onNavigateToShipments }: Cus
       <DataTable
         data={data}
         columns={columns}
+        getRowKey={(row) => row.id}
         isLoading={isLoading}
         emptyMessage="No customers found"
         pagination={{
@@ -183,23 +201,25 @@ export function CustomersTable({ initialCustomerId, onNavigateToShipments }: Cus
         }}
       />
 
-      <CustomerFormModal
-        isOpen={formState !== null}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
-        errorMessage={formError}
-        initialValues={formState?.row}
-        onSubmit={handleSubmit}
-        onClose={() => setFormState(null)}
-      />
+      {formState !== null && (
+        <CustomerFormModal
+          isSubmitting={createMutation.isPending || updateMutation.isPending}
+          errorMessage={formError}
+          initialValues={formState.row}
+          onSubmit={handleSubmit}
+          onClose={() => setFormState(null)}
+        />
+      )}
 
-      <DeleteConfirmModal
-        isOpen={deletingRow !== null}
-        isDeleting={deleteMutation.isPending}
-        errorMessage={deleteError}
-        resourceLabel={deletingRow ? `${deletingRow.first_name} ${deletingRow.last_name}` : 'customer'}
-        onConfirm={handleDelete}
-        onClose={() => setDeletingRow(null)}
-      />
+      {deletingRow !== null && (
+        <DeleteConfirmModal
+          isDeleting={deleteMutation.isPending}
+          errorMessage={deleteError}
+          resourceLabel={`${deletingRow.first_name} ${deletingRow.last_name}`}
+          onConfirm={handleDelete}
+          onClose={() => setDeletingRow(null)}
+        />
+      )}
     </div>
   )
 }

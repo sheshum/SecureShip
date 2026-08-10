@@ -9,13 +9,15 @@ import { ShipmentsTable } from '../components/Admin/ShipmentsTable'
 
 type AdminView = 'sessions' | 'shipments' | 'packages' | 'customers'
 
-const VALID_VIEWS: AdminView[] = ['sessions', 'shipments', 'packages', 'customers']
+function isAdminView(value: string | null): value is AdminView {
+  return value === 'sessions' || value === 'shipments' || value === 'packages' || value === 'customers'
+}
 
 export function AdminPage() {
   const { user, logout } = useAuth0()
   const [searchParams, setSearchParams] = useSearchParams()
   const rawTab = searchParams.get('tab')
-  const activeTab: AdminView = VALID_VIEWS.includes(rawTab as AdminView) ? (rawTab as AdminView) : 'sessions'
+  const activeTab: AdminView = isAdminView(rawTab) ? rawTab : 'sessions'
 
   const [shipmentCustomerFilter, setShipmentCustomerFilter] = useState<string | undefined>()
   const [packageShipmentFilter, setPackageShipmentFilter] = useState<string | undefined>()

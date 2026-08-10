@@ -1,4 +1,5 @@
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+const rawApiBaseUrl = import.meta.env.VITE_API_BASE_URL
+const apiBaseUrl = typeof rawApiBaseUrl === 'string' ? rawApiBaseUrl.replace(/\/$/, '') : ''
 
 export function resolveApiUrl(url: string): string {
   if (/^https?:\/\//.test(url)) {

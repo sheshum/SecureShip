@@ -3,8 +3,22 @@ import { useAuth0 } from '@auth0/auth0-react'
 
 function decodeTokenPermissions(token: string): string[] {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return Array.isArray(payload.permissions) ? (payload.permissions as string[]) : []
+    const tokenParts = token.split('.')
+    if (tokenParts.length < 2) {
+      return []
+    }
+
+    const payload: unknown = JSON.parse(atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    if (!payload || typeof payload !== 'object') {
+      return []
+    }
+
+    const permissions = Reflect.get(payload, 'permissions')
+    if (!Array.isArray(permissions)) {
+      return []
+    }
+
+    return permissions.filter((permission): permission is string => typeof permission === 'string')
   } catch {
     return []
   }

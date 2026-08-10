@@ -140,3 +140,15 @@ npm install
 npm run dev
 
 ```
+
+9. Enable repository git hooks (recommended)
+
+```bash
+# from repo root
+./scripts/setup-hooks.sh
+```
+
+This enables tracked hooks in `.githooks/`:
+
+- `pre-commit`: runs frontend oxlint and backend ruff checks on staged files
+- `pre-push`: runs full frontend oxlint and full backend ruff checks, plus migration script sanity checks

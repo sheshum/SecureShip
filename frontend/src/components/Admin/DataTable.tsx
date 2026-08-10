@@ -10,6 +10,7 @@ interface Column<T> {
 interface DataTableProps<T> {
   data: T[]
   columns: Column<T>[]
+  getRowKey: (row: T) => string
   isLoading?: boolean
   emptyMessage?: string
   pagination?: {
@@ -20,7 +21,14 @@ interface DataTableProps<T> {
   }
 }
 
-export function DataTable<T>({ data, columns, isLoading, emptyMessage = 'No data available', pagination }: DataTableProps<T>) {
+export function DataTable<T>({
+  data,
+  columns,
+  getRowKey,
+  isLoading,
+  emptyMessage = 'No data available',
+  pagination,
+}: DataTableProps<T>) {
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -51,9 +59,9 @@ export function DataTable<T>({ data, columns, isLoading, emptyMessage = 'No data
             </tr>
           </thead>
           <tbody>
-            {data.map((row, idx) => (
+            {data.map((row) => (
               <tr
-                key={idx}
+                key={getRowKey(row)}
                 className="border-b border-slate-100 transition hover:bg-slate-50/30"
               >
                 {columns.map((col) => (

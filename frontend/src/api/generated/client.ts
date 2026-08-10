@@ -31,6 +31,7 @@ import type {
   CustomerItem,
   CustomerListResponse,
   CustomerUpdateRequest,
+  GetHealthHealthGet200,
   HTTPValidationError,
   ListCustomersApiCustomersGetParams,
   ListPackagesApiPackagesGetParams,
@@ -76,7 +77,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export type getHealthHealthGetResponse200 = {
-  data: unknown
+  data: GetHealthHealthGet200
   status: 200
 }
 

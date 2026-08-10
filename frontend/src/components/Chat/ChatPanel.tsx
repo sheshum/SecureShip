@@ -4,6 +4,7 @@ import { MessageContent } from './MessageContent'
 import { ChatSessionState } from '../../api/generated/schemas'
 
 type Message = {
+  id: string
   role: 'user' | 'assistant'
   content: string
 }
@@ -83,10 +84,9 @@ function EscalationBanner() {
 type MessageListProps = {
   messages: Message[]
   isLoading: boolean
-  isEscalated: boolean
 }
 
-function MessageList({ messages, isLoading, isEscalated }: MessageListProps) {
+function MessageList({ messages, isLoading }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -95,9 +95,9 @@ function MessageList({ messages, isLoading, isEscalated }: MessageListProps) {
 
   return (
     <div className="mb-4 flex flex-1 flex-col gap-3 overflow-y-auto">
-      {messages.map((message, index) => (
+      {messages.map((message) => (
         <div
-          key={index}
+          key={message.id}
           className={`flex max-w-[80%] items-start gap-2 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
         >
           {/* {message.role !== 'user' && (isEscalated ? <HumanAvatar /> : <AiAvatar />)} */}
@@ -154,7 +154,7 @@ export function ChatPanel({
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         {hasMessages ? (
-          <MessageList messages={messages} isLoading={isLoading} isEscalated={isEscalated} />
+          <MessageList messages={messages} isLoading={isLoading} />
         ) : (
           <div className="flex flex-1 flex-col justify-center">
             <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/80 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">

@@ -13,6 +13,7 @@ export * from './customerCreateRequest';
 export * from './customerItem';
 export * from './customerListResponse';
 export * from './customerUpdateRequest';
+export * from './getHealthHealthGet200';
 export * from './hTTPValidationError';
 export * from './listCustomersApiCustomersGetParams';
 export * from './listPackagesApiPackagesGetParams';

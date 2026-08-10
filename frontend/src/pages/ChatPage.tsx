@@ -9,10 +9,18 @@ import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost } from '../api/g
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 import { resolveApiUrl } from '../api/url'
 
+function createMessage(role: 'user' | 'assistant', content: string) {
+  return {
+    id: crypto.randomUUID(),
+    role,
+    content,
+  }
+}
+
 export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([])
+  const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
@@ -30,7 +38,7 @@ export function ChatPage() {
     if (!trimmedMessage || chatMutation.isPending) return
 
     // Add user message to display
-    setMessages((prev) => [...prev, { role: 'user', content: trimmedMessage }])
+    setMessages((prev) => [...prev, createMessage('user', trimmedMessage)])
     setDraft('')
 
     try {
@@ -42,7 +50,7 @@ export function ChatPage() {
       })
 
       if (response.status === 200) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: response.data.reply }])
+        setMessages((prev) => [...prev, createMessage('assistant', response.data.reply)])
         setSessionId(response.data.session_id)
         setSessionState(response.data.state)
 
@@ -54,7 +62,10 @@ export function ChatPage() {
       }
     } catch (error) {
       console.error('Chat request failed:', error)
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }])
+      setMessages((prev) => [
+        ...prev,
+        createMessage('assistant', 'Sorry, I encountered an error. Please try again.'),
+      ])
     }
   }
 
@@ -102,7 +113,7 @@ export function ChatPage() {
 
   const handleCloseSession = async () => {
     if (!sessionId) {
-      navigate(AppRoutes.Home)
+      void navigate(AppRoutes.Home)
       return
     }
 
@@ -122,7 +133,7 @@ export function ChatPage() {
         throw new Error(errorData.detail || 'Failed to close session')
       }
 
-      navigate(AppRoutes.Home)
+      void navigate(AppRoutes.Home)
     } catch (error) {
       console.error('Failed to close session:', error)
       setCloseError(error instanceof Error ? error.message : 'Failed to close session. Please try again.')
@@ -147,26 +158,28 @@ export function ChatPage() {
         />
       </div>
 
-      <ChatCloseModal
-        isOpen={isCloseModalOpen}
-        isClosing={isClosingSession}
-        errorMessage={closeError}
-        onClose={() => {
-          setIsCloseModalOpen(false)
-          setCloseError(null)
-        }}
-        onConfirm={handleCloseSession}
-      />
+      {isCloseModalOpen && (
+        <ChatCloseModal
+          isClosing={isClosingSession}
+          errorMessage={closeError}
+          onClose={() => {
+            setIsCloseModalOpen(false)
+            setCloseError(null)
+          }}
+          onConfirm={handleCloseSession}
+        />
+      )}
 
-      <OtpVerificationModal
-        isOpen={isOtpModalOpen}
-        isSubmitting={verifyCodeMutation.isPending}
-        errorMessage={otpError}
-        helperMessage={null}
-        remainingAttempts={attemptsRemaining}
-        onSubmit={handleVerifyCode}
-        onClose={handleCloseOtpModal}
-      />
+      {isOtpModalOpen && (
+        <OtpVerificationModal
+          isSubmitting={verifyCodeMutation.isPending}
+          errorMessage={otpError}
+          helperMessage={null}
+          remainingAttempts={attemptsRemaining}
+          onSubmit={handleVerifyCode}
+          onClose={handleCloseOtpModal}
+        />
+      )}
 
       {toastMessage && (
         <Toast

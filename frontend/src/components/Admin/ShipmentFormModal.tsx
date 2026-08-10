@@ -1,13 +1,24 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useSearchCustomersApiCustomersSearchGet } from '../../api/generated/client'
-import type { ShipmentItem } from '../../api/generated/schemas'
+import { ShipmentStatus } from '../../api/generated/schemas'
+import type { ShipmentItem, ShipmentStatus as ShipmentStatusType } from '../../api/generated/schemas'
 
-const STATUS_OPTIONS = ['label_created', 'in_transit', 'out_for_delivery', 'delivered', 'exception'] as const
+const STATUS_OPTIONS = Object.values(ShipmentStatus)
+
+function isShipmentStatus(value: string): value is ShipmentStatusType {
+  return (
+    value === ShipmentStatus.label_created ||
+    value === ShipmentStatus.in_transit ||
+    value === ShipmentStatus.out_for_delivery ||
+    value === ShipmentStatus.delivered ||
+    value === ShipmentStatus.exception
+  )
+}
 
 export type ShipmentFormValues = {
   customer_id: string
   tracking_number: string
-  status: string
+  status: ShipmentStatusType
   carrier: string
   origin: string
   destination: string
@@ -15,7 +26,6 @@ export type ShipmentFormValues = {
 }
 
 type ShipmentFormModalProps = {
-  isOpen: boolean
   isSubmitting: boolean
   errorMessage: string | null
   initialValues?: ShipmentItem
@@ -34,41 +44,31 @@ const EMPTY_VALUES: ShipmentFormValues = {
 }
 
 export function ShipmentFormModal({
-  isOpen,
   isSubmitting,
   errorMessage,
   initialValues,
   onSubmit,
   onClose,
 }: ShipmentFormModalProps) {
-  const [values, setValues] = useState<ShipmentFormValues>(EMPTY_VALUES)
+  const [values, setValues] = useState<ShipmentFormValues>(
+    initialValues
+      ? {
+          customer_id: initialValues.customer_id,
+          tracking_number: initialValues.tracking_number,
+          status: initialValues.status,
+          carrier: initialValues.carrier,
+          origin: initialValues.origin,
+          destination: initialValues.destination,
+          estimated_delivery: initialValues.estimated_delivery.slice(0, 10),
+        }
+      : EMPTY_VALUES,
+  )
   const isEdit = Boolean(initialValues)
 
   const [customerQuery, setCustomerQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [showCustomerResults, setShowCustomerResults] = useState(false)
   const [customerSelectionError, setCustomerSelectionError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      setValues(
-        initialValues
-          ? {
-              customer_id: initialValues.customer_id,
-              tracking_number: initialValues.tracking_number,
-              status: initialValues.status,
-              carrier: initialValues.carrier,
-              origin: initialValues.origin,
-              destination: initialValues.destination,
-              estimated_delivery: initialValues.estimated_delivery.slice(0, 10),
-            }
-          : EMPTY_VALUES,
-      )
-      setCustomerQuery('')
-      setShowCustomerResults(false)
-      setCustomerSelectionError(null)
-    }
-  }, [isOpen, initialValues])
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedQuery(customerQuery.trim()), 300)
@@ -80,10 +80,6 @@ export function ShipmentFormModal({
     { query: { enabled: debouncedQuery.length >= 2 } },
   )
   const customerResults = Array.isArray(customerSearchResponse?.data) ? customerSearchResponse.data : []
-
-  if (!isOpen) {
-    return null
-  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -100,7 +96,10 @@ export function ShipmentFormModal({
   const labelClass = 'flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-600'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <dialog
+      open
+      className="fixed inset-0 z-50 m-0 flex h-screen w-screen max-h-none max-w-none items-center justify-center overflow-visible border-none bg-transparent p-4"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-slate-950/55"
@@ -108,7 +107,7 @@ export function ShipmentFormModal({
         aria-label="Close modal"
       />
 
-      <section className="relative w-full max-w-lg rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
+      <section className="relative z-10 w-full max-w-lg rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
         <h3 className="text-lg font-semibold text-slate-900">{isEdit ? 'Edit Shipment' : 'Add Shipment'}</h3>
 
         <form className="mt-4 grid grid-cols-2 gap-3" onSubmit={handleSubmit}>
@@ -177,7 +176,11 @@ export function ShipmentFormModal({
             Status
             <select
               value={values.status}
-              onChange={(event) => setValues({ ...values, status: event.target.value })}
+              onChange={(event) => {
+                if (isShipmentStatus(event.target.value)) {
+                  setValues({ ...values, status: event.target.value })
+                }
+              }}
               disabled={isSubmitting}
               className={inputClass}
             >
@@ -255,6 +258,6 @@ export function ShipmentFormModal({
           </div>
         </form>
       </section>
-    </div>
+    </dialog>
   )
 }

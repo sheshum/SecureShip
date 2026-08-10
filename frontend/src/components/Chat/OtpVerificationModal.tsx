@@ -1,7 +1,6 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useState } from 'react'
 
 type OtpVerificationModalProps = {
-  isOpen: boolean
   isSubmitting: boolean
   errorMessage: string | null
   helperMessage: string | null
@@ -11,7 +10,6 @@ type OtpVerificationModalProps = {
 }
 
 export function OtpVerificationModal({
-  isOpen,
   isSubmitting,
   errorMessage,
   helperMessage,
@@ -21,23 +19,13 @@ export function OtpVerificationModal({
 }: OtpVerificationModalProps) {
   const [code, setCode] = useState('')
 
-  useEffect(() => {
-    if (!isOpen) {
-      setCode('')
-    }
-  }, [isOpen])
-
-  if (!isOpen) {
-    return null
-  }
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     await onSubmit(code.trim())
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <dialog open className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4">
       <button
         type="button"
         className="absolute inset-0 bg-slate-950/55"
@@ -91,6 +79,6 @@ export function OtpVerificationModal({
           </div>
         </form>
       </section>
-    </div>
+    </dialog>
   )
 }

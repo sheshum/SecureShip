@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   useCreateShipmentApiShipmentsPost,
   useDeleteShipmentApiShipmentsShipmentIdDelete,
@@ -21,6 +21,16 @@ const SHIPMENT_STATUS_OPTIONS = Object.values(ShipmentStatus).map((status) => ({
   label: status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
 }))
 
+function isShipmentStatus(value: string): value is ShipmentStatus {
+  return (
+    value === ShipmentStatus.label_created ||
+    value === ShipmentStatus.in_transit ||
+    value === ShipmentStatus.out_for_delivery ||
+    value === ShipmentStatus.delivered ||
+    value === ShipmentStatus.exception
+  )
+}
+
 const statusColors: Record<string, string> = {
   delivered: 'bg-green-100 text-green-800',
   in_transit: 'bg-blue-100 text-blue-800',
@@ -34,94 +44,16 @@ type ShipmentsTableProps = {
   onNavigateToPackages?: (shipmentId: string) => void
 }
 
-export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: ShipmentsTableProps) {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [filterStatus, setFilterStatus] = useState<ShipmentStatus | ''>('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [customerIdFilter, setCustomerIdFilter] = useState<string | undefined>(initialCustomerId)
-  const debouncedQuery = useDebounce(searchQuery, 300)
-  const offset = (currentPage - 1) * ITEMS_PER_PAGE
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [debouncedQuery])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [customerIdFilter])
-
-  const handleFilterChange = (value: string) => {
-    setFilterStatus(value as ShipmentStatus | '')
-    setCurrentPage(1)
-  }
-
-  const [formState, setFormState] = useState<{ row?: ShipmentItem } | null>(null)
-  const [formError, setFormError] = useState<string | null>(null)
-  const [deletingRow, setDeletingRow] = useState<ShipmentItem | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  const { data: response, isLoading, refetch } = useListShipmentsApiShipmentsGet({
-    limit: ITEMS_PER_PAGE,
-    offset,
-    status: filterStatus || undefined,
-    q: debouncedQuery || undefined,
-    customer_id: customerIdFilter || undefined,
-  })
-  const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
-  const total = (response?.data && 'total' in response.data) ? response.data.total : 0
-
-  const createMutation = useCreateShipmentApiShipmentsPost()
-  const updateMutation = useUpdateShipmentApiShipmentsShipmentIdPatch()
-  const deleteMutation = useDeleteShipmentApiShipmentsShipmentIdDelete()
-
-  const handleSubmit = async (values: ShipmentFormValues) => {
-    setFormError(null)
-    try {
-      if (formState?.row) {
-        await updateMutation.mutateAsync({
-          shipmentId: formState.row.id,
-          data: {
-            tracking_number: values.tracking_number,
-            status: values.status as ShipmentStatus,
-            carrier: values.carrier,
-            origin: values.origin,
-            destination: values.destination,
-            estimated_delivery: values.estimated_delivery,
-          },
-        })
-      } else {
-        await createMutation.mutateAsync({
-          data: {
-            customer_id: values.customer_id,
-            tracking_number: values.tracking_number,
-            status: values.status as ShipmentStatus,
-            carrier: values.carrier,
-            origin: values.origin,
-            destination: values.destination,
-            estimated_delivery: values.estimated_delivery,
-          },
-        })
-      }
-      setFormState(null)
-      await refetch()
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Something went wrong')
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!deletingRow) return
-    setDeleteError(null)
-    try {
-      await deleteMutation.mutateAsync({ shipmentId: deletingRow.id })
-      setDeletingRow(null)
-      await refetch()
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Something went wrong')
-    }
-  }
-
-  const columns = [
+function buildShipmentColumns({
+  onNavigateToPackages,
+  onEdit,
+  onDelete,
+}: {
+  onNavigateToPackages?: (shipmentId: string) => void
+  onEdit: (row: ShipmentItem) => void
+  onDelete: (row: ShipmentItem) => void
+}) {
+  return [
     {
       header: 'Tracking #',
       key: 'tracking_number',
@@ -189,20 +121,14 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
           )}
           <button
             type="button"
-            onClick={() => {
-              setFormError(null)
-              setFormState({ row })
-            }}
+            onClick={() => onEdit(row)}
             className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             Edit
           </button>
           <button
             type="button"
-            onClick={() => {
-              setDeleteError(null)
-              setDeletingRow(row)
-            }}
+            onClick={() => onDelete(row)}
             className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
           >
             Delete
@@ -211,6 +137,107 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
       ),
     },
   ]
+}
+
+export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: ShipmentsTableProps) {
+  const [currentPage, setCurrentPage] = useState(1)
+  const [filterStatus, setFilterStatus] = useState<ShipmentStatus | ''>('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [customerIdFilter, setCustomerIdFilter] = useState<string | undefined>(initialCustomerId)
+  const debouncedQuery = useDebounce(searchQuery, 300)
+  const offset = (currentPage - 1) * ITEMS_PER_PAGE
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
+  const handleFilterChange = (value: string) => {
+    if (value === '') {
+      setFilterStatus('')
+    } else if (isShipmentStatus(value)) {
+      setFilterStatus(value)
+    }
+    setCurrentPage(1)
+  }
+
+  const [formState, setFormState] = useState<{ row?: ShipmentItem } | null>(null)
+  const [formError, setFormError] = useState<string | null>(null)
+  const [deletingRow, setDeletingRow] = useState<ShipmentItem | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  const { data: response, isLoading, refetch } = useListShipmentsApiShipmentsGet({
+    limit: ITEMS_PER_PAGE,
+    offset,
+    status: filterStatus || undefined,
+    q: debouncedQuery || undefined,
+    customer_id: customerIdFilter || undefined,
+  })
+  const data = (response?.data && 'shipments' in response.data) ? response.data.shipments : []
+  const total = (response?.data && 'total' in response.data) ? response.data.total : 0
+
+  const createMutation = useCreateShipmentApiShipmentsPost()
+  const updateMutation = useUpdateShipmentApiShipmentsShipmentIdPatch()
+  const deleteMutation = useDeleteShipmentApiShipmentsShipmentIdDelete()
+
+  const handleSubmit = async (values: ShipmentFormValues) => {
+    setFormError(null)
+    try {
+      if (formState?.row) {
+        await updateMutation.mutateAsync({
+          shipmentId: formState.row.id,
+          data: {
+            tracking_number: values.tracking_number,
+            status: values.status,
+            carrier: values.carrier,
+            origin: values.origin,
+            destination: values.destination,
+            estimated_delivery: values.estimated_delivery,
+          },
+        })
+      } else {
+        await createMutation.mutateAsync({
+          data: {
+            customer_id: values.customer_id,
+            tracking_number: values.tracking_number,
+            status: values.status,
+            carrier: values.carrier,
+            origin: values.origin,
+            destination: values.destination,
+            estimated_delivery: values.estimated_delivery,
+          },
+        })
+      }
+      setFormState(null)
+      await refetch()
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!deletingRow) return
+    setDeleteError(null)
+    try {
+      await deleteMutation.mutateAsync({ shipmentId: deletingRow.id })
+      setDeletingRow(null)
+      await refetch()
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'Something went wrong')
+    }
+  }
+
+  const columns = buildShipmentColumns({
+    onNavigateToPackages,
+    onEdit: (row) => {
+      setFormError(null)
+      setFormState({ row })
+    },
+    onDelete: (row) => {
+      setDeleteError(null)
+      setDeletingRow(row)
+    },
+  })
 
   return (
     <div className="p-6">
@@ -222,7 +249,7 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
         <div className="flex items-center gap-3">
           <TableSearchInput
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={handleSearchChange}
             placeholder="Search shipments…"
           />
           <TableFilterSelect
@@ -248,7 +275,10 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
           <span>Filtered by customer</span>
           <button
             type="button"
-            onClick={() => setCustomerIdFilter(undefined)}
+            onClick={() => {
+              setCustomerIdFilter(undefined)
+              setCurrentPage(1)
+            }}
             className="ml-auto text-xs font-semibold text-sky-700 transition hover:text-sky-900"
           >
             Clear ×
@@ -258,6 +288,7 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
       <DataTable
         data={data}
         columns={columns}
+        getRowKey={(row) => row.id}
         isLoading={isLoading}
         emptyMessage="No shipments found"
         pagination={{
@@ -268,23 +299,25 @@ export function ShipmentsTable({ initialCustomerId, onNavigateToPackages }: Ship
         }}
       />
 
-      <ShipmentFormModal
-        isOpen={formState !== null}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
-        errorMessage={formError}
-        initialValues={formState?.row}
-        onSubmit={handleSubmit}
-        onClose={() => setFormState(null)}
-      />
+      {formState !== null && (
+        <ShipmentFormModal
+          isSubmitting={createMutation.isPending || updateMutation.isPending}
+          errorMessage={formError}
+          initialValues={formState.row}
+          onSubmit={handleSubmit}
+          onClose={() => setFormState(null)}
+        />
+      )}
 
-      <DeleteConfirmModal
-        isOpen={deletingRow !== null}
-        isDeleting={deleteMutation.isPending}
-        errorMessage={deleteError}
-        resourceLabel={deletingRow ? `shipment ${deletingRow.tracking_number}` : 'shipment'}
-        onConfirm={handleDelete}
-        onClose={() => setDeletingRow(null)}
-      />
+      {deletingRow !== null && (
+        <DeleteConfirmModal
+          isDeleting={deleteMutation.isPending}
+          errorMessage={deleteError}
+          resourceLabel={`shipment ${deletingRow.tracking_number}`}
+          onConfirm={handleDelete}
+          onClose={() => setDeletingRow(null)}
+        />
+      )}
     </div>
   )
 }

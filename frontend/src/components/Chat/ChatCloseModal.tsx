@@ -1,31 +1,29 @@
 type ChatCloseModalProps = {
-  isOpen: boolean
   isClosing?: boolean
   errorMessage?: string | null
   onClose: () => void
   onConfirm: () => void
 }
 
-export function ChatCloseModal({ isOpen, isClosing, errorMessage, onClose, onConfirm }: ChatCloseModalProps) {
-  if (!isOpen) {
-    return null
-  }
-
+export function ChatCloseModal({ isClosing, errorMessage, onClose, onConfirm }: ChatCloseModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <dialog
+      open
+      className="fixed inset-0 z-50 m-0 flex h-screen w-screen max-h-none max-w-none items-center justify-center overflow-visible border-none bg-transparent p-4"
+    >
       <button
         type="button"
-        className="absolute left-0 top-0 h-full w-full bg-slate-950/55"
+        className="absolute inset-0 h-full w-full bg-slate-950/55"
         onClick={onClose}
         aria-label="Close modal"
       />
 
-      <section className="relative w-full max-w-sm rounded-2xl border border-white/65 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
+      <section className="relative z-10 w-full max-w-sm rounded-2xl border border-white/65 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
         <h3 className="text-lg font-semibold text-slate-900">Close this chat?</h3>
         <p className="mt-2 text-sm text-slate-600">
           You won't be able to send more messages in this conversation once it's closed.
         </p>
-        
+
         {errorMessage && (
           <p className="mt-3 text-sm text-red-600">{errorMessage}</p>
         )}
@@ -48,6 +46,6 @@ export function ChatCloseModal({ isOpen, isClosing, errorMessage, onClose, onCon
           </button>
         </div>
       </section>
-    </div>
+    </dialog>
   )
 }

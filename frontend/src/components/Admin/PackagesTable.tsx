@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   useCreatePackageApiPackagesPost,
   useDeletePackageApiPackagesPackageIdDelete,
@@ -18,6 +18,74 @@ type PackagesTableProps = {
   initialShipmentId?: string
 }
 
+function buildPackageColumns({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: (row: PackageItem) => void
+  onDelete: (row: PackageItem) => void
+}) {
+  return [
+    {
+      header: 'Package ID',
+      key: 'id',
+      accessor: (row: PackageItem) => (
+        <span className="font-mono text-xs">{row.id.substring(0, 8)}...</span>
+      ),
+    },
+    {
+      header: 'Shipment Tracking #',
+      key: 'shipment_tracking_number',
+      accessor: (row: PackageItem) => (
+        <span className="font-mono text-xs font-semibold">
+          {row.shipment_tracking_number || '—'}
+        </span>
+      ),
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      accessor: (row: PackageItem) => (
+        <span className="max-w-xs truncate" title={row.description}>
+          {row.description}
+        </span>
+      ),
+    },
+    {
+      header: 'Weight',
+      key: 'weight_kg',
+      accessor: (row: PackageItem) => `${row.weight_kg} kg`,
+    },
+    {
+      header: 'Declared Value',
+      key: 'declared_value',
+      accessor: (row: PackageItem) => `$${parseFloat(row.declared_value).toFixed(2)}`,
+    },
+    {
+      header: 'Actions',
+      key: 'actions',
+      accessor: (row: PackageItem) => (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(row)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(row)}
+            className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ]
+}
+
 export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,13 +93,10 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
   const debouncedQuery = useDebounce(searchQuery, 300)
   const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
-  useEffect(() => {
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
     setCurrentPage(1)
-  }, [debouncedQuery])
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [shipmentIdFilter])
+  }
 
   const [formState, setFormState] = useState<{ row?: PackageItem } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -92,71 +157,16 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
     }
   }
 
-  const columns = [
-    {
-      header: 'Package ID',
-      key: 'id',
-      accessor: (row: PackageItem) => (
-        <span className="font-mono text-xs">{row.id.substring(0, 8)}...</span>
-      ),
+  const columns = buildPackageColumns({
+    onEdit: (row) => {
+      setFormError(null)
+      setFormState({ row })
     },
-    {
-      header: 'Shipment Tracking #',
-      key: 'shipment_tracking_number',
-      accessor: (row: PackageItem) => (
-        <span className="font-mono text-xs font-semibold">
-          {row.shipment_tracking_number || '—'}
-        </span>
-      ),
+    onDelete: (row) => {
+      setDeleteError(null)
+      setDeletingRow(row)
     },
-    {
-      header: 'Description',
-      key: 'description',
-      accessor: (row: PackageItem) => (
-        <span className="max-w-xs truncate" title={row.description}>
-          {row.description}
-        </span>
-      ),
-    },
-    {
-      header: 'Weight',
-      key: 'weight_kg',
-      accessor: (row: PackageItem) => `${row.weight_kg} kg`,
-    },
-    {
-      header: 'Declared Value',
-      key: 'declared_value',
-      accessor: (row: PackageItem) => `$${parseFloat(row.declared_value).toFixed(2)}`,
-    },
-    {
-      header: 'Actions',
-      key: 'actions',
-      accessor: (row: PackageItem) => (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setFormError(null)
-              setFormState({ row })
-            }}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setDeleteError(null)
-              setDeletingRow(row)
-            }}
-            className="rounded-lg px-2 py-1 text-xs font-semibold text-[#b3432b] transition hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
-  ]
+  })
 
   return (
     <div className="p-6">
@@ -169,7 +179,7 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
           <div className="flex items-center gap-3">
             <TableSearchInput
               value={searchQuery}
-              onChange={setSearchQuery}
+              onChange={handleSearchChange}
               placeholder="Search packages…"
             />
             <button
@@ -190,7 +200,10 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
           <span>Filtered by shipment</span>
           <button
             type="button"
-            onClick={() => setShipmentIdFilter(undefined)}
+            onClick={() => {
+              setShipmentIdFilter(undefined)
+              setCurrentPage(1)
+            }}
             className="ml-auto text-xs font-semibold text-sky-700 transition hover:text-sky-900"
           >
             Clear ×
@@ -200,6 +213,7 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
       <DataTable
         data={data}
         columns={columns}
+        getRowKey={(row) => row.id}
         isLoading={isLoading}
         emptyMessage="No packages found"
         pagination={{
@@ -210,23 +224,25 @@ export function PackagesTable({ initialShipmentId }: PackagesTableProps) {
         }}
       />
 
-      <PackageFormModal
-        isOpen={formState !== null}
-        isSubmitting={createMutation.isPending || updateMutation.isPending}
-        errorMessage={formError}
-        initialValues={formState?.row}
-        onSubmit={handleSubmit}
-        onClose={() => setFormState(null)}
-      />
+      {formState !== null && (
+        <PackageFormModal
+          isSubmitting={createMutation.isPending || updateMutation.isPending}
+          errorMessage={formError}
+          initialValues={formState.row}
+          onSubmit={handleSubmit}
+          onClose={() => setFormState(null)}
+        />
+      )}
 
-      <DeleteConfirmModal
-        isOpen={deletingRow !== null}
-        isDeleting={deleteMutation.isPending}
-        errorMessage={deleteError}
-        resourceLabel={deletingRow ? `package ${deletingRow.id.substring(0, 8)}...` : 'package'}
-        onConfirm={handleDelete}
-        onClose={() => setDeletingRow(null)}
-      />
+      {deletingRow !== null && (
+        <DeleteConfirmModal
+          isDeleting={deleteMutation.isPending}
+          errorMessage={deleteError}
+          resourceLabel={`package ${deletingRow.id.substring(0, 8)}...`}
+          onConfirm={handleDelete}
+          onClose={() => setDeletingRow(null)}
+        />
+      )}
     </div>
   )
 }

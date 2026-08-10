@@ -10,7 +10,6 @@ export type PackageFormValues = {
 }
 
 type PackageFormModalProps = {
-  isOpen: boolean
   isSubmitting: boolean
   errorMessage: string | null
   initialValues?: PackageItem
@@ -26,38 +25,28 @@ const EMPTY_VALUES: PackageFormValues = {
 }
 
 export function PackageFormModal({
-  isOpen,
   isSubmitting,
   errorMessage,
   initialValues,
   onSubmit,
   onClose,
 }: PackageFormModalProps) {
-  const [values, setValues] = useState<PackageFormValues>(EMPTY_VALUES)
+  const [values, setValues] = useState<PackageFormValues>(
+    initialValues
+      ? {
+          tracking_number: initialValues.shipment_tracking_number ?? '',
+          description: initialValues.description,
+          weight_kg: initialValues.weight_kg,
+          declared_value: initialValues.declared_value,
+        }
+      : EMPTY_VALUES,
+  )
   const isEdit = Boolean(initialValues)
 
   const [shipmentQuery, setShipmentQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [showShipmentResults, setShowShipmentResults] = useState(false)
   const [shipmentSelectionError, setShipmentSelectionError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (isOpen) {
-      setValues(
-        initialValues
-          ? {
-              tracking_number: initialValues.shipment_tracking_number ?? '',
-              description: initialValues.description,
-              weight_kg: initialValues.weight_kg,
-              declared_value: initialValues.declared_value,
-            }
-          : EMPTY_VALUES,
-      )
-      setShipmentQuery('')
-      setShowShipmentResults(false)
-      setShipmentSelectionError(null)
-    }
-  }, [isOpen, initialValues])
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedQuery(shipmentQuery.trim()), 300)
@@ -70,10 +59,6 @@ export function PackageFormModal({
   )
   const shipmentResults = Array.isArray(shipmentSearchResponse?.data) ? shipmentSearchResponse.data : []
 
-  if (!isOpen) {
-    return null
-  }
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!isEdit && !values.tracking_number) {
@@ -85,7 +70,10 @@ export function PackageFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <dialog
+      open
+      className="fixed inset-0 z-50 m-0 flex h-screen w-screen max-h-none max-w-none items-center justify-center overflow-visible border-none bg-transparent p-4"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-slate-950/55"
@@ -93,7 +81,7 @@ export function PackageFormModal({
         aria-label="Close modal"
       />
 
-      <section className="relative w-full max-w-md rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
+      <section className="relative z-10 w-full max-w-md rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
         <h3 className="text-lg font-semibold text-slate-900">{isEdit ? 'Edit Package' : 'Add Package'}</h3>
 
         <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
@@ -211,6 +199,6 @@ export function PackageFormModal({
           </div>
         </form>
       </section>
-    </div>
+    </dialog>
   )
 }
