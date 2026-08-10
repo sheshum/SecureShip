@@ -66,7 +66,7 @@ class LookupShipmentsTool:
                 data={
                     "lookup_result": "NOT_FOUND",
                     "tracking_number": tracking_number,
-                }
+                },
             )
 
         shipments = self.shipment_repo.list_shipments_for_customer(
@@ -81,7 +81,7 @@ class LookupShipmentsTool:
                 data={
                     "lookup_result": "NOT_FOUND",
                     "tracking_number": tracking_number,
-                }
+                },
             )
 
         shipment_count = len(shipments)

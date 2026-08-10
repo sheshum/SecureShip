@@ -86,9 +86,7 @@ class Agent:
         return []
 
     @staticmethod
-    def _resolve_tool_choice(
-        session_state: ChatSessionState, *, is_first_iteration: bool
-    ) -> str:
+    def _resolve_tool_choice(session_state: ChatSessionState, *, is_first_iteration: bool) -> str:
         """Force a tool call on the first LLM call for gated states.
 
         Uses "required" (not a specific tool) so the model can still pick
@@ -183,9 +181,7 @@ class Agent:
                 "LLM Response",
                 {
                     "has_tool_calls": bool(completion.tool_calls),
-                    "content_preview": completion.content[:100]
-                    if completion.content
-                    else None,
+                    "content_preview": completion.content[:100] if completion.content else None,
                 },
             )
 
@@ -202,10 +198,7 @@ class Agent:
 
             log_console(
                 "Tool Calls",
-                [
-                    {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
-                    for tc in completion.tool_calls
-                ],
+                [{"id": tc.id, "name": tc.name, "arguments": tc.arguments} for tc in completion.tool_calls],
             )
 
             for tool_call in completion.tool_calls:

@@ -56,14 +56,14 @@ async def get_package(
     package_repo: Annotated[PackageRepository, Depends(get_package_repository)] = None,
 ) -> PackageItem:
     """Get single package by ID.
-    
+
     Args:
         package_id: UUID of the package to retrieve
         package_repo: Package repository dependency
-        
+
     Returns:
         Package details
-        
+
     Raises:
         HTTPException: 404 if package not found
     """
@@ -79,11 +79,11 @@ async def list_packages_by_shipment(
     package_repo: Annotated[PackageRepository, Depends(get_package_repository)] = None,
 ) -> PackageListResponse:
     """List all packages for a specific shipment.
-    
+
     Args:
         shipment_id: UUID of the shipment
         package_repo: Package repository dependency
-        
+
     Returns:
         List of packages for the shipment
     """

@@ -88,10 +88,7 @@ async def chat(
             "role": msg.role,
             "content": msg.content,
             "tool_call_id": msg.tool_call_id,
-            "tool_calls": [
-                {"id": tc.id, "name": tc.name, "arguments": tc.arguments}
-                for tc in msg.tool_calls
-            ]
+            "tool_calls": [{"id": tc.id, "name": tc.name, "arguments": tc.arguments} for tc in msg.tool_calls]
             if msg.tool_calls
             else None,
         }

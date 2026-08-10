@@ -19,9 +19,7 @@ from app.schemas.verification import VerifyCodeRequest, VerifyCodeResponse
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-def _record_transcript_note(
-    session_repo: ChatSessionRepository, session_id, content: str
-) -> None:
+def _record_transcript_note(session_repo: ChatSessionRepository, session_id, content: str) -> None:
     session_repo.append_messages(
         session_id,
         [{"role": "system", "content": content, "tool_call_id": None, "tool_calls": None}],
@@ -32,9 +30,7 @@ def _record_transcript_note(
 async def verify_code(
     request: VerifyCodeRequest,
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
-    verification_repo: Annotated[
-        SessionVerificationRepository, Depends(get_session_verification_repository)
-    ],
+    verification_repo: Annotated[SessionVerificationRepository, Depends(get_session_verification_repository)],
 ) -> VerifyCodeResponse:
     """Verify an OTP code for a chat session.
 
@@ -74,17 +70,13 @@ async def verify_code(
     now = datetime.now(UTC)
     if verification.expires_at < now:
         verification_repo.update_status(request.session_id, "expired")
-        session_repo.update_session(
-            request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
-        )
+        session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
         _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
     if verification.attempts >= 3:
         verification_repo.update_status(request.session_id, "exhausted")
-        session_repo.update_session(
-            request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
-        )
+        session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
         _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
@@ -107,9 +99,7 @@ async def verify_code(
         attempts_remaining = max(0, 3 - updated.attempts)
         if attempts_remaining == 0:
             verification_repo.update_status(request.session_id, "exhausted")
-            session_repo.update_session(
-                request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None
-            )
+            session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
             _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
             return VerifyCodeResponse(result="expired", attempts_remaining=0)
 

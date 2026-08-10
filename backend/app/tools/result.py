@@ -8,9 +8,11 @@ from dataclasses import dataclass
 from typing import Any
 from enum import Enum
 
+
 class ToolStatus(str, Enum):
     SUCCESS = "success"
     ERROR = "error"
+
 
 @dataclass
 class ToolResult:

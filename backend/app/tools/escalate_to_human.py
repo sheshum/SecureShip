@@ -39,11 +39,9 @@ ESCALATE_TO_HUMAN_SCHEMA = {
         },
     },
 }
-@tool(
-    name="escalate_to_human",
-    schema=ESCALATE_TO_HUMAN_SCHEMA,
-    requires_verification=False
-)
+
+
+@tool(name="escalate_to_human", schema=ESCALATE_TO_HUMAN_SCHEMA, requires_verification=False)
 class EscalateToHumanTool:
     """Tool for escalating customer issues to a human operator.
 
@@ -73,11 +71,8 @@ class EscalateToHumanTool:
         """
         # Update session state to ESCALATED_TO_HUMAN
         logger.info(f"Escalating session {context.session_id} to human operator. Issue: {issue_description}")
-        self.session_repo.update_session(
-            context.session_id,
-            state=ChatSessionState.ESCALATED_TO_HUMAN
-        )
-        
+        self.session_repo.update_session(context.session_id, state=ChatSessionState.ESCALATED_TO_HUMAN)
+
         # Here you would implement the logic to log the escalation request,
         # notify a human operator, or take any other necessary actions.
         # For this example, we'll just return a success message.
@@ -86,5 +81,5 @@ class EscalateToHumanTool:
             message="The issue has been escalated to a human operator.",
             data={
                 "issue_description": issue_description,
-            }
+            },
         )

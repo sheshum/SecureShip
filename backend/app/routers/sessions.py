@@ -41,9 +41,7 @@ async def list_sessions(
                 started_at=s.started_at,
                 ended_at=s.ended_at,
                 customer_id=s.customer_id,
-                customer_name=(
-                    f"{s.customer.first_name} {s.customer.last_name}" if s.customer else None
-                ),
+                customer_name=(f"{s.customer.first_name} {s.customer.last_name}" if s.customer else None),
             )
             for s in sessions_data
         ],
@@ -58,15 +56,15 @@ async def update_session(
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
 ) -> SessionItem:
     """Update session fields (e.g., set ended_at to close session).
-    
+
     Args:
         session_id: ID of the session to update
         request: Fields to update
         session_repo: Session repository dependency
-        
+
     Returns:
         Updated session item
-        
+
     Raises:
         HTTPException: 404 if session not found, 400 if no fields to update
     """

@@ -72,9 +72,7 @@ class PackageRepository:
         """Get single package by ID (admin view)."""
         with self._session_factory() as session:
             package = session.scalar(
-                select(Package)
-                .options(selectinload(Package.shipment))
-                .where(Package.id == package_id)
+                select(Package).options(selectinload(Package.shipment)).where(Package.id == package_id)
             )
             if package is None:
                 return None
@@ -84,9 +82,7 @@ class PackageRepository:
         """List all packages for a specific shipment."""
         with self._session_factory() as session:
             packages = session.scalars(
-                select(Package)
-                .options(selectinload(Package.shipment))
-                .where(Package.shipment_id == shipment_id)
+                select(Package).options(selectinload(Package.shipment)).where(Package.shipment_id == shipment_id)
             ).all()
             return [self._serialize_package(pkg) for pkg in packages]
 

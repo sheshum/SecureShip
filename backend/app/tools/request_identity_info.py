@@ -1,4 +1,5 @@
 """Tool for requesting user identity verification."""
+
 from logging import getLogger
 
 from app.repositories.chat_sessions import ChatSessionRepository

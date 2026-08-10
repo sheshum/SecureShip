@@ -24,9 +24,7 @@ class CustomerRepository:
                 return None
             return self._serialize_customer(customer)
 
-    def create_customer(
-        self, *, first_name: str, last_name: str, phone_number: str, address: str
-    ) -> dict:
+    def create_customer(self, *, first_name: str, last_name: str, phone_number: str, address: str) -> dict:
         with self._session_factory() as session:
             customer = Customer(
                 first_name=first_name,
@@ -132,9 +130,7 @@ class CustomerRepository:
             ).all()
             return [self._serialize_customer(customer) for customer in customers]
 
-    def find_by_identity(
-        self, first_name: str, last_name: str, phone_number: str
-    ) -> Customer | None:
+    def find_by_identity(self, first_name: str, last_name: str, phone_number: str) -> Customer | None:
         """Find customer by name and phone (case-insensitive name match).
 
         Used by identity verification to match customer records.

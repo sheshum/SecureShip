@@ -36,9 +36,7 @@ class Shipment(Base):
     __tablename__ = "shipment"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("customer.id"), index=True
-    )
+    customer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("customer.id"), index=True)
     tracking_number: Mapped[str] = mapped_column(String(50), unique=True)
     status: Mapped[str] = mapped_column(Enum(*SHIPMENT_STATUSES, name="shipment_status"))
     carrier: Mapped[str] = mapped_column(String(100))
@@ -55,9 +53,7 @@ class Package(Base):
     __tablename__ = "package"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    shipment_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("shipment.id"), index=True
-    )
+    shipment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("shipment.id"), index=True)
     description: Mapped[str] = mapped_column(String(255))
     weight_kg: Mapped[Decimal] = mapped_column(Numeric(8, 2))
     declared_value: Mapped[Decimal] = mapped_column(Numeric(10, 2))
@@ -109,9 +105,7 @@ class SessionVerification(Base):
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(20), default="pending")
-    matched_customer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("customer.id")
-    )
+    matched_customer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("customer.id"))
 
     session: Mapped[ChatSession] = relationship(back_populates="session_verification")
     matched_customer: Mapped[Customer] = relationship()

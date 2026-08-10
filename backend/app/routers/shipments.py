@@ -73,14 +73,14 @@ async def get_shipment(
     shipment_repo: Annotated[ShipmentRepository, Depends(get_shipment_repository)] = None,
 ) -> ShipmentItem:
     """Get single shipment by ID.
-    
+
     Args:
         shipment_id: UUID of the shipment to retrieve
         shipment_repo: Shipment repository dependency
-        
+
     Returns:
         Shipment details
-        
+
     Raises:
         HTTPException: 404 if shipment not found
     """

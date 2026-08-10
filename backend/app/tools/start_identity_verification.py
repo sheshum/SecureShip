@@ -110,10 +110,7 @@ class StartIdentityVerificationTool:
             + (f"customer_id={customer.id}" if customer else "no match")
         )
 
-
-        neutral_message = (
-            "Identity verification failed."
-        )
+        neutral_message = "Identity verification failed."
 
         if customer is None:
             return ToolResult(status=ToolStatus.ERROR, message=neutral_message)

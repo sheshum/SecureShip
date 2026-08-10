@@ -76,9 +76,7 @@ class ChatSessionRepository:
             session.commit()
             return snapshot
 
-    def set_conversation_messages(
-        self, session_id: UUID, messages: list[dict[str, Any]]
-    ) -> ChatSession | None:
+    def set_conversation_messages(self, session_id: UUID, messages: list[dict[str, Any]]) -> ChatSession | None:
         """Store conversation messages as the transcript.
 
         Args:
@@ -99,9 +97,7 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
-    def append_messages(
-        self, session_id: UUID, messages: list[dict[str, Any]]
-    ) -> ChatSession | None:
+    def append_messages(self, session_id: UUID, messages: list[dict[str, Any]]) -> ChatSession | None:
         """Append messages to the transcript.
 
         Used by non-agent code paths (e.g. /api/auth/verify-code) to record

@@ -11,9 +11,7 @@ class ChatRequest(BaseModel):
     """A single chat request with a user prompt."""
 
     prompt: str = Field(..., min_length=1, description="User's message to the assistant")
-    session_id: UUID | None = Field(
-        None, description="Optional session ID to continue an existing conversation"
-    )
+    session_id: UUID | None = Field(None, description="Optional session ID to continue an existing conversation")
 
 
 class ChatResponse(BaseModel):

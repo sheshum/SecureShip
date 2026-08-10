@@ -16,9 +16,7 @@ class VerifyCodeRequest(BaseModel):
 class VerifyCodeResponse(BaseModel):
     """Response from code verification attempt."""
 
-    result: Literal["verified", "incorrect", "expired"] = Field(
-        ..., description="Verification result status"
-    )
+    result: Literal["verified", "incorrect", "expired"] = Field(..., description="Verification result status")
     attempts_remaining: int | None = Field(
         None, description="Number of attempts remaining (only for 'incorrect' result)"
     )

@@ -61,13 +61,10 @@ def get_session_verification_repository() -> SessionVerificationRepository:
     return SessionVerificationRepository()
 
 
-
 def get_start_identity_verification_tool(
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
-    verification_repo: Annotated[
-        SessionVerificationRepository, Depends(get_session_verification_repository)
-    ],
+    verification_repo: Annotated[SessionVerificationRepository, Depends(get_session_verification_repository)],
 ) -> StartIdentityVerificationTool:
     """Dependency that constructs StartIdentityVerificationTool with its dependencies."""
     return StartIdentityVerificationTool(
@@ -90,6 +87,7 @@ def get_request_identity_info_tool(
     """Dependency that constructs RequestIdentityInfoTool with its dependencies."""
     return RequestIdentityInfoTool(session_repo=session_repo)
 
+
 def get_escalate_to_human_tool(
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
 ) -> EscalateToHumanTool:
@@ -100,12 +98,8 @@ def get_escalate_to_human_tool(
 def get_tool_registry(
     verify_identity_tool: Annotated[StartIdentityVerificationTool, Depends(get_start_identity_verification_tool)],
     lookup_shipments_tool: Annotated[LookupShipmentsTool, Depends(get_lookup_shipments_tool)],
-    request_identity_info_tool: Annotated[
-        RequestIdentityInfoTool, Depends(get_request_identity_info_tool)
-    ],
-    escalate_to_human_tool: Annotated[
-        EscalateToHumanTool, Depends(get_escalate_to_human_tool)
-    ],
+    request_identity_info_tool: Annotated[RequestIdentityInfoTool, Depends(get_request_identity_info_tool)],
+    escalate_to_human_tool: Annotated[EscalateToHumanTool, Depends(get_escalate_to_human_tool)],
 ) -> dict[str, ToolSpec]:
     """Build a fresh tool registry for this request.
 

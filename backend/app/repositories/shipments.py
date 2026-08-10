@@ -115,9 +115,7 @@ class ShipmentRepository:
         customer_uuid = UUID(str(customer_id))
         with self._session_factory() as session:
             stmt = (
-                select(Shipment)
-                .options(selectinload(Shipment.packages))
-                .where(Shipment.customer_id == customer_uuid)
+                select(Shipment).options(selectinload(Shipment.packages)).where(Shipment.customer_id == customer_uuid)
             )
 
             if tracking_number:
@@ -227,14 +225,13 @@ class ShipmentRepository:
             "address": customer.address,
         }
 
-
     @classmethod
     def _serialize_shipment_with_customer(cls, shipment: Shipment) -> dict:
         """Serialize shipment with customer name for admin views."""
         customer_name = None
         if shipment.customer:
             customer_name = f"{shipment.customer.first_name} {shipment.customer.last_name}"
-        
+
         return {
             "id": str(shipment.id),
             "customer_id": str(shipment.customer_id),
@@ -248,6 +245,7 @@ class ShipmentRepository:
             "customer_name": customer_name,
             "package_count": len(shipment.packages) if shipment.packages else 0,
         }
+
     @classmethod
     def _serialize_shipment(cls, shipment: Shipment) -> dict:
         return {
