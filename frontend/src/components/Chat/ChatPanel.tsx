@@ -16,19 +16,52 @@ type ChatPanelProps = {
   sessionState?: ChatSessionState
   onDraftChange: (value: string) => void
   onSubmit: () => void
+  onStopRequest: () => void
   onClose: () => void
 }
 
 type ChatHeaderProps = {
+  sessionState?: ChatSessionState
   onClose: () => void
 }
 
-function ChatHeader({ onClose }: ChatHeaderProps) {
+function VerificationBadge({ isVerified }: { isVerified: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+        isVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+      }`}
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-3 w-3"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        {isVerified ? (
+          <path
+            fillRule="evenodd"
+            d="M16.704 5.29a1 1 0 00-1.408-1.42l-6.361 6.29-2.227-2.202a1 1 0 00-1.408 1.42l2.932 2.9a1 1 0 001.408 0l7.064-6.988z"
+            clipRule="evenodd"
+          />
+        ) : (
+          <path d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v8a1 1 0 001 1h10a1 1 0 001-1v-8a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm2 6H8V6a2 2 0 114 0v2z" />
+        )}
+      </svg>
+      {isVerified ? 'Verified' : 'Unverified'}
+    </span>
+  )
+}
+
+function ChatHeader({ sessionState, onClose }: ChatHeaderProps) {
+  const isVerified = sessionState === ChatSessionState.verified
   return (
     <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
       <div className="flex items-center gap-2">
         <img src="/Logo_icon_only.png" alt="" className="h-10 w-12" />
         <p className="text-sm font-bold uppercase tracking-[0.14em] text-slate-700">SecureShip Assistant</p>
+        <VerificationBadge isVerified={isVerified} />
       </div>
       <button
         type="button"
@@ -52,14 +85,6 @@ function ChatHeader({ onClose }: ChatHeaderProps) {
     </header>
   )
 }
-
-// function AiAvatar() {
-//   return (
-//     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100">
-//       <img src="/ai_avatar.svg" alt="" className="h-5 w-5" aria-hidden="true" />
-//     </span>
-//   )
-// }
 
 function HumanAvatar() {
   return (
@@ -137,6 +162,7 @@ export function ChatPanel({
   sessionState,
   onDraftChange,
   onSubmit,
+  onStopRequest,
   onClose,
 }: ChatPanelProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -150,7 +176,7 @@ export function ChatPanel({
 
   return (
     <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-white/70 bg-white/84 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
-      <ChatHeader onClose={onClose} />
+      <ChatHeader sessionState={sessionState} onClose={onClose} />
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
         {hasMessages ? (
@@ -185,6 +211,8 @@ export function ChatPanel({
             value={draft}
             onChange={onDraftChange}
             onSubmit={onSubmit}
+            isSending={isLoading}
+            onStop={onStopRequest}
             inputRef={inputRef}
           />
         </div>

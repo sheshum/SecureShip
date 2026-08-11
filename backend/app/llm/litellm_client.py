@@ -39,6 +39,7 @@ class LiteLLMClient(LLMClient):
                 tool_choice=resolved_tool_choice,
                 stream=False,
             )
+
             choice = response.choices[0]
             message = choice.message
             tool_calls = tuple(

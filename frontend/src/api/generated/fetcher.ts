@@ -1,19 +1,38 @@
 import { resolveApiUrl } from '../url'
 import { getAccessToken } from '../authToken'
 
-export async function customFetcher<T>(url: string, options: RequestInit): Promise<T> {
+// keyed by request url so in-flight requests can be cancelled from outside the fetcher
+const pendingRequests = new Map<string, AbortController>()
+
+export function cancelRequest(url: string): boolean {
+  const controller = pendingRequests.get(url)
+  if (!controller) return false
+  controller.abort()
+  return true
+}
+
+export async function customFetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
   const requestUrl = resolveApiUrl(url)
   const token = await getAccessToken()
 
+  const controller = new AbortController()
+  options.signal?.addEventListener('abort', () => controller.abort(), { once: true })
+  pendingRequests.set(url, controller)
+
   let response: Response
-  response = await fetch(requestUrl, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers ?? {}),
-    },
-  })
+  try {
+    response = await fetch(requestUrl, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers ?? {}),
+      },
+    })
+  } finally {
+    if (pendingRequests.get(url) === controller) pendingRequests.delete(url)
+  }
 
   if (!response.ok) {
     const text = await response.text()

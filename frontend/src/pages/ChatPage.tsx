@@ -5,9 +5,10 @@ import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
-import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost } from '../api/generated/client'
+import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl } from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 import { resolveApiUrl } from '../api/url'
+import { cancelRequest } from '../api/generated/fetcher'
 
 function createMessage(role: 'user' | 'assistant', content: string) {
   return {
@@ -61,12 +62,17 @@ export function ChatPage() {
         }
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
       console.error('Chat request failed:', error)
       setMessages((prev) => [
         ...prev,
         createMessage('assistant', 'Sorry, I encountered an error. Please try again.'),
       ])
     }
+  }
+
+  const handleStopRequest = () => {
+    cancelRequest(getChatApiChatPostUrl())
   }
 
   const handleVerifyCode = async (code: string) => {
@@ -154,6 +160,7 @@ export function ChatPage() {
           sessionState={sessionState}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
+          onStopRequest={handleStopRequest}
           onClose={() => setIsCloseModalOpen(true)}
         />
       </div>

@@ -25,7 +25,10 @@ export function OtpVerificationModal({
   }
 
   return (
-    <dialog open className="fixed inset-0 z-50 flex items-center justify-center bg-transparent p-4">
+    <dialog
+      open
+      className="fixed inset-0 z-50 m-0 flex h-screen w-screen max-h-none max-w-none items-center justify-center overflow-visible border-none bg-transparent p-4"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-slate-950/55"
@@ -33,7 +36,7 @@ export function OtpVerificationModal({
         aria-label="Close verification modal"
       />
 
-      <section className="relative w-full max-w-md rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
+      <section className="relative z-10 w-full max-w-md rounded-2xl border border-white/65 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
         <h3 className="text-lg font-semibold text-slate-900">Enter Verification Code</h3>
         <p className="mt-1 text-sm text-slate-600">
           We sent a one-time code to your verified phone number.

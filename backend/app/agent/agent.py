@@ -160,6 +160,7 @@ class Agent:
         completion = None
 
         for iteration in range(MAX_ITERATIONS):
+            tool_choice = self._resolve_tool_choice(current_state, is_first_iteration=iteration == 0)
             log_console(
                 "Agent Turn",
                 {
@@ -170,7 +171,6 @@ class Agent:
                     "messages_count": len(messages),
                 },
             )
-            tool_choice = self._resolve_tool_choice(current_state, is_first_iteration=iteration == 0)
             completion = await self.llm_client.plan_chat_turn(
                 messages=messages,
                 tools=available_tools if available_tools else None,

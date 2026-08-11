@@ -96,16 +96,11 @@ class StartIdentityVerificationTool:
             ChatSessionState.ANONYMOUS,
             ChatSessionState.COLLECTING_IDENTITY,
         }:
-            # This should never happen (dispatch_tool_call checks verification)
-            log_console(
-                f"start_identity_verification: session {context.session_id} is not ANONYMOUS, state={context.state}"
-            )
             return ToolResult(
                 status=ToolStatus.ERROR,
                 message="Already verified. Identity verification cannot be performed in the current session state.",
             )
 
-        # Use repository to find customer by identity
         customer = self.customer_repo.find_by_identity(first_name, last_name, phone_number)
 
         log_console(
@@ -113,12 +108,9 @@ class StartIdentityVerificationTool:
             + (f"customer_id={customer.id}" if customer else "no match")
         )
 
-        neutral_message = "Identity verification failed."
-
         if customer is None:
-            return ToolResult(status=ToolStatus.ERROR, message=neutral_message)
+            return ToolResult(status=ToolStatus.ERROR, message="Identity verification failed.")
 
-        # Match found - generate and send OTP
         code = generate_otp()
         code_hash_value = hash_code(code)
 
@@ -142,9 +134,10 @@ class StartIdentityVerificationTool:
         # Send mock SMS (logs to console in dev, would be Twilio in prod)
         send_mock_sms(customer.phone_number, code)
 
-        # Return SAME neutral message as failure case (SEC-13)
-        # The model learns "code sent" but never learns the code itself
         return ToolResult(
             status=ToolStatus.SUCCESS,
-            message=neutral_message,
+            message=(
+                "Identity verification initiated. "
+                "If the information provided matches our records, a verification code has been sent to the customer's phone."
+            )
         )
