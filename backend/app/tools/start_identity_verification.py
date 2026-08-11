@@ -138,6 +138,7 @@ class StartIdentityVerificationTool:
             status=ToolStatus.SUCCESS,
             message=(
                 "Identity verification initiated. "
-                "If the information provided matches our records, a verification code has been sent to the customer's phone."
+                "If the information provided matches our records, "
+                "a verification code has been sent to the customer's phone."
             )
         )
