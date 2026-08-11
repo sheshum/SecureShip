@@ -13,7 +13,7 @@ type MessageContentProps = {
  */
 export function MessageContent({ content }: MessageContentProps) {
   return (
-    <div className="prose prose-sm max-w-none text-sm prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2">
+    <div className="prose prose-sm max-w-none text-sm prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2 prose-a:text-sky-600 prose-code:rounded prose-code:bg-sky-50 prose-code:px-1 prose-code:text-sky-700">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
   )

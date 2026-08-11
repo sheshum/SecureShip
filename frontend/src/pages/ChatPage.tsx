@@ -18,6 +18,10 @@ function createMessage(role: 'user' | 'assistant', content: string) {
   }
 }
 
+const handleStopRequest = () => {
+  cancelRequest(getChatApiChatPostUrl())
+}
+
 export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
@@ -69,10 +73,6 @@ export function ChatPage() {
         createMessage('assistant', 'Sorry, I encountered an error. Please try again.'),
       ])
     }
-  }
-
-  const handleStopRequest = () => {
-    cancelRequest(getChatApiChatPostUrl())
   }
 
   const handleVerifyCode = async (code: string) => {

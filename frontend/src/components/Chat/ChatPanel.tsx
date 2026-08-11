@@ -88,8 +88,16 @@ function ChatHeader({ sessionState, onClose }: ChatHeaderProps) {
 
 function HumanAvatar() {
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 shadow-sm">
       <img src="/human_avatar.svg" alt="" className="h-5 w-5" aria-hidden="true" />
+    </span>
+  )
+}
+
+function AiAvatar() {
+  return (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-stone-100 shadow-sm">
+      <img src="/ai_avatar.svg" alt="" className="h-4 w-4" aria-hidden="true" />
     </span>
   )
 }
@@ -119,22 +127,22 @@ function MessageList({ messages, isLoading }: MessageListProps) {
   }, [messages, isLoading])
 
   return (
-    <div className="mb-4 flex flex-1 flex-col gap-3 overflow-y-auto">
+    <div className="mb-4 flex flex-1 flex-col gap-5 overflow-y-auto">
       {messages.map((message) => (
         <div
           key={message.id}
           className={`flex max-w-[80%] items-start gap-2 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
         >
-          {/* {message.role !== 'user' && (isEscalated ? <HumanAvatar /> : <AiAvatar />)} */}
+          {message.role !== 'user' && <AiAvatar />}
           <div
-            className={`rounded-lg px-4 py-3 ${
+            className={
               message.role === 'user'
-                ? 'bg-sky-100 text-sky-900'
-                : 'bg-white text-slate-900 shadow-sm'
-            }`}
+                ? 'rounded-2xl rounded-br-sm bg-gradient-to-br from-sky-400 to-blue-600 px-4 py-3 text-sm text-white shadow-sm'
+                : 'rounded-2xl rounded-bl-sm border border-stone-200 border-l-2 border-l-sky-400 bg-stone-100 px-4 py-3 text-slate-900 shadow-sm'
+            }
           >
             {message.role === 'user' ? (
-              <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+              <p className="whitespace-pre-wrap">{message.content}</p>
             ) : (
               <MessageContent content={message.content} />
             )}
@@ -142,7 +150,7 @@ function MessageList({ messages, isLoading }: MessageListProps) {
         </div>
       ))}
       {isLoading && (
-        <div className="mr-auto max-w-[80%] rounded-lg bg-white px-4 py-3 shadow-sm">
+        <div className="mr-auto max-w-[80%] rounded-lg bg-stone-100 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: '0ms' }} />
             <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: '150ms' }} />
@@ -175,7 +183,7 @@ export function ChatPanel({
   ]
 
   return (
-    <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-white/70 bg-white/84 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
+    <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-white/70 bg-gradient-to-br from-stone-50/90 via-amber-50/85 to-amber-100/90 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
       <ChatHeader sessionState={sessionState} onClose={onClose} />
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
@@ -183,7 +191,7 @@ export function ChatPanel({
           <MessageList messages={messages} isLoading={isLoading} />
         ) : (
           <div className="flex flex-1 flex-col justify-center">
-            <div className="mx-auto w-full max-w-2xl rounded-3xl border border-slate-200/90 bg-white/80 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">
+            <div className="mx-auto w-full max-w-2xl rounded-3xl border border-stone-200/90 bg-stone-50/90 p-5 text-center shadow-[0_16px_46px_rgba(15,23,42,0.08)] sm:p-6">
               <h3 className="text-lg font-semibold text-slate-900">What can I help you with today?</h3>
               <div className="mt-4 flex flex-wrap justify-center gap-2.5">
                 {starterPrompts.map((prompt) => (
@@ -194,7 +202,7 @@ export function ChatPanel({
                       onDraftChange(prompt)
                       inputRef.current?.focus()
                     }}
-                    className="rounded-full border border-slate-300 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800"
+                    className="rounded-full border border-stone-300 bg-stone-50 px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800"
                   >
                     {prompt}
                   </button>

@@ -31,7 +31,7 @@ export function ChatInput({ value, onChange, onSubmit, isSending, onStop, inputR
       <p id="chat-message-hint" className="sr-only">
         Press Shift plus Enter to send your message. Press Enter to add a new line.
       </p>
-      <div className="flex items-end rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2">
+      <div className="flex items-end rounded-2xl border border-stone-200 bg-stone-50/95 p-2 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur focus-within:ring-2 focus-within:ring-sky-500 focus-within:ring-offset-2">
         <textarea
           ref={inputRef}
           id="chat-message"
