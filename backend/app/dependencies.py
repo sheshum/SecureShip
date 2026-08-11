@@ -139,6 +139,8 @@ def get_agent(
 @lru_cache
 def get_auth0_client() -> Auth0FastAPI:
     settings = get_settings()
+    if not settings.auth0_domain or not settings.auth0_audience:
+        raise RuntimeError("Admin auth is not configured")
     return Auth0FastAPI(domain=settings.auth0_domain, audience=settings.auth0_audience)
 
 
@@ -148,7 +150,12 @@ async def require_admin_auth(request: Request) -> dict:
     Built lazily (via get_auth0_client) so the app still boots and the public
     chat/auth flow keeps working when AUTH0_DOMAIN/AUTH0_AUDIENCE are unset.
     """
-    claims = await get_auth0_client().require_auth()(request)
+    try:
+        auth0_client = get_auth0_client()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail="Admin auth is not configured") from exc
+
+    claims = await auth0_client.require_auth()(request)
     if "admin:all" not in claims.get("permissions", []):
         raise HTTPException(status_code=403, detail="Forbidden")
     return claims
