@@ -15,7 +15,7 @@ type ChatPanelProps = {
   isLoading: boolean
   sessionState?: ChatSessionState
   onDraftChange: (value: string) => void
-  onSubmit: () => void
+  onSubmit: (message?: string) => void
   onStopRequest: () => void
   onClose: () => void
 }
@@ -198,10 +198,7 @@ export function ChatPanel({
                   <button
                     key={prompt}
                     type="button"
-                    onClick={() => {
-                      onDraftChange(prompt)
-                      inputRef.current?.focus()
-                    }}
+                    onClick={() => onSubmit(prompt)}
                     className="rounded-full border border-stone-300 bg-stone-50 px-3.5 py-2 text-xs font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-800"
                   >
                     {prompt}

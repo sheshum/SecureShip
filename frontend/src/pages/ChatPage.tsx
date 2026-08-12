@@ -38,8 +38,8 @@ export function ChatPage() {
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
 
-  const handleSubmit = async () => {
-    const trimmedMessage = draft.trim()
+  const handleSubmit = async (message?: string) => {
+    const trimmedMessage = (message ?? draft).trim()
     if (!trimmedMessage || chatMutation.isPending) return
 
     // Add user message to display
