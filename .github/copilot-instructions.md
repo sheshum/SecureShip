@@ -22,6 +22,19 @@ Any request that involves adding, removing, or modifying tables, columns, constr
 - Tailwind v4 via `@tailwindcss/vite`. React 19 with React Compiler enabled via Babel in `vite.config.ts`.
 - Admin panel (`/dashboard`) is Auth0-protected: backend endpoints require a valid JWT with the `admin:all` permission (`require_admin_auth` in `dependencies.py`); frontend wraps the route in `ProtectedRoute`. No RBAC beyond that one permission check is implemented yet.
 
+## Lint after changes
+
+After modifying any backend file, run from `backend/`:
+```bash
+uv run ruff format .
+uv run ruff check .
+```
+After modifying any frontend file, run from `frontend/`:
+```bash
+npm run lint:ci
+```
+Fix any reported errors before considering the task done.
+
 <!-- mermaid-ai-skills:start -->
 ## Mermaid Diagrams
 
