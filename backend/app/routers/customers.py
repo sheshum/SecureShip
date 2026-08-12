@@ -68,7 +68,10 @@ async def create_customer(
     customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)] = None,
 ) -> CustomerItem:
     """Create a new customer."""
-    customer = customer_repo.create_customer(**request.model_dump())
+    try:
+        customer = customer_repo.create_customer(**request.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     return CustomerItem(**customer)
 
 
@@ -82,7 +85,10 @@ async def update_customer(
     updates = request.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(status_code=400, detail="No fields to update")
-    customer = customer_repo.update_customer(customer_id, **updates)
+    try:
+        customer = customer_repo.update_customer(customer_id, **updates)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     if customer is None:
         raise HTTPException(status_code=404, detail=f"Customer {customer_id} not found")
     return CustomerItem(**customer)

@@ -183,7 +183,7 @@ export function ChatPanel({
   ]
 
   return (
-    <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-white/70 bg-gradient-to-br from-stone-50/90 via-amber-50/85 to-amber-100/90 shadow-[0_24px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl lg:basis-[76%]">
+    <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-slate-200/60 bg-gradient-to-b from-white via-slate-50/95 to-slate-100/80 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:basis-[76%]">
       <ChatHeader sessionState={sessionState} onClose={onClose} />
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">

@@ -7,6 +7,7 @@ import {
 } from '../../api/generated/client'
 import type { CustomerItem } from '../../api/generated/schemas'
 import { useDebounce } from '../../lib/useDebounce'
+import { getApiErrorMessage } from '../../lib/apiError'
 import { CustomerFormModal, type CustomerFormValues } from './CustomerFormModal'
 import { DataTable } from './DataTable'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
@@ -127,7 +128,7 @@ export function CustomersTable({ initialCustomerId, onNavigateToShipments }: Cus
       setFormState(null)
       await refetch()
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Something went wrong')
+      setFormError(getApiErrorMessage(error))
     }
   }
 

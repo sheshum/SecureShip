@@ -6,6 +6,7 @@ from collections.abc import Callable
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import SessionLocal
@@ -33,7 +34,13 @@ class CustomerRepository:
                 address=address,
             )
             session.add(customer)
-            session.commit()
+            try:
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                if "uq_customer_first_last_phone" in str(e.orig):
+                    raise ValueError("A customer with this name and phone number already exists") from e
+                raise
             session.refresh(customer)
             return self._serialize_customer(customer)
 
@@ -44,7 +51,13 @@ class CustomerRepository:
                 return None
             for key, value in updates.items():
                 setattr(customer, key, value)
-            session.commit()
+            try:
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                if "uq_customer_first_last_phone" in str(e.orig):
+                    raise ValueError("A customer with this name and phone number already exists") from e
+                raise
             session.refresh(customer)
             return self._serialize_customer(customer)
 
