@@ -7,10 +7,10 @@ flowchart TB
     end
 
     subgraph Backend["Backend API (Python / FastAPI suggested)"]
-        ChatAPI["/chat endpoint<br/>(HTTP or WebSocket — Section 6.3/6.3b)"]
+        ChatAPI["/api/chat endpoint<br/>(HTTP POST)"]
         VerifyAPI["/verify-code endpoint"]
         AdminAPI["/admin/* endpoints"]
-        SessionStore["Session Store<br/>(in-memory / Redis, live state)"]
+        SessionStore["Session Store<br/>(Postgres — chat_session table)"]
         ChatDB["Chat Session Storage<br/>(Postgres JSONB — Section 4.6)"]
         ToolLayer["Tool Layer<br/>(enforces gating BEFORE<br/>any data tool executes)"]
         AuthMW["Admin Auth Middleware<br/>(Auth0 SDK)"]
