@@ -117,14 +117,12 @@ def get_tool_registry(
         escalate_to_human_tool,
     ]:
         name, schema, requires_verification = get_tool_metadata(type(tool_instance))
-        registry.register(
-            ToolSpec(
-                name=name,
-                schema=schema,
-                handler=tool_instance,
-                requires_verification=requires_verification,
-            )
-        )
+        registry.register(ToolSpec(
+            name=name,
+            schema=schema,
+            handler=tool_instance,
+            requires_verification=requires_verification,
+        ))
     return registry
 
 
