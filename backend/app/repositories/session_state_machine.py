@@ -45,6 +45,9 @@ class SessionStateValidator:
         # Collecting identity transitions
         (ChatSessionState.COLLECTING_IDENTITY, ChatSessionState.CODE_SENT),
         (ChatSessionState.COLLECTING_IDENTITY, ChatSessionState.ANONYMOUS),  # rejection/restart
+        # Post-escalation: Melany can still guide an anonymous user through verification
+        (ChatSessionState.ESCALATED_TO_HUMAN, ChatSessionState.COLLECTING_IDENTITY),
+        (ChatSessionState.ESCALATED_TO_HUMAN, ChatSessionState.CODE_SENT),
     }
 
     @staticmethod
@@ -69,7 +72,7 @@ class SessionStateValidator:
 
         # Check if transition is in the valid set
         if (from_state, to_state) not in SessionStateValidator.VALID_TRANSITIONS:
-            raise ValueError(f"Invalid state transition: {from_state.value} -> {to_state.value}")
+            raise ValueError(f"Invalid state transition: {from_state} -> {to_state}")
 
         # Enforce state-specific invariants for the target state
         SessionStateValidator._enforce_target_state_invariants(to_state, new_customer_id)

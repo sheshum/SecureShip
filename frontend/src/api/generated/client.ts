@@ -57,8 +57,6 @@ import type {
 import { customFetcher } from './fetcher';
 
 
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
-
 
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
@@ -99,7 +97,7 @@ export const getGetHealthHealthGetUrl = () => {
 /**
  * @summary Get Health
  */
-export const getHealthHealthGet = async ( options?: Parameters<typeof customFetcher>[1]): Promise<getHealthHealthGetResponse> => {
+export const getHealthHealthGet = async ( options?: RequestInit): Promise<getHealthHealthGetResponse> => {
 
   return customFetcher<getHealthHealthGetResponse>(getGetHealthHealthGetUrl(),
   {
@@ -121,16 +119,16 @@ export const getGetHealthHealthGetQueryKey = () => {
     }
 
 
-export const getGetHealthHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof getHealthHealthGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getGetHealthHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof getHealthHealthGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetHealthHealthGetQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHealthHealthGet>>> = ({ signal }) => getHealthHealthGet({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHealthHealthGet>>> = ({ signal }) => getHealthHealthGet({ signal });
 
 
 
@@ -150,7 +148,7 @@ export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealt
           TError,
           Awaited<ReturnType<typeof getHealthHealthGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealthHealthGet>>, TError = unknown>(
@@ -160,11 +158,11 @@ export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealt
           TError,
           Awaited<ReturnType<typeof getHealthHealthGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealthHealthGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -172,7 +170,7 @@ export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealt
  */
 
 export function useGetHealthHealthGet<TData = Awaited<ReturnType<typeof getHealthHealthGet>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealthHealthGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -220,7 +218,7 @@ export const getChatApiChatPostUrl = () => {
  * Chat endpoint: delegate to Agent for agentic loop execution.
  * @summary Chat
  */
-export const chatApiChatPost = async (chatRequest: ChatRequest, options?: Parameters<typeof customFetcher>[1]): Promise<chatApiChatPostResponse> => {
+export const chatApiChatPost = async (chatRequest: ChatRequest, options?: RequestInit): Promise<chatApiChatPostResponse> => {
 
   return customFetcher<chatApiChatPostResponse>(getChatApiChatPostUrl(),
   {
@@ -236,15 +234,15 @@ export const chatApiChatPost = async (chatRequest: ChatRequest, options?: Parame
 
 
 export const getChatApiChatPostMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chatApiChatPost>>, TError,{data: ChatRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chatApiChatPost>>, TError,{data: ChatRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof chatApiChatPost>>, TError,{data: ChatRequest}, TContext> => {
 
 const mutationKey = ['chatApiChatPost'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -252,7 +250,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof chatApiChatPost>>, {data: ChatRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  chatApiChatPost(data,requestOptions)
+          return  chatApiChatPost(data,)
         }
 
 
@@ -270,7 +268,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Chat
  */
 export const useChatApiChatPost = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chatApiChatPost>>, TError,{data: ChatRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof chatApiChatPost>>, TError,{data: ChatRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof chatApiChatPost>>,
         TError,
@@ -330,7 +328,7 @@ export const getVerifyCodeApiAuthVerifyCodePostUrl = () => {
  *     HTTPException: 400 if no verification in progress or session not found
  * @summary Verify Code
  */
-export const verifyCodeApiAuthVerifyCodePost = async (verifyCodeRequest: VerifyCodeRequest, options?: Parameters<typeof customFetcher>[1]): Promise<verifyCodeApiAuthVerifyCodePostResponse> => {
+export const verifyCodeApiAuthVerifyCodePost = async (verifyCodeRequest: VerifyCodeRequest, options?: RequestInit): Promise<verifyCodeApiAuthVerifyCodePostResponse> => {
 
   return customFetcher<verifyCodeApiAuthVerifyCodePostResponse>(getVerifyCodeApiAuthVerifyCodePostUrl(),
   {
@@ -346,15 +344,15 @@ export const verifyCodeApiAuthVerifyCodePost = async (verifyCodeRequest: VerifyC
 
 
 export const getVerifyCodeApiAuthVerifyCodePostMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext> => {
 
 const mutationKey = ['verifyCodeApiAuthVerifyCodePost'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -362,7 +360,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, {data: VerifyCodeRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  verifyCodeApiAuthVerifyCodePost(data,requestOptions)
+          return  verifyCodeApiAuthVerifyCodePost(data,)
         }
 
 
@@ -380,7 +378,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Verify Code
  */
 export const useVerifyCodeApiAuthVerifyCodePost = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>, TError,{data: VerifyCodeRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof verifyCodeApiAuthVerifyCodePost>>,
         TError,
@@ -437,7 +435,7 @@ export const getListSessionsApiSessionsGetUrl = (params?: ListSessionsApiSession
  *     List of chat sessions
  * @summary List Sessions
  */
-export const listSessionsApiSessionsGet = async (params?: ListSessionsApiSessionsGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listSessionsApiSessionsGetResponse> => {
+export const listSessionsApiSessionsGet = async (params?: ListSessionsApiSessionsGetParams, options?: RequestInit): Promise<listSessionsApiSessionsGetResponse> => {
 
   return customFetcher<listSessionsApiSessionsGetResponse>(getListSessionsApiSessionsGetUrl(params),
   {
@@ -459,16 +457,16 @@ export const getListSessionsApiSessionsGetQueryKey = (params?: ListSessionsApiSe
     }
 
 
-export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListSessionsApiSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListSessionsApiSessionsGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>> = ({ signal }) => listSessionsApiSessionsGet(params, { signal });
 
 
 
@@ -488,7 +486,7 @@ export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof 
           TError,
           Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
@@ -498,11 +496,11 @@ export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof 
           TError,
           Awaited<ReturnType<typeof listSessionsApiSessionsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
- params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -510,7 +508,7 @@ export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof 
  */
 
 export function useListSessionsApiSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError = HTTPValidationError>(
- params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListSessionsApiSessionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiSessionsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -570,7 +568,7 @@ export const getUpdateSessionApiSessionsSessionIdPatchUrl = (sessionId: string,)
  * @summary Update Session
  */
 export const updateSessionApiSessionsSessionIdPatch = async (sessionId: string,
-    sessionUpdateRequest: SessionUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updateSessionApiSessionsSessionIdPatchResponse> => {
+    sessionUpdateRequest: SessionUpdateRequest, options?: RequestInit): Promise<updateSessionApiSessionsSessionIdPatchResponse> => {
 
   return customFetcher<updateSessionApiSessionsSessionIdPatchResponse>(getUpdateSessionApiSessionsSessionIdPatchUrl(sessionId),
   {
@@ -586,15 +584,15 @@ export const updateSessionApiSessionsSessionIdPatch = async (sessionId: string,
 
 
 export const getUpdateSessionApiSessionsSessionIdPatchMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, TError,{sessionId: string;data: SessionUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, TError,{sessionId: string;data: SessionUpdateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, TError,{sessionId: string;data: SessionUpdateRequest}, TContext> => {
 
 const mutationKey = ['updateSessionApiSessionsSessionIdPatch'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -602,7 +600,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, {sessionId: string;data: SessionUpdateRequest}> = (props) => {
           const {sessionId,data} = props ?? {};
 
-          return  updateSessionApiSessionsSessionIdPatch(sessionId,data,requestOptions)
+          return  updateSessionApiSessionsSessionIdPatch(sessionId,data,)
         }
 
 
@@ -620,7 +618,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update Session
  */
 export const useUpdateSessionApiSessionsSessionIdPatch = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, TError,{sessionId: string;data: SessionUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>, TError,{sessionId: string;data: SessionUpdateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateSessionApiSessionsSessionIdPatch>>,
         TError,
@@ -678,7 +676,7 @@ export const getListPackagesApiPackagesGetUrl = (params?: ListPackagesApiPackage
  *     List of packages with total count
  * @summary List Packages
  */
-export const listPackagesApiPackagesGet = async (params?: ListPackagesApiPackagesGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listPackagesApiPackagesGetResponse> => {
+export const listPackagesApiPackagesGet = async (params?: ListPackagesApiPackagesGetParams, options?: RequestInit): Promise<listPackagesApiPackagesGetResponse> => {
 
   return customFetcher<listPackagesApiPackagesGetResponse>(getListPackagesApiPackagesGetUrl(params),
   {
@@ -700,16 +698,16 @@ export const getListPackagesApiPackagesGetQueryKey = (params?: ListPackagesApiPa
     }
 
 
-export const getListPackagesApiPackagesGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListPackagesApiPackagesGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListPackagesApiPackagesGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>> = ({ signal }) => listPackagesApiPackagesGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>> = ({ signal }) => listPackagesApiPackagesGet(params, { signal });
 
 
 
@@ -729,7 +727,7 @@ export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof 
           TError,
           Awaited<ReturnType<typeof listPackagesApiPackagesGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
@@ -739,11 +737,11 @@ export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof 
           TError,
           Awaited<ReturnType<typeof listPackagesApiPackagesGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
- params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -751,7 +749,7 @@ export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof 
  */
 
 export function useListPackagesApiPackagesGet<TData = Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError = HTTPValidationError>(
- params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListPackagesApiPackagesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesApiPackagesGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -799,7 +797,7 @@ export const getCreatePackageApiPackagesPostUrl = () => {
  * Create a new package, resolving its shipment by tracking number.
  * @summary Create Package
  */
-export const createPackageApiPackagesPost = async (packageCreateRequest: PackageCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createPackageApiPackagesPostResponse> => {
+export const createPackageApiPackagesPost = async (packageCreateRequest: PackageCreateRequest, options?: RequestInit): Promise<createPackageApiPackagesPostResponse> => {
 
   return customFetcher<createPackageApiPackagesPostResponse>(getCreatePackageApiPackagesPostUrl(),
   {
@@ -815,15 +813,15 @@ export const createPackageApiPackagesPost = async (packageCreateRequest: Package
 
 
 export const getCreatePackageApiPackagesPostMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext> => {
 
 const mutationKey = ['createPackageApiPackagesPost'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -831,7 +829,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, {data: PackageCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  createPackageApiPackagesPost(data,requestOptions)
+          return  createPackageApiPackagesPost(data,)
         }
 
 
@@ -849,7 +847,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create Package
  */
 export const useCreatePackageApiPackagesPost = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPackageApiPackagesPost>>, TError,{data: PackageCreateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPackageApiPackagesPost>>,
         TError,
@@ -900,7 +898,7 @@ export const getGetPackageApiPackagesPackageIdGetUrl = (packageId: string,) => {
  *     HTTPException: 404 if package not found
  * @summary Get Package
  */
-export const getPackageApiPackagesPackageIdGet = async (packageId: string, options?: Parameters<typeof customFetcher>[1]): Promise<getPackageApiPackagesPackageIdGetResponse> => {
+export const getPackageApiPackagesPackageIdGet = async (packageId: string, options?: RequestInit): Promise<getPackageApiPackagesPackageIdGetResponse> => {
 
   return customFetcher<getPackageApiPackagesPackageIdGetResponse>(getGetPackageApiPackagesPackageIdGetUrl(packageId),
   {
@@ -922,16 +920,16 @@ export const getGetPackageApiPackagesPackageIdGetQueryKey = (packageId: string,)
     }
 
 
-export const getGetPackageApiPackagesPackageIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getGetPackageApiPackagesPackageIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPackageApiPackagesPackageIdGetQueryKey(packageId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>> = ({ signal }) => getPackageApiPackagesPackageIdGet(packageId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>> = ({ signal }) => getPackageApiPackagesPackageIdGet(packageId, { signal });
 
 
 
@@ -951,7 +949,7 @@ export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
@@ -961,11 +959,11 @@ export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
- packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -973,7 +971,7 @@ export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<
  */
 
 export function useGetPackageApiPackagesPackageIdGet<TData = Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError = HTTPValidationError>(
- packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ packageId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPackageApiPackagesPackageIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1022,7 +1020,7 @@ export const getUpdatePackageApiPackagesPackageIdPatchUrl = (packageId: string,)
  * @summary Update Package
  */
 export const updatePackageApiPackagesPackageIdPatch = async (packageId: string,
-    packageUpdateRequest: PackageUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updatePackageApiPackagesPackageIdPatchResponse> => {
+    packageUpdateRequest: PackageUpdateRequest, options?: RequestInit): Promise<updatePackageApiPackagesPackageIdPatchResponse> => {
 
   return customFetcher<updatePackageApiPackagesPackageIdPatchResponse>(getUpdatePackageApiPackagesPackageIdPatchUrl(packageId),
   {
@@ -1038,15 +1036,15 @@ export const updatePackageApiPackagesPackageIdPatch = async (packageId: string,
 
 
 export const getUpdatePackageApiPackagesPackageIdPatchMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext> => {
 
 const mutationKey = ['updatePackageApiPackagesPackageIdPatch'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1054,7 +1052,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, {packageId: string;data: PackageUpdateRequest}> = (props) => {
           const {packageId,data} = props ?? {};
 
-          return  updatePackageApiPackagesPackageIdPatch(packageId,data,requestOptions)
+          return  updatePackageApiPackagesPackageIdPatch(packageId,data,)
         }
 
 
@@ -1072,7 +1070,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update Package
  */
 export const useUpdatePackageApiPackagesPackageIdPatch = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>, TError,{packageId: string;data: PackageUpdateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updatePackageApiPackagesPackageIdPatch>>,
         TError,
@@ -1113,7 +1111,7 @@ export const getDeletePackageApiPackagesPackageIdDeleteUrl = (packageId: string,
  * Delete a package.
  * @summary Delete Package
  */
-export const deletePackageApiPackagesPackageIdDelete = async (packageId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deletePackageApiPackagesPackageIdDeleteResponse> => {
+export const deletePackageApiPackagesPackageIdDelete = async (packageId: string, options?: RequestInit): Promise<deletePackageApiPackagesPackageIdDeleteResponse> => {
 
   return customFetcher<deletePackageApiPackagesPackageIdDeleteResponse>(getDeletePackageApiPackagesPackageIdDeleteUrl(packageId),
   {
@@ -1129,15 +1127,15 @@ export const deletePackageApiPackagesPackageIdDelete = async (packageId: string,
 
 
 export const getDeletePackageApiPackagesPackageIdDeleteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext> => {
 
 const mutationKey = ['deletePackageApiPackagesPackageIdDelete'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1145,7 +1143,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, {packageId: string}> = (props) => {
           const {packageId} = props ?? {};
 
-          return  deletePackageApiPackagesPackageIdDelete(packageId,requestOptions)
+          return  deletePackageApiPackagesPackageIdDelete(packageId,)
         }
 
 
@@ -1163,7 +1161,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete Package
  */
 export const useDeletePackageApiPackagesPackageIdDelete = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>, TError,{packageId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deletePackageApiPackagesPackageIdDelete>>,
         TError,
@@ -1211,7 +1209,7 @@ export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetUrl = (s
  *     List of packages for the shipment
  * @summary List Packages By Shipment
  */
-export const listPackagesByShipmentApiPackagesByShipmentShipmentIdGet = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse> => {
+export const listPackagesByShipmentApiPackagesByShipmentShipmentIdGet = async (shipmentId: string, options?: RequestInit): Promise<listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse> => {
 
   return customFetcher<listPackagesByShipmentApiPackagesByShipmentShipmentIdGetResponse>(getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetUrl(shipmentId),
   {
@@ -1233,16 +1231,16 @@ export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryKey
     }
 
 
-export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListPackagesByShipmentApiPackagesByShipmentShipmentIdGetQueryKey(shipmentId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>> = ({ signal }) => listPackagesByShipmentApiPackagesByShipmentShipmentIdGet(shipmentId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>> = ({ signal }) => listPackagesByShipmentApiPackagesByShipmentShipmentIdGet(shipmentId, { signal });
 
 
 
@@ -1262,7 +1260,7 @@ export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TDat
           TError,
           Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
@@ -1272,11 +1270,11 @@ export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TDat
           TError,
           Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
- shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1284,7 +1282,7 @@ export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TDat
  */
 
 export function useListPackagesByShipmentApiPackagesByShipmentShipmentIdGet<TData = Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError = HTTPValidationError>(
- shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPackagesByShipmentApiPackagesByShipmentShipmentIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1350,7 +1348,7 @@ export const getListShipmentsApiShipmentsGetUrl = (params?: ListShipmentsApiShip
  *     List of shipments with total count
  * @summary List Shipments
  */
-export const listShipmentsApiShipmentsGet = async (params?: ListShipmentsApiShipmentsGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listShipmentsApiShipmentsGetResponse> => {
+export const listShipmentsApiShipmentsGet = async (params?: ListShipmentsApiShipmentsGetParams, options?: RequestInit): Promise<listShipmentsApiShipmentsGetResponse> => {
 
   return customFetcher<listShipmentsApiShipmentsGetResponse>(getListShipmentsApiShipmentsGetUrl(params),
   {
@@ -1372,16 +1370,16 @@ export const getListShipmentsApiShipmentsGetQueryKey = (params?: ListShipmentsAp
     }
 
 
-export const getListShipmentsApiShipmentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListShipmentsApiShipmentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListShipmentsApiShipmentsGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>> = ({ signal }) => listShipmentsApiShipmentsGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>> = ({ signal }) => listShipmentsApiShipmentsGet(params, { signal });
 
 
 
@@ -1401,7 +1399,7 @@ export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
@@ -1411,11 +1409,11 @@ export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
- params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1423,7 +1421,7 @@ export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeo
  */
 
 export function useListShipmentsApiShipmentsGet<TData = Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError = HTTPValidationError>(
- params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListShipmentsApiShipmentsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listShipmentsApiShipmentsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1471,7 +1469,7 @@ export const getCreateShipmentApiShipmentsPostUrl = () => {
  * Create a new shipment.
  * @summary Create Shipment
  */
-export const createShipmentApiShipmentsPost = async (shipmentCreateRequest: ShipmentCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createShipmentApiShipmentsPostResponse> => {
+export const createShipmentApiShipmentsPost = async (shipmentCreateRequest: ShipmentCreateRequest, options?: RequestInit): Promise<createShipmentApiShipmentsPostResponse> => {
 
   return customFetcher<createShipmentApiShipmentsPostResponse>(getCreateShipmentApiShipmentsPostUrl(),
   {
@@ -1487,15 +1485,15 @@ export const createShipmentApiShipmentsPost = async (shipmentCreateRequest: Ship
 
 
 export const getCreateShipmentApiShipmentsPostMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext> => {
 
 const mutationKey = ['createShipmentApiShipmentsPost'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1503,7 +1501,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, {data: ShipmentCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  createShipmentApiShipmentsPost(data,requestOptions)
+          return  createShipmentApiShipmentsPost(data,)
         }
 
 
@@ -1521,7 +1519,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create Shipment
  */
 export const useCreateShipmentApiShipmentsPost = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>, TError,{data: ShipmentCreateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createShipmentApiShipmentsPost>>,
         TError,
@@ -1569,7 +1567,7 @@ export const getSearchShipmentsApiShipmentsSearchGetUrl = (params?: SearchShipme
  * Typeahead search for shipments by tracking number.
  * @summary Search Shipments
  */
-export const searchShipmentsApiShipmentsSearchGet = async (params?: SearchShipmentsApiShipmentsSearchGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<searchShipmentsApiShipmentsSearchGetResponse> => {
+export const searchShipmentsApiShipmentsSearchGet = async (params?: SearchShipmentsApiShipmentsSearchGetParams, options?: RequestInit): Promise<searchShipmentsApiShipmentsSearchGetResponse> => {
 
   return customFetcher<searchShipmentsApiShipmentsSearchGetResponse>(getSearchShipmentsApiShipmentsSearchGetUrl(params),
   {
@@ -1591,16 +1589,16 @@ export const getSearchShipmentsApiShipmentsSearchGetQueryKey = (params?: SearchS
     }
 
 
-export const getSearchShipmentsApiShipmentsSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getSearchShipmentsApiShipmentsSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSearchShipmentsApiShipmentsSearchGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>> = ({ signal }) => searchShipmentsApiShipmentsSearchGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>> = ({ signal }) => searchShipmentsApiShipmentsSearchGet(params, { signal });
 
 
 
@@ -1620,7 +1618,7 @@ export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
@@ -1630,11 +1628,11 @@ export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
- params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1642,7 +1640,7 @@ export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnTy
  */
 
 export function useSearchShipmentsApiShipmentsSearchGet<TData = Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError = HTTPValidationError>(
- params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: SearchShipmentsApiShipmentsSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchShipmentsApiShipmentsSearchGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1700,7 +1698,7 @@ export const getGetShipmentApiShipmentsShipmentIdGetUrl = (shipmentId: string,) 
  *     HTTPException: 404 if shipment not found
  * @summary Get Shipment
  */
-export const getShipmentApiShipmentsShipmentIdGet = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<getShipmentApiShipmentsShipmentIdGetResponse> => {
+export const getShipmentApiShipmentsShipmentIdGet = async (shipmentId: string, options?: RequestInit): Promise<getShipmentApiShipmentsShipmentIdGetResponse> => {
 
   return customFetcher<getShipmentApiShipmentsShipmentIdGetResponse>(getGetShipmentApiShipmentsShipmentIdGetUrl(shipmentId),
   {
@@ -1722,16 +1720,16 @@ export const getGetShipmentApiShipmentsShipmentIdGetQueryKey = (shipmentId: stri
     }
 
 
-export const getGetShipmentApiShipmentsShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getGetShipmentApiShipmentsShipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetShipmentApiShipmentsShipmentIdGetQueryKey(shipmentId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>> = ({ signal }) => getShipmentApiShipmentsShipmentIdGet(shipmentId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>> = ({ signal }) => getShipmentApiShipmentsShipmentIdGet(shipmentId, { signal });
 
 
 
@@ -1751,7 +1749,7 @@ export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
@@ -1761,11 +1759,11 @@ export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
- shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1773,7 +1771,7 @@ export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnTy
  */
 
 export function useGetShipmentApiShipmentsShipmentIdGet<TData = Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError = HTTPValidationError>(
- shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ shipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getShipmentApiShipmentsShipmentIdGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1822,7 +1820,7 @@ export const getUpdateShipmentApiShipmentsShipmentIdPatchUrl = (shipmentId: stri
  * @summary Update Shipment
  */
 export const updateShipmentApiShipmentsShipmentIdPatch = async (shipmentId: string,
-    shipmentUpdateRequest: ShipmentUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updateShipmentApiShipmentsShipmentIdPatchResponse> => {
+    shipmentUpdateRequest: ShipmentUpdateRequest, options?: RequestInit): Promise<updateShipmentApiShipmentsShipmentIdPatchResponse> => {
 
   return customFetcher<updateShipmentApiShipmentsShipmentIdPatchResponse>(getUpdateShipmentApiShipmentsShipmentIdPatchUrl(shipmentId),
   {
@@ -1838,15 +1836,15 @@ export const updateShipmentApiShipmentsShipmentIdPatch = async (shipmentId: stri
 
 
 export const getUpdateShipmentApiShipmentsShipmentIdPatchMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext> => {
 
 const mutationKey = ['updateShipmentApiShipmentsShipmentIdPatch'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1854,7 +1852,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, {shipmentId: string;data: ShipmentUpdateRequest}> = (props) => {
           const {shipmentId,data} = props ?? {};
 
-          return  updateShipmentApiShipmentsShipmentIdPatch(shipmentId,data,requestOptions)
+          return  updateShipmentApiShipmentsShipmentIdPatch(shipmentId,data,)
         }
 
 
@@ -1872,7 +1870,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update Shipment
  */
 export const useUpdateShipmentApiShipmentsShipmentIdPatch = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>, TError,{shipmentId: string;data: ShipmentUpdateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateShipmentApiShipmentsShipmentIdPatch>>,
         TError,
@@ -1913,7 +1911,7 @@ export const getDeleteShipmentApiShipmentsShipmentIdDeleteUrl = (shipmentId: str
  * Delete a shipment. Fails with 409 if packages still reference it.
  * @summary Delete Shipment
  */
-export const deleteShipmentApiShipmentsShipmentIdDelete = async (shipmentId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deleteShipmentApiShipmentsShipmentIdDeleteResponse> => {
+export const deleteShipmentApiShipmentsShipmentIdDelete = async (shipmentId: string, options?: RequestInit): Promise<deleteShipmentApiShipmentsShipmentIdDeleteResponse> => {
 
   return customFetcher<deleteShipmentApiShipmentsShipmentIdDeleteResponse>(getDeleteShipmentApiShipmentsShipmentIdDeleteUrl(shipmentId),
   {
@@ -1929,15 +1927,15 @@ export const deleteShipmentApiShipmentsShipmentIdDelete = async (shipmentId: str
 
 
 export const getDeleteShipmentApiShipmentsShipmentIdDeleteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext> => {
 
 const mutationKey = ['deleteShipmentApiShipmentsShipmentIdDelete'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1945,7 +1943,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, {shipmentId: string}> = (props) => {
           const {shipmentId} = props ?? {};
 
-          return  deleteShipmentApiShipmentsShipmentIdDelete(shipmentId,requestOptions)
+          return  deleteShipmentApiShipmentsShipmentIdDelete(shipmentId,)
         }
 
 
@@ -1963,7 +1961,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete Shipment
  */
 export const useDeleteShipmentApiShipmentsShipmentIdDelete = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>, TError,{shipmentId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteShipmentApiShipmentsShipmentIdDelete>>,
         TError,
@@ -2021,7 +2019,7 @@ export const getListCustomersApiCustomersGetUrl = (params?: ListCustomersApiCust
  *     List of customers with total count
  * @summary List Customers
  */
-export const listCustomersApiCustomersGet = async (params?: ListCustomersApiCustomersGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<listCustomersApiCustomersGetResponse> => {
+export const listCustomersApiCustomersGet = async (params?: ListCustomersApiCustomersGetParams, options?: RequestInit): Promise<listCustomersApiCustomersGetResponse> => {
 
   return customFetcher<listCustomersApiCustomersGetResponse>(getListCustomersApiCustomersGetUrl(params),
   {
@@ -2043,16 +2041,16 @@ export const getListCustomersApiCustomersGetQueryKey = (params?: ListCustomersAp
     }
 
 
-export const getListCustomersApiCustomersGetQueryOptions = <TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getListCustomersApiCustomersGetQueryOptions = <TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListCustomersApiCustomersGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>> = ({ signal }) => listCustomersApiCustomersGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>> = ({ signal }) => listCustomersApiCustomersGet(params, { signal });
 
 
 
@@ -2072,7 +2070,7 @@ export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof listCustomersApiCustomersGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
@@ -2082,11 +2080,11 @@ export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof listCustomersApiCustomersGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
- params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2094,7 +2092,7 @@ export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeo
  */
 
 export function useListCustomersApiCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError = HTTPValidationError>(
- params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: ListCustomersApiCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiCustomersGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2142,7 +2140,7 @@ export const getCreateCustomerApiCustomersPostUrl = () => {
  * Create a new customer.
  * @summary Create Customer
  */
-export const createCustomerApiCustomersPost = async (customerCreateRequest: CustomerCreateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<createCustomerApiCustomersPostResponse> => {
+export const createCustomerApiCustomersPost = async (customerCreateRequest: CustomerCreateRequest, options?: RequestInit): Promise<createCustomerApiCustomersPostResponse> => {
 
   return customFetcher<createCustomerApiCustomersPostResponse>(getCreateCustomerApiCustomersPostUrl(),
   {
@@ -2158,15 +2156,15 @@ export const createCustomerApiCustomersPost = async (customerCreateRequest: Cust
 
 
 export const getCreateCustomerApiCustomersPostMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext> => {
 
 const mutationKey = ['createCustomerApiCustomersPost'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2174,7 +2172,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, {data: CustomerCreateRequest}> = (props) => {
           const {data} = props ?? {};
 
-          return  createCustomerApiCustomersPost(data,requestOptions)
+          return  createCustomerApiCustomersPost(data,)
         }
 
 
@@ -2192,7 +2190,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create Customer
  */
 export const useCreateCustomerApiCustomersPost = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiCustomersPost>>, TError,{data: CustomerCreateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createCustomerApiCustomersPost>>,
         TError,
@@ -2240,7 +2238,7 @@ export const getSearchCustomersApiCustomersSearchGetUrl = (params?: SearchCustom
  * Typeahead search for customers by first/last name or phone number.
  * @summary Search Customers
  */
-export const searchCustomersApiCustomersSearchGet = async (params?: SearchCustomersApiCustomersSearchGetParams, options?: Parameters<typeof customFetcher>[1]): Promise<searchCustomersApiCustomersSearchGetResponse> => {
+export const searchCustomersApiCustomersSearchGet = async (params?: SearchCustomersApiCustomersSearchGetParams, options?: RequestInit): Promise<searchCustomersApiCustomersSearchGetResponse> => {
 
   return customFetcher<searchCustomersApiCustomersSearchGetResponse>(getSearchCustomersApiCustomersSearchGetUrl(params),
   {
@@ -2262,16 +2260,16 @@ export const getSearchCustomersApiCustomersSearchGetQueryKey = (params?: SearchC
     }
 
 
-export const getSearchCustomersApiCustomersSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+export const getSearchCustomersApiCustomersSearchGetQueryOptions = <TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSearchCustomersApiCustomersSearchGetQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>> = ({ signal }) => searchCustomersApiCustomersSearchGet(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>> = ({ signal }) => searchCustomersApiCustomersSearchGet(params, { signal });
 
 
 
@@ -2291,7 +2289,7 @@ export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
@@ -2301,11 +2299,11 @@ export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customFetcher>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
- params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2313,7 +2311,7 @@ export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnTy
  */
 
 export function useSearchCustomersApiCustomersSearchGet<TData = Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError = HTTPValidationError>(
- params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, request?: SecondParameter<typeof customFetcher>}
+ params?: SearchCustomersApiCustomersSearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchCustomersApiCustomersSearchGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2362,7 +2360,7 @@ export const getUpdateCustomerApiCustomersCustomerIdPatchUrl = (customerId: stri
  * @summary Update Customer
  */
 export const updateCustomerApiCustomersCustomerIdPatch = async (customerId: string,
-    customerUpdateRequest: CustomerUpdateRequest, options?: Parameters<typeof customFetcher>[1]): Promise<updateCustomerApiCustomersCustomerIdPatchResponse> => {
+    customerUpdateRequest: CustomerUpdateRequest, options?: RequestInit): Promise<updateCustomerApiCustomersCustomerIdPatchResponse> => {
 
   return customFetcher<updateCustomerApiCustomersCustomerIdPatchResponse>(getUpdateCustomerApiCustomersCustomerIdPatchUrl(customerId),
   {
@@ -2378,15 +2376,15 @@ export const updateCustomerApiCustomersCustomerIdPatch = async (customerId: stri
 
 
 export const getUpdateCustomerApiCustomersCustomerIdPatchMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext> => {
 
 const mutationKey = ['updateCustomerApiCustomersCustomerIdPatch'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2394,7 +2392,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, {customerId: string;data: CustomerUpdateRequest}> = (props) => {
           const {customerId,data} = props ?? {};
 
-          return  updateCustomerApiCustomersCustomerIdPatch(customerId,data,requestOptions)
+          return  updateCustomerApiCustomersCustomerIdPatch(customerId,data,)
         }
 
 
@@ -2412,7 +2410,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update Customer
  */
 export const useUpdateCustomerApiCustomersCustomerIdPatch = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>, TError,{customerId: string;data: CustomerUpdateRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateCustomerApiCustomersCustomerIdPatch>>,
         TError,
@@ -2453,7 +2451,7 @@ export const getDeleteCustomerApiCustomersCustomerIdDeleteUrl = (customerId: str
  * Delete a customer. Fails with 409 if shipments still reference it.
  * @summary Delete Customer
  */
-export const deleteCustomerApiCustomersCustomerIdDelete = async (customerId: string, options?: Parameters<typeof customFetcher>[1]): Promise<deleteCustomerApiCustomersCustomerIdDeleteResponse> => {
+export const deleteCustomerApiCustomersCustomerIdDelete = async (customerId: string, options?: RequestInit): Promise<deleteCustomerApiCustomersCustomerIdDeleteResponse> => {
 
   return customFetcher<deleteCustomerApiCustomersCustomerIdDeleteResponse>(getDeleteCustomerApiCustomersCustomerIdDeleteUrl(customerId),
   {
@@ -2469,15 +2467,15 @@ export const deleteCustomerApiCustomersCustomerIdDelete = async (customerId: str
 
 
 export const getDeleteCustomerApiCustomersCustomerIdDeleteMutationOptions = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext> => {
 
 const mutationKey = ['deleteCustomerApiCustomersCustomerIdDelete'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2485,7 +2483,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, {customerId: string}> = (props) => {
           const {customerId} = props ?? {};
 
-          return  deleteCustomerApiCustomersCustomerIdDelete(customerId,requestOptions)
+          return  deleteCustomerApiCustomersCustomerIdDelete(customerId,)
         }
 
 
@@ -2503,7 +2501,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete Customer
  */
 export const useDeleteCustomerApiCustomersCustomerIdDelete = <TError = HTTPValidationError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, request?: SecondParameter<typeof customFetcher>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteCustomerApiCustomersCustomerIdDelete>>,
         TError,

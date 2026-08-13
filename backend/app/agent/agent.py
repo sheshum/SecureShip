@@ -2,6 +2,7 @@
 
 import json
 from typing import Any
+from uuid import UUID
 
 from app.agent.result import AgentResult
 from app.agent.session import AgentSession, SessionStateRefresher
@@ -49,7 +50,11 @@ class Agent:
         self.tool_registry = tool_registry
         self.system_prompt = system_prompt
 
-    def _resolve_available_tools(self, session_state: ChatSessionState) -> list[dict[str, Any]]:
+    def _resolve_available_tools(
+        self,
+        session_state: ChatSessionState,
+        customer_id: UUID | None = None,
+    ) -> list[dict[str, Any]]:
         """Tool schemas the model may see for this state.
 
         Invariant: any tool with requires_verification=True is only exposed when
@@ -82,24 +87,36 @@ class Agent:
                 self.tool_registry["lookup_shipments"].schema,
                 self.tool_registry["escalate_to_human"].schema,
             ]
-        # ESCALATED_TO_HUMAN and any future terminal states.
+        # ESCALATED_TO_HUMAN: mirror the pre-escalation gating tier.
+        # customer_id set ≡ was verified → Melany may call lookup_shipments.
+        # customer_id null ≡ was anonymous → Melany can guide through verification.
+        if session_state == ChatSessionState.ESCALATED_TO_HUMAN:
+            if customer_id is not None:
+                return [self.tool_registry["lookup_shipments"].schema]
+            return [self.tool_registry["request_identity_info"].schema]
         return []
 
     @staticmethod
-    def _resolve_tool_choice(session_state: ChatSessionState, *, is_first_iteration: bool) -> str:
-        """Force a tool call on the first LLM call for gated states.
+    def _resolve_tool_choice(
+        session_state: ChatSessionState,
+        *,
+        is_first_iteration: bool,
+        customer_id: UUID | None = None,
+    ) -> str | dict[str, Any]:
+        """Force a specific tool on the first LLM call for gated states.
 
-        Uses "required" (not a specific tool) so the model can still pick
-        escalate_to_human from the exposed list if the user asks for one.
+        Uses the exact function name rather than "required" so models that
+        ignore the generic flag are still steered to the correct tool.
         Subsequent iterations use "auto" so the model can respond after
         consuming the tool's result rather than re-invoking it.
         """
         if not is_first_iteration:
             return "auto"
-        if session_state in {
-            ChatSessionState.ANONYMOUS,
-            ChatSessionState.COLLECTING_IDENTITY,
-        }:
+        if session_state in {ChatSessionState.ANONYMOUS, ChatSessionState.CODE_EXPIRED}:
+            return "required"
+        if session_state == ChatSessionState.COLLECTING_IDENTITY:
+            return {"type": "function", "function": {"name": "start_identity_verification"}}
+        if session_state == ChatSessionState.ESCALATED_TO_HUMAN and customer_id is None:
             return "required"
         return "auto"
 
@@ -154,13 +171,15 @@ class Agent:
         )
 
         current_state = session.state
-        available_tools = self._resolve_available_tools(current_state)
+        available_tools = self._resolve_available_tools(current_state, auth_context.customer_id)
         messages = self._build_messages(session, prompt)
         tool_calls_made = 0
         completion = None
 
         for iteration in range(MAX_ITERATIONS):
-            tool_choice = self._resolve_tool_choice(current_state, is_first_iteration=iteration == 0)
+            tool_choice = self._resolve_tool_choice(
+                current_state, is_first_iteration=iteration == 0, customer_id=auth_context.customer_id
+            )
             log_console(
                 "Agent Turn",
                 {
@@ -232,7 +251,7 @@ class Agent:
                 state=fresh_state,
             )
             current_state = fresh_state
-            available_tools = self._resolve_available_tools(fresh_state)
+            available_tools = self._resolve_available_tools(fresh_state, auth_context.customer_id)
         else:
             # Loop exhausted without a terminal (tool-call-free) response.
             log_console(

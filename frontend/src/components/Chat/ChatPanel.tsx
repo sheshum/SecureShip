@@ -5,7 +5,7 @@ import { ChatSessionState } from '../../api/generated/schemas'
 
 type Message = {
   id: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'melany' | 'event'
   content: string
 }
 
@@ -13,6 +13,7 @@ type ChatPanelProps = {
   draft: string
   messages: Message[]
   isLoading: boolean
+  isHandoffSequencePlaying?: boolean
   sessionState?: ChatSessionState
   onDraftChange: (value: string) => void
   onSubmit: (message?: string) => void
@@ -23,6 +24,14 @@ type ChatPanelProps = {
 type ChatHeaderProps = {
   sessionState?: ChatSessionState
   onClose: () => void
+}
+
+function HumanBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-teal-700">
+      Human Support
+    </span>
+  )
 }
 
 function VerificationBadge({ isVerified }: { isVerified: boolean }) {
@@ -60,8 +69,8 @@ function ChatHeader({ sessionState, onClose }: ChatHeaderProps) {
     <header className="flex items-center justify-between gap-3 border-b border-slate-200/80 px-4 py-3 sm:px-6">
       <div className="flex items-center gap-2">
         <img src="/Logo_icon_only.png" alt="" className="h-10 w-12" />
-        <p className="text-sm font-bold uppercase tracking-[0.14em] text-slate-700">SecureShip Assistant</p>
-        <VerificationBadge isVerified={isVerified} />
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-slate-700">SecureShip Assistant</p>
+          <VerificationBadge isVerified={isVerified} />
       </div>
       <button
         type="button"
@@ -88,7 +97,7 @@ function ChatHeader({ sessionState, onClose }: ChatHeaderProps) {
 
 function HumanAvatar() {
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-100 shadow-sm">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 shadow-sm">
       <img src="/human_avatar.svg" alt="" className="h-5 w-5" aria-hidden="true" />
     </span>
   )
@@ -102,17 +111,7 @@ function AiAvatar() {
   )
 }
 
-function EscalationBanner() {
-  return (
-    <div className="mx-4 mt-4 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 sm:mx-6">
-      <HumanAvatar />
-      <div className="flex-1">
-        <p className="text-sm font-semibold text-amber-900">Connected to Human Support</p>
-        <p className="mt-0.5 text-xs text-amber-700">You are talking to a customer service representative.</p>
-      </div>
-    </div>
-  )
-}
+
 
 type MessageListProps = {
   messages: Message[]
@@ -128,27 +127,41 @@ function MessageList({ messages, isLoading }: MessageListProps) {
 
   return (
     <div className="mb-4 flex flex-1 flex-col gap-5 overflow-y-auto">
-      {messages.map((message) => (
-        <div
-          key={message.id}
-          className={`flex max-w-[80%] items-start gap-2 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
-        >
-          {message.role !== 'user' && <AiAvatar />}
+      {messages.map((message) => {
+        if (message.role === 'event') {
+          return (
+            <div key={message.id} className="flex items-center gap-3 px-2">
+              <div className="h-px flex-1 bg-teal-200" />
+              <span className="text-xs font-medium text-teal-600">{message.content}</span>
+              <div className="h-px flex-1 bg-teal-200" />
+            </div>
+          )
+        }
+        return (
           <div
-            className={
-              message.role === 'user'
-                ? 'rounded-2xl rounded-br-sm bg-gradient-to-br from-sky-400 to-blue-600 px-4 py-3 text-sm text-white shadow-sm'
-                : 'rounded-2xl rounded-bl-sm border border-stone-200 border-l-2 border-l-sky-400 bg-stone-100 px-4 py-3 text-slate-900 shadow-sm'
-            }
+            key={message.id}
+            className={`flex max-w-[80%] items-start gap-2 ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
           >
-            {message.role === 'user' ? (
-              <p className="whitespace-pre-wrap">{message.content}</p>
-            ) : (
-              <MessageContent content={message.content} />
-            )}
+            {message.role === 'melany' && <HumanAvatar />}
+            {message.role === 'assistant' && <AiAvatar />}
+            <div
+              className={
+                message.role === 'user'
+                  ? 'rounded-2xl rounded-br-sm bg-gradient-to-br from-sky-400 to-blue-600 px-4 py-3 text-sm text-white shadow-sm'
+                  : message.role === 'melany'
+                  ? 'rounded-2xl rounded-bl-sm border border-teal-200 border-l-2 border-l-teal-500 bg-teal-50 px-4 py-3 text-slate-900 shadow-sm'
+                  : 'rounded-2xl rounded-bl-sm border border-stone-200 border-l-2 border-l-sky-400 bg-stone-100 px-4 py-3 text-slate-900 shadow-sm'
+              }
+            >
+              {message.role === 'user' ? (
+                <p className="whitespace-pre-wrap">{message.content}</p>
+              ) : (
+                <MessageContent content={message.content} />
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
       {isLoading && (
         <div className="mr-auto max-w-[80%] rounded-lg bg-stone-100 px-4 py-3 shadow-sm">
           <div className="flex items-center gap-2">
@@ -167,6 +180,7 @@ export function ChatPanel({
   draft,
   messages,
   isLoading,
+  isHandoffSequencePlaying = false,
   sessionState,
   onDraftChange,
   onSubmit,
@@ -183,7 +197,13 @@ export function ChatPanel({
   ]
 
   return (
-    <section className="flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border border-slate-200/60 bg-gradient-to-b from-white via-slate-50/95 to-slate-100/80 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:basis-[76%]">
+    <section
+      className={`flex min-h-0 flex-1 w-full flex-col rounded-[1.6rem] border shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl lg:basis-[76%] transition-colors duration-700 ${
+        isEscalated
+          ? 'border-teal-200/60 bg-gradient-to-b from-teal-50 via-emerald-50/95 to-stone-50/80'
+          : 'border-slate-200/60 bg-gradient-to-b from-white via-slate-50/95 to-slate-100/80'
+      }`}
+    >
       <ChatHeader sessionState={sessionState} onClose={onClose} />
 
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
@@ -209,14 +229,12 @@ export function ChatPanel({
           </div>
         )}
 
-        {isEscalated && <EscalationBanner />}
-
         <div className="mt-5 border-t border-slate-200/80 pt-4 sm:pt-5">
           <ChatInput
             value={draft}
             onChange={onDraftChange}
             onSubmit={onSubmit}
-            isSending={isLoading}
+            isSending={isLoading || isHandoffSequencePlaying}
             onStop={onStopRequest}
             inputRef={inputRef}
           />

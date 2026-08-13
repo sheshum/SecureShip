@@ -23,3 +23,9 @@ class ChatResponse(BaseModel):
     verification_required: bool | None = Field(
         None, description="Whether user verification is required (true when state is CODE_SENT)"
     )
+    escalation_handoff: bool = Field(
+        False, description="True on the turn escalation is triggered; frontend uses this to play the scripted sequence"
+    )
+    customer_first_name: str | None = Field(
+        None, description="Verified customer's first name, if known; used in Melany's personalised greeting"
+    )

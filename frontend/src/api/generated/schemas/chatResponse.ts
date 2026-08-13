@@ -19,4 +19,8 @@ export interface ChatResponse {
   state: ChatSessionState;
   /** Whether user verification is required (true when state is CODE_SENT) */
   verification_required?: boolean | null;
+  /** True on the turn escalation is triggered; frontend uses this to play the scripted sequence */
+  escalation_handoff?: boolean;
+  /** Verified customer's first name, if known; used in Melany's personalised greeting */
+  customer_first_name?: string | null;
 }

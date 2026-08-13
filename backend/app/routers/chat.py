@@ -7,10 +7,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.agent import Agent, AgentSession
-from app.dependencies import get_agent, get_chat_session_repository
+from app.agent.prompts import ESCALATION_NOTE
+from app.dependencies import get_agent, get_chat_session_repository, get_customer_repository
 from app.llm.base import LLMError
 from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
+from app.repositories.customers import CustomerRepository
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.sessions import ChatSessionState
 
@@ -48,10 +50,12 @@ async def chat(
     request: ChatRequest,
     agent: Annotated[Agent, Depends(get_agent)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    customer_repo: Annotated[CustomerRepository, Depends(get_customer_repository)],
 ) -> ChatResponse:
     """Chat endpoint: delegate to Agent for agentic loop execution."""
     # 1. Load session from DB
     chat_session = ensure_session(request.session_id, session_repo)
+    pre_agent_state = chat_session.state
 
     # 2. Build agent session (snapshot of current state)
     agent_session = AgentSession(
@@ -99,10 +103,30 @@ async def chat(
     # 5. Reload session (tools may have mutated it)
     chat_session = session_repo.get_session(chat_session.id) or chat_session
 
-    # 6. Build response with fresh state
+    # 6. Detect if escalation happened this turn and inject the Melany persona note.
+    escalation_handoff = (
+        pre_agent_state != ChatSessionState.ESCALATED_TO_HUMAN
+        and chat_session.state == ChatSessionState.ESCALATED_TO_HUMAN
+    )
+    if escalation_handoff:
+        session_repo.append_messages(
+            chat_session.id,
+            [{"role": "system", "content": ESCALATION_NOTE, "tool_call_id": None, "tool_calls": None}],
+        )
+
+    # 7. Resolve verified customer's first name for the personalised Melany greeting.
+    customer_first_name: str | None = None
+    if chat_session.customer_id is not None:
+        customer = customer_repo.get_customer_by_id(chat_session.customer_id)
+        if customer is not None:
+            customer_first_name = customer.get("first_name")
+
+    # 8. Build response with fresh state
     return ChatResponse(
         reply=result.reply,
         session_id=chat_session.id,
         state=chat_session.state,
         verification_required=chat_session.state == ChatSessionState.CODE_SENT,
+        escalation_handoff=escalation_handoff,
+        customer_first_name=customer_first_name,
     )

@@ -21,9 +21,7 @@ class Base(DeclarativeBase):
 
 class Customer(Base):
     __tablename__ = "customer"
-    __table_args__ = (
-        UniqueConstraint("first_name", "last_name", "phone_number", name="uq_customer_first_last_phone"),
-    )
+    __table_args__ = (UniqueConstraint("first_name", "last_name", "phone_number", name="uq_customer_first_last_phone"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     first_name: Mapped[str] = mapped_column(String(100))

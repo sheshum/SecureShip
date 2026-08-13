@@ -10,13 +10,13 @@ import type { ChatSessionState } from '../api/generated/schemas/chatSessionState
 import { resolveApiUrl } from '../api/url'
 import { cancelRequest } from '../api/generated/fetcher'
 
-function createMessage(role: 'user' | 'assistant', content: string) {
-  return {
-    id: crypto.randomUUID(),
-    role,
-    content,
-  }
+type MessageRole = 'user' | 'assistant' | 'melany' | 'event'
+
+function createMessage(role: MessageRole, content: string) {
+  return { id: crypto.randomUUID(), role, content }
 }
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 const handleStopRequest = () => {
   cancelRequest(getChatApiChatPostUrl())
@@ -25,9 +25,11 @@ const handleStopRequest = () => {
 export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
+  const [messages, setMessages] = useState<Array<{ id: string; role: MessageRole; content: string }>>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
+  const [firstName, setFirstName] = useState<string | null>(null)
+  const [isHandoffSequencePlaying, setIsHandoffSequencePlaying] = useState(false)
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
@@ -55,14 +57,43 @@ export function ChatPage() {
       })
 
       if (response.status === 200) {
-        setMessages((prev) => [...prev, createMessage('assistant', response.data.reply)])
-        setSessionId(response.data.session_id)
-        setSessionState(response.data.state)
+        const { reply, session_id, state, verification_required, escalation_handoff, customer_first_name } = response.data
 
-        if (response.data.verification_required) {
-          setIsOtpModalOpen(true)
-          setOtpError(null)
-          setAttemptsRemaining(null)
+        if (customer_first_name) setFirstName(customer_first_name)
+        setSessionId(session_id)
+        setSessionState(state)
+
+        if (escalation_handoff) {
+          // Step 1: LLM's acknowledgement message ("Thank you for your patience...")
+          setMessages((prev) => [...prev, createMessage('assistant', reply)])
+
+          // Steps 2-4: cosmetic scripted handoff — runs client-side, no network calls
+          setIsHandoffSequencePlaying(true)
+          try {
+            await delay(700)
+            setMessages((prev) => [...prev, createMessage('event', 'Melany has entered the chat')])
+
+            await delay(1200)
+            setMessages((prev) => [...prev, createMessage('melany', 'Hello, my name is Melany, let me just read through the chat...')])
+
+            const fn = customer_first_name ?? firstName
+            await delay(2000)
+            setMessages((prev) => [
+              ...prev,
+              createMessage('melany', fn ? `Hey ${fn}, I'm up to speed, how can I help?` : "Hey, I'm up to speed, how can I help?"),
+            ])
+          } finally {
+            setIsHandoffSequencePlaying(false)
+          }
+        } else {
+          const role = state === 'escalated_to_human' ? 'melany' : 'assistant'
+          setMessages((prev) => [...prev, createMessage(role, reply)])
+
+          if (verification_required) {
+            setIsOtpModalOpen(true)
+            setOtpError(null)
+            setAttemptsRemaining(null)
+          }
         }
       }
     } catch (error) {
@@ -157,6 +188,7 @@ export function ChatPage() {
           draft={draft}
           messages={messages}
           isLoading={chatMutation.isPending}
+          isHandoffSequencePlaying={isHandoffSequencePlaying}
           sessionState={sessionState}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
