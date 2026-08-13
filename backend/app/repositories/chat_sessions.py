@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.config import Settings
 from app.db import SessionLocal
 from app.models import ChatSession
 from app.repositories.session_state_machine import SessionStateValidator
@@ -18,8 +19,9 @@ _UNSET = object()
 
 
 class ChatSessionRepository:
-    def __init__(self, session_factory: Callable[[], Session] | None = None) -> None:
+    def __init__(self, session_factory: Callable[[], Session] | None = None, settings: Settings | None = None) -> None:
         self._session_factory = session_factory or SessionLocal
+        self._settings = settings or Settings()
 
     def list_sessions(
         self, limit: int = 100, offset: int = 0, state: ChatSessionState | None = None
@@ -42,10 +44,12 @@ class ChatSessionRepository:
 
     def create_session(self, now: datetime) -> ChatSession:
         with self._session_factory() as session:
+            expires_at = now + timedelta(seconds=self._settings.auth_session_ttl_seconds)
             chat_session = ChatSession(
                 state=ChatSessionState.ANONYMOUS,
                 started_at=now,
                 ended_at=None,
+                expires_at=expires_at,
                 transcript={"messages": []},
             )
             session.add(chat_session)
@@ -55,7 +59,19 @@ class ChatSessionRepository:
 
     def get_session(self, session_id: UUID) -> ChatSession | None:
         with self._session_factory() as session:
-            return session.get(ChatSession, session_id)
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is None:
+                return None
+            # Lazy expiry: mark ended_at and treat as not found
+            if (
+                chat_session.expires_at
+                and datetime.now(UTC) >= chat_session.expires_at
+                and chat_session.ended_at is None
+            ):
+                chat_session.ended_at = datetime.now(UTC)
+                session.commit()
+                return None
+            return chat_session
 
     def delete_session(self, session_id: UUID, now: datetime) -> ChatSession | None:
         with self._session_factory() as session:

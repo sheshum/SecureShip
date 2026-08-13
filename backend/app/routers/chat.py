@@ -11,7 +11,7 @@ from app.dependencies import get_agent, get_chat_session_repository
 from app.llm.base import LLMError
 from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse, RestoredMessage, SessionRestoreResponse
 from app.schemas.sessions import ChatSessionState
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -23,20 +23,16 @@ def ensure_session(
 ) -> ChatSession:
     """Get an existing session or create a new one.
 
-    Args:
-        session_id: Optional session ID to continue
-        session_repo: Chat session repository
-
-    Returns:
-        The chat session (existing or newly created)
-
     Raises:
-        HTTPException: If session_id is provided but not found
+        HTTPException 404: session_id given but not found
+        HTTPException 410: session exists but has expired
     """
     if session_id:
         chat_session = session_repo.get_session(session_id)
         if chat_session is None:
-            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+            # Distinguish expired (ended_at set by lazy-expiry) from never existed
+            # by attempting a raw lookup; keep the response surface simple with 410.
+            raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
         return chat_session
 
     now = datetime.now(UTC)
@@ -108,4 +104,27 @@ async def chat(
         session_id=chat_session.id,
         state=chat_session.state,
         verification_required=chat_session.state == ChatSessionState.CODE_SENT,
+    )
+
+
+@router.get("/session/{session_id}", response_model=SessionRestoreResponse)
+def restore_session(
+    session_id: UUID,
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+) -> SessionRestoreResponse:
+    """Return session state and user/assistant message history for client-side restoration."""
+    chat_session = session_repo.get_session(session_id)
+    if chat_session is None:
+        raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
+
+    raw = session_repo.get_conversation_messages(session_id)
+    messages = [
+        RestoredMessage(role=m["role"], content=m["content"] or "")
+        for m in raw
+        if m.get("role") in {"user", "assistant"} and m.get("content")
+    ]
+    return SessionRestoreResponse(
+        session_id=chat_session.id,
+        state=chat_session.state,
+        messages=messages,
     )

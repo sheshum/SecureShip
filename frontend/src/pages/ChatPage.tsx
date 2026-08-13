@@ -1,14 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppRoutes } from '../lib/routes'
 import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
-import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl } from '../api/generated/client'
+import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl, useRestoreSessionApiChatSessionSessionIdGet } from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 import { resolveApiUrl } from '../api/url'
 import { cancelRequest } from '../api/generated/fetcher'
+
+const SESSION_STORAGE_KEY = 'secureship_session_id'
+
+function isSessionExpiredError(error: unknown): boolean {
+  return error instanceof Error && error.message.toLowerCase().includes('expired')
+}
 
 function createMessage(role: 'user' | 'assistant', content: string) {
   return {
@@ -22,28 +28,90 @@ const handleStopRequest = () => {
   cancelRequest(getChatApiChatPostUrl())
 }
 
+type DisplayMessage = { id: string; role: 'user' | 'assistant'; content: string }
+
 export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
+
+  // Frozen at mount — the session ID that was persisted before this page visit
+  const [initialStoredId] = useState<string | null>(() => localStorage.getItem(SESSION_STORAGE_KEY))
+
+  // Messages added during this page visit (not from restoration)
+  const [localMessages, setLocalMessages] = useState<DisplayMessage[]>([])
+  // Session ID and state driven by backend responses
+  const [newSessionId, setNewSessionId] = useState<string | null>(null)
+  const [localSessionState, setLocalSessionState] = useState<ChatSessionState>('anonymous')
+  // Set to true when the backend reports the restored session has expired mid-chat
+  const [sessionInvalidated, setSessionInvalidated] = useState(false)
+
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [expiredToastDismissed, setExpiredToastDismissed] = useState(false)
   const [closeError, setCloseError] = useState<string | null>(null)
   const [isClosingSession, setIsClosingSession] = useState(false)
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
 
+  const restoreQuery = useRestoreSessionApiChatSessionSessionIdGet(initialStoredId!, {
+    query: { enabled: !!initialStoredId, retry: false },
+  })
+
+  // Clear localStorage when restoration fails (no setState — storage side-effect only)
+  useEffect(() => {
+    if (initialStoredId && restoreQuery.isError) {
+      localStorage.removeItem(SESSION_STORAGE_KEY)
+    }
+  }, [initialStoredId, restoreQuery.isError])
+
+  // Non-null only when a valid restored session is available and not yet invalidated
+  const restorationData =
+    !sessionInvalidated &&
+    restoreQuery.isSuccess &&
+    restoreQuery.data != null &&
+    restoreQuery.data.status === 200
+      ? restoreQuery.data.data
+      : null
+
+  // Effective session ID: restored session or new session created by the backend
+  const sessionId: string | null = restorationData && initialStoredId ? initialStoredId : newSessionId
+
+  // Effective session state: restored state until the user sends a new local message
+  const sessionState: ChatSessionState =
+    restorationData && localMessages.length === 0 ? restorationData.state : localSessionState
+
+  // Restored messages with stable IDs; recomputed only when query data changes
+  const restoredMessages = useMemo<DisplayMessage[]>(() => {
+    if (
+      sessionInvalidated ||
+      !initialStoredId ||
+      !restoreQuery.isSuccess ||
+      !restoreQuery.data ||
+      restoreQuery.data.status !== 200
+    )
+      return []
+    return restoreQuery.data.data.messages.flatMap((m, i) => {
+      if (m.role !== 'user' && m.role !== 'assistant') return []
+      return [{ id: `restored-${i}`, role: m.role, content: m.content }]
+    })
+  }, [sessionInvalidated, initialStoredId, restoreQuery.isSuccess, restoreQuery.data])
+
+  const displayMessages = useMemo(
+    () => [...restoredMessages, ...localMessages],
+    [restoredMessages, localMessages],
+  )
+
+  // Derived from query error — no useEffect needed
+  const showExpiredSessionToast = !!initialStoredId && restoreQuery.isError && !expiredToastDismissed
+
   const handleSubmit = async (message?: string) => {
     const trimmedMessage = (message ?? draft).trim()
     if (!trimmedMessage || chatMutation.isPending) return
 
-    // Add user message to display
-    setMessages((prev) => [...prev, createMessage('user', trimmedMessage)])
+    setLocalMessages((prev) => [...prev, createMessage('user', trimmedMessage)])
     setDraft('')
 
     try {
@@ -51,13 +119,15 @@ export function ChatPage() {
         data: {
           prompt: trimmedMessage,
           session_id: sessionId || undefined,
-        }
+        },
       })
 
       if (response.status === 200) {
-        setMessages((prev) => [...prev, createMessage('assistant', response.data.reply)])
-        setSessionId(response.data.session_id)
-        setSessionState(response.data.state)
+        setLocalMessages((prev) => [...prev, createMessage('assistant', response.data.reply)])
+        const sid = response.data.session_id
+        setNewSessionId(sid)
+        localStorage.setItem(SESSION_STORAGE_KEY, sid)
+        setLocalSessionState(response.data.state)
 
         if (response.data.verification_required) {
           setIsOtpModalOpen(true)
@@ -67,8 +137,17 @@ export function ChatPage() {
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (isSessionExpiredError(error)) {
+        localStorage.removeItem(SESSION_STORAGE_KEY)
+        setSessionInvalidated(true)
+        setNewSessionId(null)
+        setLocalMessages([])
+        setLocalSessionState('anonymous')
+        setToastMessage('Your session has expired. Please start a new conversation.')
+        return
+      }
       console.error('Chat request failed:', error)
-      setMessages((prev) => [
+      setLocalMessages((prev) => [
         ...prev,
         createMessage('assistant', 'Sorry, I encountered an error. Please try again.'),
       ])
@@ -93,7 +172,7 @@ export function ChatPage() {
 
         if (result === 'verified') {
           setIsOtpModalOpen(false)
-          setSessionState('verified')
+          setLocalSessionState('verified')
           setOtpError(null)
           setAttemptsRemaining(null)
           setToastMessage('Verification successful! You now have access to your shipment information.')
@@ -118,6 +197,7 @@ export function ChatPage() {
   }
 
   const handleCloseSession = async () => {
+    localStorage.removeItem(SESSION_STORAGE_KEY)
     if (!sessionId) {
       void navigate(AppRoutes.Home)
       return
@@ -155,7 +235,7 @@ export function ChatPage() {
       <div className="relative mx-auto flex h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col gap-4 rounded-[2rem] border border-white/35 bg-slate-100/72 p-3 shadow-[0_30px_90px_rgba(15,23,42,0.34)] backdrop-blur-2xl sm:h-[calc(100svh-2rem)] sm:gap-5 sm:p-5">
         <ChatPanel
           draft={draft}
-          messages={messages}
+          messages={displayMessages}
           isLoading={chatMutation.isPending}
           sessionState={sessionState}
           onDraftChange={setDraft}
@@ -193,6 +273,14 @@ export function ChatPage() {
           message={toastMessage}
           type="success"
           onClose={() => setToastMessage(null)}
+        />
+      )}
+
+      {showExpiredSessionToast && (
+        <Toast
+          message="Your previous session has expired. Starting a new conversation."
+          type="info"
+          onClose={() => setExpiredToastDismissed(true)}
         />
       )}
     </main>

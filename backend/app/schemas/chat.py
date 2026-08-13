@@ -23,3 +23,16 @@ class ChatResponse(BaseModel):
     verification_required: bool | None = Field(
         None, description="Whether user verification is required (true when state is CODE_SENT)"
     )
+
+
+class RestoredMessage(BaseModel):
+    role: str
+    content: str
+
+
+class SessionRestoreResponse(BaseModel):
+    """Payload returned when restoring a session on page load."""
+
+    session_id: UUID
+    state: ChatSessionState
+    messages: list[RestoredMessage]
