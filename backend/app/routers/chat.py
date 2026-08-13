@@ -100,6 +100,9 @@ async def chat(
     chat_session = session_repo.get_session(chat_session.id) or chat_session
 
     # 6. Build response with fresh state
+    if not result.reply.strip():
+        raise HTTPException(status_code=500, detail="The assistant returned an empty response. Please try again.")
+
     return ChatResponse(
         reply=result.reply,
         session_id=chat_session.id,

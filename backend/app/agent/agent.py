@@ -9,7 +9,7 @@ from app.llm.base import LLMClient, LLMMessage, ToolCall
 from app.schemas.sessions import ChatSessionState
 from app.services.auth_context import AuthContext
 from app.services.dispatch import dispatch_tool_call
-from app.tools.tool_registry import ToolSpec
+from app.tools.tool_registry import ToolName, ToolRegistry
 from app.tools.utils import log_console
 
 # Hard ceiling on tool-call iterations per turn. Identity -> verify -> lookup
@@ -35,14 +35,14 @@ class Agent:
     def __init__(
         self,
         llm_client: LLMClient,
-        tool_registry: dict[str, ToolSpec],
+        tool_registry: ToolRegistry,
         system_prompt: str,
     ):
         """Initialize agent with LLM client and tool registry.
 
         Args:
             llm_client: LLM client for completions
-            tool_registry: Available tools (name -> ToolSpec)
+            tool_registry: Available tools
             system_prompt: System prompt for the agent
         """
         self.llm_client = llm_client
@@ -58,29 +58,29 @@ class Agent:
         """
         if session_state == ChatSessionState.ANONYMOUS:
             return [
-                self.tool_registry["request_identity_info"].schema,
-                self.tool_registry["escalate_to_human"].schema,
+                self.tool_registry.get(ToolName.REQUEST_IDENTITY_INFO).schema,
+                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state == ChatSessionState.COLLECTING_IDENTITY:
             return [
-                self.tool_registry["start_identity_verification"].schema,
-                self.tool_registry["escalate_to_human"].schema,
+                self.tool_registry.get(ToolName.START_IDENTITY_VERIFICATION).schema,
+                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state in {
             ChatSessionState.CODE_SENT,
             ChatSessionState.AWAITING_CODE,
         }:
             # Waiting on the OTP UI; nothing useful the model can do except escalate.
-            return [self.tool_registry["escalate_to_human"].schema]
+            return [self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema]
         if session_state == ChatSessionState.CODE_EXPIRED:
             return [
-                self.tool_registry["request_identity_info"].schema,
-                self.tool_registry["escalate_to_human"].schema,
+                self.tool_registry.get(ToolName.REQUEST_IDENTITY_INFO).schema,
+                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state == ChatSessionState.VERIFIED:
             return [
-                self.tool_registry["lookup_shipments"].schema,
-                self.tool_registry["escalate_to_human"].schema,
+                self.tool_registry.get(ToolName.LOOKUP_SHIPMENTS).schema,
+                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         # ESCALATED_TO_HUMAN and any future terminal states.
         return []
@@ -169,6 +169,8 @@ class Agent:
                     "state": current_state,
                     "iteration": iteration,
                     "messages_count": len(messages),
+                    "tool_choice": tool_choice,
+                    "available_tools": [t.get("function", {}).get("name") for t in available_tools],
                 },
             )
             completion = await self.llm_client.plan_chat_turn(

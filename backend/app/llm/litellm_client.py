@@ -30,6 +30,13 @@ class LiteLLMClient(LLMClient):
     ) -> LLMCompletion:
         try:
             resolved_tool_choice = self._resolve_tool_choice(tool_choice, tools)
+            tool_names = [t.get("function", {}).get("name") for t in (tools or [])]
+            logger.debug(
+                "LLM call | model=%s tool_choice=%r tools=%s",
+                self._model,
+                resolved_tool_choice,
+                tool_names,
+            )
             response = await litellm.acompletion(
                 model=self._model,
                 messages=self._serialize_messages(messages),
@@ -51,6 +58,11 @@ class LiteLLMClient(LLMClient):
                 for tool_call in (getattr(message, "tool_calls", None) or [])
             )
             content = getattr(message, "content", "") or ""
+            logger.debug(
+                "LLM response | tool_calls=%d content_len=%d",
+                len(tool_calls),
+                len(content),
+            )
             return LLMCompletion(content=str(content), tool_calls=tool_calls)
         except Exception as exc:
             logger.exception("LLM completion failed (model=%s)", self._model)
@@ -71,6 +83,8 @@ class LiteLLMClient(LLMClient):
             OpenAI-formatted tool_choice or None
         """
         if not tools:
+            if tool_choice == "required":
+                raise ValueError("tool_choice='required' but no tools are available")
             return None
 
         if tool_choice is None:
@@ -79,7 +93,6 @@ class LiteLLMClient(LLMClient):
         if isinstance(tool_choice, dict):
             return tool_choice
 
-        # Convert string or list to OpenAI format
         return tool_choice if isinstance(tool_choice, str) else tool_choice[0]
 
     @staticmethod

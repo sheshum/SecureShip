@@ -25,7 +25,7 @@ from app.tools.escalate_to_human import EscalateToHumanTool
 from app.tools.lookup_shipments import LookupShipmentsTool
 from app.tools.request_identity_info import RequestIdentityInfoTool
 from app.tools.start_identity_verification import StartIdentityVerificationTool
-from app.tools.tool_registry import ToolSpec, get_tool_metadata
+from app.tools.tool_registry import ToolRegistry, ToolSpec, get_tool_metadata
 
 
 @lru_cache
@@ -100,14 +100,14 @@ def get_tool_registry(
     lookup_shipments_tool: Annotated[LookupShipmentsTool, Depends(get_lookup_shipments_tool)],
     request_identity_info_tool: Annotated[RequestIdentityInfoTool, Depends(get_request_identity_info_tool)],
     escalate_to_human_tool: Annotated[EscalateToHumanTool, Depends(get_escalate_to_human_tool)],
-) -> dict[str, ToolSpec]:
+) -> ToolRegistry:
     """Build a fresh tool registry for this request.
 
     Tools are constructed per-request via FastAPI DI (so each gets its own
-    repository instances). We return a plain local dict — no shared/global
+    repository instances). We return a plain local ToolRegistry — no shared/global
     state — which is what the dispatcher looks tools up in.
     """
-    registry: dict[str, ToolSpec] = {}
+    registry = ToolRegistry()
     for tool_instance in [
         verify_identity_tool,
         lookup_shipments_tool,
@@ -115,18 +115,18 @@ def get_tool_registry(
         escalate_to_human_tool,
     ]:
         name, schema, requires_verification = get_tool_metadata(type(tool_instance))
-        registry[name] = ToolSpec(
+        registry.register(ToolSpec(
             name=name,
             schema=schema,
             handler=tool_instance,
             requires_verification=requires_verification,
-        )
+        ))
     return registry
 
 
 def get_agent(
     llm_client: Annotated[LLMClient, Depends(get_llm_client)],
-    tool_registry: Annotated[dict[str, ToolSpec], Depends(get_tool_registry)],
+    tool_registry: Annotated[ToolRegistry, Depends(get_tool_registry)],
 ) -> Agent:
     """Construct Agent with injected dependencies."""
     return Agent(
