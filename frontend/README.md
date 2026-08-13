@@ -1,34 +1,60 @@
-# React + TypeScript + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite + Tailwind v4. All commands run from the `frontend/` directory.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Development server
+
+```bash
+npm run dev             # http://localhost:5173 (proxies /api → http://localhost:8000)
+```
+
+## Build & preview
+
+```bash
+npm run build           # tsc -b && vite build
+npm run preview         # preview the production build locally
+```
+
+## Linting
+
+```bash
+npm run lint            # oxlint (fast, no type-checking)
+npm run lint:fix        # oxlint --fix
+npm run lint:ci         # oxlint with type-aware checking (requires backend types generated)
+```
+
+## API client sync
+
+`src/api/generated/` is Orval-generated from the backend's OpenAPI schema — **never hand-edit it**.
+
+```bash
+npm run api:sync        # pull /openapi.json from backend + regenerate hooks and types
+```
+
+The backend must be running at `http://localhost:8000` when you run this.
+
+## Configuration
+
+Create `frontend/.env.local` to override defaults:
+
+```env
+# Override backend proxy target (defaults to http://localhost:8000)
+VITE_API_PROXY_TARGET=http://localhost:8000
+
+# Auth0 — required for the /dashboard admin panel
+VITE_AUTH0_DOMAIN=
+VITE_AUTH0_CLIENT_ID=
+VITE_AUTH0_AUDIENCE=
+```
+
+## Notes
+
+- **React Compiler** is enabled via `babel-plugin-react-compiler` wired through `@rolldown/plugin-babel` in `vite.config.ts` — check that file before assuming standard compiler behavior.
+- **Tailwind v4** is used via `@tailwindcss/vite` (not the PostCSS plugin).
+- **Orval** generates react-query v5 hooks; the generated client lives in `src/api/generated/`.
