@@ -5,8 +5,9 @@ import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
-import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl, useUpdateSessionApiSessionsSessionIdPatch } from '../api/generated/client'
+import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl } from '../api/generated/client'
 import { cancelRequest, HttpError } from '../api/generated/fetcher'
+import { resolveApiUrl } from '../api/url'
 import { useSessionPersistence } from '../hooks/useSessionPersistence'
 import type { DisplayMessage } from '../hooks/useSessionPersistence'
 
@@ -31,7 +32,6 @@ export function ChatPage() {
   const [isClosingSession, setIsClosingSession] = useState(false)
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
-  const closeSessionMutation = useUpdateSessionApiSessionsSessionIdPatch()
   const session = useSessionPersistence()
   const shouldShowOtpModal = isOtpModalOpen || (session.verificationRequired && !otpModalDismissed)
 
@@ -127,10 +127,13 @@ export function ChatPage() {
     setIsClosingSession(true)
 
     try {
-      await closeSessionMutation.mutateAsync({
-        sessionId: session.sessionId,
-        data: { ended_at: new Date().toISOString() },
+      const closeResponse = await fetch(resolveApiUrl('/api/sessions/close'), {
+        method: 'POST',
+        credentials: 'include',
       })
+      if (!closeResponse.ok) {
+        throw new Error(`Failed to close session: ${closeResponse.status}`)
+      }
 
       session.onSessionClosed()
       void navigate(AppRoutes.Home)

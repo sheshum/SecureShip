@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response
 
 from app.dependencies import get_chat_session_repository, require_admin_auth
 from app.repositories.chat_sessions import ChatSessionRepository
@@ -49,14 +49,54 @@ async def list_sessions(
     )
 
 
-@router.patch("/{session_id}", response_model=SessionItem)
+@router.post("/close", response_model=SessionItem)
+async def close_own_session(
+    response: Response,
+    session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    session_id: Annotated[UUID | None, Cookie()] = None,
+) -> SessionItem:
+    """Close the caller's own session, identified exclusively by the HttpOnly session cookie.
+
+    This endpoint requires no admin credentials; the session is derived from
+    the cookie so callers cannot close other users' sessions.
+
+    Args:
+        response: FastAPI response (used to delete session cookie on close)
+        session_repo: Session repository dependency
+        session_id: Session UUID taken from the HttpOnly cookie
+
+    Returns:
+        Closed session item
+
+    Raises:
+        HTTPException: 404 if no session cookie is present or session not found
+    """
+    if session_id is None:
+        raise HTTPException(status_code=404, detail="No active session")
+
+    chat_session = session_repo.update_session(session_id, ended_at=datetime.now(UTC))
+
+    if chat_session is None:
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+
+    response.delete_cookie("session_id", path="/", samesite="strict", httponly=True)
+
+    return SessionItem(
+        id=chat_session.id,
+        state=ChatSessionState(chat_session.state),
+        started_at=chat_session.started_at,
+        ended_at=chat_session.ended_at,
+    )
+
+
+@router.patch("/{session_id}", response_model=SessionItem, dependencies=[Depends(require_admin_auth)])
 async def update_session(
     session_id: UUID,
     request: SessionUpdateRequest,
     response: Response,
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
 ) -> SessionItem:
-    """Update session fields (e.g., set ended_at to close session).
+    """Update session fields (admin-only, e.g., set ended_at to close session).
 
     Args:
         session_id: ID of the session to update
@@ -83,7 +123,7 @@ async def update_session(
     chat_session = session_repo.update_session(session_id, **updates)
 
     if closing:
-        response.delete_cookie("session_id", path="/", samesite="strict")
+        response.delete_cookie("session_id", path="/", samesite="strict", httponly=True)
 
     if chat_session is None:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
