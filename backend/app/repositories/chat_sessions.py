@@ -58,7 +58,7 @@ class ChatSessionRepository:
             return chat_session
 
     def get_session(self, session_id: UUID) -> ChatSession | None:
-        """Return the active session, or None if not found or expired.
+        """Return the active session, or None if not found, closed, or expired.
 
         Side-effect: sets ended_at when the session has passed its TTL.
         """
@@ -66,11 +66,9 @@ class ChatSessionRepository:
             chat_session = session.get(ChatSession, session_id)
             if chat_session is None:
                 return None
-            if (
-                chat_session.expires_at
-                and datetime.now(UTC) >= chat_session.expires_at
-                and chat_session.ended_at is None
-            ):
+            if chat_session.ended_at is not None:
+                return None
+            if chat_session.expires_at and datetime.now(UTC) >= chat_session.expires_at:
                 self._mark_expired(chat_session, session)
                 return None
             return chat_session
@@ -78,6 +76,14 @@ class ChatSessionRepository:
     def _mark_expired(self, chat_session: ChatSession, db_session: Session) -> None:
         chat_session.ended_at = datetime.now(UTC)
         db_session.commit()
+
+    def touch_session(self, session_id: UUID, new_expires_at: datetime) -> None:
+        """Extend session TTL (rolling window on activity)."""
+        with self._session_factory() as session:
+            chat_session = session.get(ChatSession, session_id)
+            if chat_session is not None:
+                chat_session.expires_at = new_expires_at
+                session.commit()
 
     def delete_session(self, session_id: UUID, now: datetime) -> ChatSession | None:
         with self._session_factory() as session:

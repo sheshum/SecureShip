@@ -279,40 +279,40 @@ export const useChatApiChatPost = <TError = HTTPValidationError,
       return useMutation(getChatApiChatPostMutationOptions(options), queryClient);
     }
 
-export type restoreSessionApiChatSessionSessionIdGetResponse200 = {
+export type restoreSessionApiChatSessionGetResponse200 = {
   data: SessionRestoreResponse
   status: 200
 }
 
-export type restoreSessionApiChatSessionSessionIdGetResponse422 = {
+export type restoreSessionApiChatSessionGetResponse422 = {
   data: HTTPValidationError
   status: 422
 }
 
-export type restoreSessionApiChatSessionSessionIdGetResponseSuccess = (restoreSessionApiChatSessionSessionIdGetResponse200) & {
+export type restoreSessionApiChatSessionGetResponseSuccess = (restoreSessionApiChatSessionGetResponse200) & {
   headers: Headers;
 };
-export type restoreSessionApiChatSessionSessionIdGetResponseError = (restoreSessionApiChatSessionSessionIdGetResponse422) & {
+export type restoreSessionApiChatSessionGetResponseError = (restoreSessionApiChatSessionGetResponse422) & {
   headers: Headers;
 };
 
-export type restoreSessionApiChatSessionSessionIdGetResponse = (restoreSessionApiChatSessionSessionIdGetResponseSuccess | restoreSessionApiChatSessionSessionIdGetResponseError)
+export type restoreSessionApiChatSessionGetResponse = (restoreSessionApiChatSessionGetResponseSuccess | restoreSessionApiChatSessionGetResponseError)
 
-export const getRestoreSessionApiChatSessionSessionIdGetUrl = (sessionId: string,) => {
-
-
+export const getRestoreSessionApiChatSessionGetUrl = () => {
 
 
-  return `/api/chat/session/${sessionId}`
+
+
+  return `/api/chat/session`
 }
 
 /**
  * Return session state and user/assistant message history for client-side restoration.
  * @summary Restore Session
  */
-export const restoreSessionApiChatSessionSessionIdGet = async (sessionId: string, options?: RequestInit): Promise<restoreSessionApiChatSessionSessionIdGetResponse> => {
+export const restoreSessionApiChatSessionGet = async ( options?: RequestInit): Promise<restoreSessionApiChatSessionGetResponse> => {
 
-  return customFetcher<restoreSessionApiChatSessionSessionIdGetResponse>(getRestoreSessionApiChatSessionSessionIdGetUrl(sessionId),
+  return customFetcher<restoreSessionApiChatSessionGetResponse>(getRestoreSessionApiChatSessionGetUrl(),
   {
     ...options,
     method: 'GET'
@@ -325,69 +325,69 @@ export const restoreSessionApiChatSessionSessionIdGet = async (sessionId: string
 
 
 
-export const getRestoreSessionApiChatSessionSessionIdGetQueryKey = (sessionId: string,) => {
+export const getRestoreSessionApiChatSessionGetQueryKey = () => {
     return [
-    `/api/chat/session/${sessionId}`
+    `/api/chat/session`
     ] as const;
     }
 
 
-export const getRestoreSessionApiChatSessionSessionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError = HTTPValidationError>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData>>, }
+export const getRestoreSessionApiChatSessionGetQueryOptions = <TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError = HTTPValidationError>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getRestoreSessionApiChatSessionSessionIdGetQueryKey(sessionId);
+  const queryKey =  queryOptions?.queryKey ?? getRestoreSessionApiChatSessionGetQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>> = ({ signal }) => restoreSessionApiChatSessionSessionIdGet(sessionId, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>> = ({ signal }) => restoreSessionApiChatSessionGet({ signal });
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type RestoreSessionApiChatSessionSessionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>>
-export type RestoreSessionApiChatSessionSessionIdGetQueryError = HTTPValidationError
+export type RestoreSessionApiChatSessionGetQueryResult = NonNullable<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>>
+export type RestoreSessionApiChatSessionGetQueryError = HTTPValidationError
 
 
-export function useRestoreSessionApiChatSessionSessionIdGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData>> & Pick<
+export function useRestoreSessionApiChatSessionGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError = HTTPValidationError>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>,
+          Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>,
           TError,
-          Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>
+          Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useRestoreSessionApiChatSessionSessionIdGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData>> & Pick<
+export function useRestoreSessionApiChatSessionGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError = HTTPValidationError>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>,
+          Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>,
           TError,
-          Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>
+          Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useRestoreSessionApiChatSessionSessionIdGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData>>, }
+export function useRestoreSessionApiChatSessionGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError = HTTPValidationError>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
  * @summary Restore Session
  */
 
-export function useRestoreSessionApiChatSessionSessionIdGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError = HTTPValidationError>(
- sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionSessionIdGet>>, TError, TData>>, }
+export function useRestoreSessionApiChatSessionGet<TData = Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError = HTTPValidationError>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof restoreSessionApiChatSessionGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getRestoreSessionApiChatSessionSessionIdGetQueryOptions(sessionId,options)
+  const queryOptions = getRestoreSessionApiChatSessionGetQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -439,9 +439,10 @@ export const getVerifyCodeApiAuthVerifyCodePostUrl = () => {
  * - Returns neutral messages (no enumeration)
  *
  * Args:
- *     request: Session ID and 6-digit code
+ *     request: 6-digit code
  *     session_repo: Repository for chat sessions
  *     verification_repo: Repository for verification records
+ *     session_id: Session ID from HttpOnly cookie
  *
  * Returns:
  *     VerifyCodeResponse with result and attempts_remaining if applicable
@@ -680,6 +681,7 @@ export const getUpdateSessionApiSessionsSessionIdPatchUrl = (sessionId: string,)
  * Args:
  *     session_id: ID of the session to update
  *     request: Fields to update
+ *     response: FastAPI response (used to delete session cookie on close)
  *     session_repo: Session repository dependency
  *
  * Returns:

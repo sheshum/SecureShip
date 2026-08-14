@@ -5,8 +5,7 @@ import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
-import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl } from '../api/generated/client'
-import { resolveApiUrl } from '../api/url'
+import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl, useUpdateSessionApiSessionsSessionIdPatch } from '../api/generated/client'
 import { cancelRequest, HttpError } from '../api/generated/fetcher'
 import { useSessionPersistence } from '../hooks/useSessionPersistence'
 import type { DisplayMessage } from '../hooks/useSessionPersistence'
@@ -31,6 +30,7 @@ export function ChatPage() {
   const [isClosingSession, setIsClosingSession] = useState(false)
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
+  const closeSessionMutation = useUpdateSessionApiSessionsSessionIdPatch()
   const session = useSessionPersistence()
 
   const handleSubmit = async (message?: string) => {
@@ -44,7 +44,6 @@ export function ChatPage() {
       const response = await chatMutation.mutateAsync({
         data: {
           prompt: trimmedMessage,
-          session_id: session.sessionId || undefined,
         },
       })
 
@@ -80,7 +79,6 @@ export function ChatPage() {
     try {
       const response = await verifyCodeMutation.mutateAsync({
         data: {
-          session_id: session.sessionId,
           code: code,
         }
       })
@@ -115,7 +113,6 @@ export function ChatPage() {
   }
 
   const handleCloseSession = async () => {
-    session.onSessionClosed()
     if (!session.sessionId) {
       void navigate(AppRoutes.Home)
       return
@@ -125,18 +122,12 @@ export function ChatPage() {
     setIsClosingSession(true)
 
     try {
-      const url = resolveApiUrl(`/api/sessions/${session.sessionId}`)
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ended_at: new Date().toISOString() }),
+      await closeSessionMutation.mutateAsync({
+        sessionId: session.sessionId,
+        data: { ended_at: new Date().toISOString() },
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        throw new Error(errorData.detail || 'Failed to close session')
-      }
-
+      session.onSessionClosed()
       void navigate(AppRoutes.Home)
     } catch (error) {
       console.error('Failed to close session:', error)

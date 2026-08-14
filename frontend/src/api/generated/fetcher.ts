@@ -33,6 +33,7 @@ export async function customFetcher<T>(url: string, options: RequestInit = {}): 
     response = await fetch(requestUrl, {
       ...options,
       signal: controller.signal,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

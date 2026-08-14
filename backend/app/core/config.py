@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     )
 
     auth_session_ttl_seconds: int = Field(
-        default=1800,
+        default=3600,
         ge=1,
         validation_alias=AliasChoices("AUTH_SESSION_TTL_SECONDS"),
     )

@@ -3,8 +3,9 @@
 import hashlib
 from datetime import UTC, datetime
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Cookie, Depends, HTTPException
 
 from app.agent.prompts import VERIFICATION_EXHAUSTED_NOTE, VERIFICATION_SUCCEEDED_NOTE
 from app.dependencies import (
@@ -31,6 +32,7 @@ async def verify_code(
     request: VerifyCodeRequest,
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
     verification_repo: Annotated[SessionVerificationRepository, Depends(get_session_verification_repository)],
+    session_id: Annotated[UUID | None, Cookie()] = None,
 ) -> VerifyCodeResponse:
     """Verify an OTP code for a chat session.
 
@@ -43,9 +45,10 @@ async def verify_code(
     - Returns neutral messages (no enumeration)
 
     Args:
-        request: Session ID and 6-digit code
+        request: 6-digit code
         session_repo: Repository for chat sessions
         verification_repo: Repository for verification records
+        session_id: Session ID from HttpOnly cookie
 
     Returns:
         VerifyCodeResponse with result and attempts_remaining if applicable
@@ -53,11 +56,14 @@ async def verify_code(
     Raises:
         HTTPException: 400 if no verification in progress or session not found
     """
-    session = session_repo.get_session(request.session_id)
+    if session_id is None:
+        raise HTTPException(status_code=400, detail="Session not found")
+
+    session = session_repo.get_session(session_id)
     if session is None:
         raise HTTPException(status_code=400, detail="Session not found")
 
-    verification = verification_repo.get_by_session(request.session_id)
+    verification = verification_repo.get_by_session(session_id)
     if verification is None:
         raise HTTPException(status_code=400, detail="No verification in progress")
 
@@ -69,28 +75,28 @@ async def verify_code(
 
     now = datetime.now(UTC)
     if verification.expires_at < now:
-        verification_repo.update_status(request.session_id, "expired")
-        session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
-        _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
+        verification_repo.update_status(session_id, "expired")
+        session_repo.update_session(session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
+        _record_transcript_note(session_repo, session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
     if verification.attempts >= 3:
-        verification_repo.update_status(request.session_id, "exhausted")
-        session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
-        _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
+        verification_repo.update_status(session_id, "exhausted")
+        session_repo.update_session(session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
+        _record_transcript_note(session_repo, session_id, VERIFICATION_EXHAUSTED_NOTE)
         return VerifyCodeResponse(result="expired", attempts_remaining=None)
 
     code_hash = hashlib.sha256(request.code.encode()).hexdigest()
 
     if code_hash != verification.code_hash:
         # Increment attempt counter
-        updated = verification_repo.increment_attempt(request.session_id)
+        updated = verification_repo.increment_attempt(session_id)
         if updated is None:
             raise HTTPException(status_code=500, detail="Failed to update attempts")
 
         # Update session state to awaiting_code
         session_repo.update_session(
-            request.session_id,
+            session_id,
             state=ChatSessionState.AWAITING_CODE,
             customer_id=session.customer_id,
         )
@@ -98,19 +104,19 @@ async def verify_code(
         # Check if this was the last attempt
         attempts_remaining = max(0, 3 - updated.attempts)
         if attempts_remaining == 0:
-            verification_repo.update_status(request.session_id, "exhausted")
-            session_repo.update_session(request.session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
-            _record_transcript_note(session_repo, request.session_id, VERIFICATION_EXHAUSTED_NOTE)
+            verification_repo.update_status(session_id, "exhausted")
+            session_repo.update_session(session_id, state=ChatSessionState.CODE_EXPIRED, customer_id=None)
+            _record_transcript_note(session_repo, session_id, VERIFICATION_EXHAUSTED_NOTE)
             return VerifyCodeResponse(result="expired", attempts_remaining=0)
 
         return VerifyCodeResponse(result="incorrect", attempts_remaining=attempts_remaining)
 
-    verification_repo.update_status(request.session_id, "verified")
+    verification_repo.update_status(session_id, "verified")
     session_repo.update_session(
-        request.session_id,
+        session_id,
         state=ChatSessionState.VERIFIED,
         customer_id=verification.matched_customer_id,
     )
-    _record_transcript_note(session_repo, request.session_id, VERIFICATION_SUCCEEDED_NOTE)
+    _record_transcript_note(session_repo, session_id, VERIFICATION_SUCCEEDED_NOTE)
 
     return VerifyCodeResponse(result="verified", attempts_remaining=None)

@@ -1,53 +1,47 @@
 """Chat endpoints: public conversation with the LLM agent."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 
 from app.agent import Agent, AgentSession
-from app.dependencies import get_agent, get_chat_session_repository
+from app.core.config import Settings
+from app.core.exceptions import SessionExpiredError
+from app.dependencies import get_agent, get_chat_session_repository, get_settings
 from app.llm.base import LLMError
-from app.models import ChatSession
 from app.repositories.chat_sessions import ChatSessionRepository
 from app.schemas.chat import ChatRequest, ChatResponse, RestoredMessage, SessionRestoreResponse
 from app.schemas.sessions import ChatSessionState
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-
-def ensure_session(
-    session_id: UUID | None,
-    session_repo: ChatSessionRepository,
-) -> ChatSession:
-    """Get an existing session or create a new one.
-
-    Raises:
-        HTTPException 410: session_id given but session not found or has expired
-    """
-    if session_id:
-        chat_session = session_repo.get_session(session_id)
-        if chat_session is None:
-            # Both expired and never-existed sessions map to 410 Gone.
-            raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
-        return chat_session
-
-    now = datetime.now(UTC)
-    return session_repo.create_session(now)
+_COOKIE_NAME = "session_id"
+# JS-readable flag — no sensitive data; lets the frontend skip the restore query for fresh users
+_PRESENCE_COOKIE = "has_session"
+_COOKIE_ATTRS: dict = {"httponly": True, "samesite": "strict", "path": "/"}
 
 
 @router.post("", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
+    response: Response,
     agent: Annotated[Agent, Depends(get_agent)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    session_id: Annotated[UUID | None, Cookie()] = None,
 ) -> ChatResponse:
     """Chat endpoint: delegate to Agent for agentic loop execution."""
-    # 1. Load session from DB
-    chat_session = ensure_session(request.session_id, session_repo)
+    # Resolve or create session from cookie
+    if session_id is not None:
+        chat_session = session_repo.get_session(session_id)
+        if chat_session is None:
+            raise SessionExpiredError()
+    else:
+        chat_session = session_repo.create_session(datetime.now(UTC))
 
-    # 2. Build agent session (snapshot of current state)
+    # Build agent session (snapshot of current state)
     agent_session = AgentSession(
         session_id=chat_session.id,
         customer_id=chat_session.customer_id,
@@ -55,7 +49,7 @@ async def chat(
         history=session_repo.get_conversation_messages(chat_session.id, preloaded=chat_session),
     )
 
-    # 3. Execute agent turn (pure orchestration, no DB)
+    # Execute agent turn (pure orchestration, no DB)
     async def _refresh_state(session_id: UUID) -> tuple[ChatSessionState, int | None]:
         s = session_repo.get_session(session_id)
         if s is None:
@@ -74,7 +68,7 @@ async def chat(
             detail="The assistant is temporarily unavailable. Please try again.",
         ) from exc
 
-    # 4. Persist transcript. Index 0 is Agent's ephemeral SYSTEM_PROMPT; every
+    # Persist transcript. Index 0 is Agent's ephemeral SYSTEM_PROMPT; every
     # other role (including later `system` messages injected by auth.py) is
     # part of the LLM-visible history and must be preserved.
     serialized_messages = [
@@ -90,12 +84,29 @@ async def chat(
     ]
     session_repo.set_conversation_messages(chat_session.id, serialized_messages)
 
-    # 5. Reload session (tools may have mutated it)
+    # Reload session (tools may have mutated it)
     chat_session = session_repo.get_session(chat_session.id) or chat_session
 
-    # 6. Build response with fresh state
     if not result.reply.strip():
         raise HTTPException(status_code=500, detail="The assistant returned an empty response. Please try again.")
+
+    # Stamp cookies and extend DB TTL on every successful response (rolling window)
+    new_expires_at = datetime.now(UTC) + timedelta(seconds=settings.auth_session_ttl_seconds)
+    session_repo.touch_session(chat_session.id, new_expires_at)
+    response.set_cookie(
+        key=_COOKIE_NAME,
+        value=str(chat_session.id),
+        max_age=settings.auth_session_ttl_seconds,
+        **_COOKIE_ATTRS,
+    )
+    response.set_cookie(
+        key=_PRESENCE_COOKIE,
+        value="1",
+        max_age=settings.auth_session_ttl_seconds,
+        httponly=False,
+        samesite="strict",
+        path="/",
+    )
 
     return ChatResponse(
         reply=result.reply,
@@ -105,15 +116,18 @@ async def chat(
     )
 
 
-@router.get("/session/{session_id}", response_model=SessionRestoreResponse)
+@router.get("/session", response_model=SessionRestoreResponse)
 def restore_session(
-    session_id: UUID,
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
+    session_id: Annotated[UUID | None, Cookie()] = None,
 ) -> SessionRestoreResponse:
     """Return session state and user/assistant message history for client-side restoration."""
+    if session_id is None:
+        raise HTTPException(status_code=404, detail="No active session")
+
     chat_session = session_repo.get_session(session_id)
     if chat_session is None:
-        raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
+        raise SessionExpiredError()
 
     raw = session_repo.get_conversation_messages(session_id, preloaded=chat_session)
     messages = [

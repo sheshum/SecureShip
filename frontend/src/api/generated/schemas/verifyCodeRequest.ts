@@ -10,8 +10,6 @@
  * Request to verify an OTP code.
  */
 export interface VerifyCodeRequest {
-  /** The chat session ID */
-  session_id: string;
   /**
      * The 6-digit OTP code
      * @minLength 6

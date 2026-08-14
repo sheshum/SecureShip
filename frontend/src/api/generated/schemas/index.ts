@@ -24,6 +24,7 @@ export * from './packageItem';
 export * from './packageListResponse';
 export * from './packageUpdateRequest';
 export * from './restoredMessage';
+export * from './restoredMessageRole';
 export * from './searchCustomersApiCustomersSearchGetParams';
 export * from './searchShipmentsApiShipmentsSearchGetParams';
 export * from './sessionItem';

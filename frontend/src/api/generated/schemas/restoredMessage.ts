@@ -5,8 +5,9 @@
  * BFF for SecureShip client application
  * OpenAPI spec version: 1.0.0
  */
+import type { RestoredMessageRole } from './restoredMessageRole';
 
 export interface RestoredMessage {
-  role: string;
+  role: RestoredMessageRole;
   content: string;
 }
