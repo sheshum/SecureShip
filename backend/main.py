@@ -40,7 +40,6 @@ def create_app() -> FastAPI:
             content={"detail": "Session has expired or no longer exists"},
         )
         resp.delete_cookie("session_id", path="/", samesite="strict")
-        resp.delete_cookie("has_session", path="/", samesite="strict")
         return resp
 
     app.include_router(health.router)

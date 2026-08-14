@@ -84,7 +84,6 @@ async def update_session(
 
     if closing:
         response.delete_cookie("session_id", path="/", samesite="strict")
-        response.delete_cookie("has_session", path="/", samesite="strict")
 
     if chat_session is None:
         raise HTTPException(status_code=404, detail=f"Session {session_id} not found")

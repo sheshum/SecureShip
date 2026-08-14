@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 
 from app.agent import Agent, AgentSession
 from app.core.config import Settings
@@ -18,15 +18,21 @@ from app.schemas.sessions import ChatSessionState
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 _COOKIE_NAME = "session_id"
-# JS-readable flag — no sensitive data; lets the frontend skip the restore query for fresh users
-_PRESENCE_COOKIE = "has_session"
-_COOKIE_ATTRS: dict = {"httponly": True, "samesite": "strict", "path": "/"}
+
+
+def _cookie_attrs_for_request(request: Request) -> dict:
+    # `SameSite=strict` can block cookies in local proxy setups (frontend dev server
+    # proxying to backend). Relax to `lax` for localhost development only.
+    local_hosts = {"localhost", "127.0.0.1"}
+    samesite = "lax" if request.url.hostname in local_hosts else "strict"
+    return {"httponly": True, "samesite": samesite, "path": "/"}
 
 
 @router.post("", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
     response: Response,
+    http_request: Request,
     agent: Annotated[Agent, Depends(get_agent)],
     session_repo: Annotated[ChatSessionRepository, Depends(get_chat_session_repository)],
     settings: Annotated[Settings, Depends(get_settings)],
@@ -97,17 +103,8 @@ async def chat(
         key=_COOKIE_NAME,
         value=str(chat_session.id),
         max_age=settings.auth_session_ttl_seconds,
-        **_COOKIE_ATTRS,
+        **_cookie_attrs_for_request(http_request),
     )
-    response.set_cookie(
-        key=_PRESENCE_COOKIE,
-        value="1",
-        max_age=settings.auth_session_ttl_seconds,
-        httponly=False,
-        samesite="strict",
-        path="/",
-    )
-
     return ChatResponse(
         reply=result.reply,
         session_id=chat_session.id,
@@ -138,5 +135,6 @@ def restore_session(
     return SessionRestoreResponse(
         session_id=chat_session.id,
         state=chat_session.state,
+        verification_required=chat_session.state == ChatSessionState.CODE_SENT,
         messages=messages,
     )

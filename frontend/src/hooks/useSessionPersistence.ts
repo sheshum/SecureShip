@@ -1,6 +1,10 @@
-import { useMemo, useState } from 'react'
-import { useRestoreSessionApiChatSessionGet } from '../api/generated/client'
+import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { HttpError } from '../api/generated/fetcher'
+import {
+  getRestoreSessionApiChatSessionGetQueryKey,
+  useRestoreSessionApiChatSessionGet,
+} from '../api/generated/client'
 import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
 
 export type DisplayMessage = { id: string; role: 'user' | 'assistant'; content: string }
@@ -9,33 +13,41 @@ export interface UseSessionPersistenceReturn {
   // Kept for building the close-session URL; null until first chat response or restore
   sessionId: string | null
   sessionState: ChatSessionState
+  verificationRequired: boolean
   displayMessages: DisplayMessage[]
-  // true when the restore query returns 410 (session existed but expired)
-  showExpiredSessionToast: boolean
   appendLocalMessage(msg: DisplayMessage): void
   onChatResponse(sid: string, state: ChatSessionState): void
   onVerified(): void
   onSessionExpired(): void
   onSessionClosed(): void
-  dismissExpiredToast(): void
 }
 
 export function useSessionPersistence(): UseSessionPersistenceReturn {
+  const queryClient = useQueryClient()
   const [localMessages, setLocalMessages] = useState<DisplayMessage[]>([])
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [localSessionState, setLocalSessionState] = useState<ChatSessionState>('anonymous')
   const [localStateInitialized, setLocalStateInitialized] = useState(false)
   const [sessionInvalidated, setSessionInvalidated] = useState(false)
-  const [expiredToastDismissed, setExpiredToastDismissed] = useState(false)
 
-  // Frozen at mount — avoids firing the restore query for users who never had a session
-  const [hasSessionCookie] = useState(() => document.cookie.includes('has_session=1'))
-
-  // Cookie is sent automatically by the browser — no session ID needed in the URL.
-  // 410 = cookie present but session expired/closed.
+  // The API owns the session cookie; it may not be visible to JS on the frontend origin.
+  // Probe unconditionally — 404 = no session, 410 = session expired.
   const restoreQuery = useRestoreSessionApiChatSessionGet({
-    query: { enabled: hasSessionCookie, retry: false },
+    query: { retry: false },
   })
+
+  useEffect(() => {
+    if (!restoreQuery.isError) return
+
+    if (restoreQuery.error instanceof HttpError) {
+      console.error(
+        `Session restore failed with status ${restoreQuery.error.status}: ${restoreQuery.error.message}`,
+      )
+      return
+    }
+
+    console.error('Session restore failed:', restoreQuery.error)
+  }, [restoreQuery.error, restoreQuery.isError])
 
   const restorationData =
     !sessionInvalidated &&
@@ -51,6 +63,10 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
   // Use restored state until onChatResponse or onVerified has been called
   const sessionState: ChatSessionState =
     restorationData && !localStateInitialized ? restorationData.state : localSessionState
+  const verificationRequired =
+    restorationData && !localStateInitialized
+      ? restorationData.verification_required
+      : localSessionState === 'code_sent'
 
   const restoredMessages = useMemo<DisplayMessage[]>(() => {
     if (sessionInvalidated || !restorationData) return []
@@ -65,19 +81,11 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
     [restoredMessages, localMessages],
   )
 
-  // 410 = had a session cookie that is now expired or gone
-  const showExpiredSessionToast =
-    !sessionInvalidated &&
-    restoreQuery.isError &&
-    restoreQuery.error instanceof HttpError &&
-    restoreQuery.error.status === 410 &&
-    !expiredToastDismissed
-
   return {
     sessionId: effectiveSessionId,
     sessionState,
+    verificationRequired,
     displayMessages,
-    showExpiredSessionToast,
     appendLocalMessage(msg) {
       setLocalMessages((prev) => [...prev, msg])
     },
@@ -98,10 +106,12 @@ export function useSessionPersistence(): UseSessionPersistenceReturn {
       setLocalSessionState('anonymous')
     },
     onSessionClosed() {
-      // Cookie is deleted by the backend PATCH /api/sessions/{id} response
-    },
-    dismissExpiredToast() {
-      setExpiredToastDismissed(true)
+      setSessionInvalidated(true)
+      setSessionId(null)
+      setLocalMessages([])
+      setLocalStateInitialized(false)
+      setLocalSessionState('anonymous')
+      queryClient.removeQueries({ queryKey: getRestoreSessionApiChatSessionGetQueryKey() })
     },
   }
 }

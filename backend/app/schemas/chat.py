@@ -35,4 +35,7 @@ class SessionRestoreResponse(BaseModel):
 
     session_id: UUID
     state: ChatSessionState
+    verification_required: bool = Field(
+        ..., description="Whether OTP verification is required (true when state is CODE_SENT)"
+    )
     messages: list[RestoredMessage]

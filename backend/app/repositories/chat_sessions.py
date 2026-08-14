@@ -81,7 +81,7 @@ class ChatSessionRepository:
         """Extend session TTL (rolling window on activity)."""
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
-            if chat_session is not None:
+            if chat_session is not None and chat_session.ended_at is None:
                 chat_session.expires_at = new_expires_at
                 session.commit()
 

@@ -14,5 +14,7 @@ import type { RestoredMessage } from './restoredMessage';
 export interface SessionRestoreResponse {
   session_id: string;
   state: ChatSessionState;
+  /** Whether OTP verification is required (true when state is CODE_SENT) */
+  verification_required: boolean;
   messages: RestoredMessage[];
 }

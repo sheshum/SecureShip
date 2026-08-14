@@ -22,6 +22,7 @@ export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [otpModalDismissed, setOtpModalDismissed] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
@@ -32,6 +33,7 @@ export function ChatPage() {
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
   const closeSessionMutation = useUpdateSessionApiSessionsSessionIdPatch()
   const session = useSessionPersistence()
+  const shouldShowOtpModal = isOtpModalOpen || (session.verificationRequired && !otpModalDismissed)
 
   const handleSubmit = async (message?: string) => {
     const trimmedMessage = (message ?? draft).trim()
@@ -53,6 +55,7 @@ export function ChatPage() {
 
         if (response.data.verification_required) {
           setIsOtpModalOpen(true)
+          setOtpModalDismissed(false)
           setOtpError(null)
           setAttemptsRemaining(null)
         }
@@ -88,6 +91,7 @@ export function ChatPage() {
 
         if (result === 'verified') {
           setIsOtpModalOpen(false)
+          setOtpModalDismissed(false)
           session.onVerified()
           setOtpError(null)
           setAttemptsRemaining(null)
@@ -108,6 +112,7 @@ export function ChatPage() {
 
   const handleCloseOtpModal = () => {
     setIsOtpModalOpen(false)
+    setOtpModalDismissed(true)
     setOtpError(null)
     setAttemptsRemaining(null)
   }
@@ -166,7 +171,7 @@ export function ChatPage() {
         />
       )}
 
-      {isOtpModalOpen && (
+      {shouldShowOtpModal && (
         <OtpVerificationModal
           isSubmitting={verifyCodeMutation.isPending}
           errorMessage={otpError}
@@ -182,14 +187,6 @@ export function ChatPage() {
           message={toastMessage}
           type="success"
           onClose={() => setToastMessage(null)}
-        />
-      )}
-
-      {session.showExpiredSessionToast && (
-        <Toast
-          message="Your previous session has expired. Starting a new conversation."
-          type="info"
-          onClose={() => session.dismissExpiredToast()}
         />
       )}
     </main>
