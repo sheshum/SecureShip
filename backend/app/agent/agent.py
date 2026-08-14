@@ -3,6 +3,7 @@
 import json
 from typing import Any
 
+from app.agent.prompts import get_system_prompt
 from app.agent.result import AgentResult
 from app.agent.session import AgentSession, SessionStateRefresher
 from app.llm.base import LLMClient, LLMMessage, ToolCall
@@ -36,18 +37,9 @@ class Agent:
         self,
         llm_client: LLMClient,
         tool_registry: ToolRegistry,
-        system_prompt: str,
     ):
-        """Initialize agent with LLM client and tool registry.
-
-        Args:
-            llm_client: LLM client for completions
-            tool_registry: Available tools
-            system_prompt: System prompt for the agent
-        """
         self.llm_client = llm_client
         self.tool_registry = tool_registry
-        self.system_prompt = system_prompt
 
     def _resolve_available_tools(self, session_state: ChatSessionState) -> list[dict[str, Any]]:
         """Tool schemas the model may see for this state.
@@ -104,7 +96,7 @@ class Agent:
         return "auto"
 
     def _build_messages(self, session: AgentSession, prompt: str) -> list[LLMMessage]:
-        messages: list[LLMMessage] = [LLMMessage(role="system", content=self.system_prompt)]
+        messages: list[LLMMessage] = [LLMMessage(role="system", content=get_system_prompt(session.state))]
         for msg in session.history:
             raw_tool_calls = msg.get("tool_calls") or ()
             tool_calls = tuple(

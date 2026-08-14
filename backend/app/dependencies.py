@@ -10,7 +10,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request
 from fastapi_plugin import Auth0FastAPI
 
-from app.agent import SYSTEM_PROMPT, Agent
+from app.agent import Agent
 from app.core.config import Settings
 from app.llm.base import LLMClient
 from app.llm.litellm_client import LiteLLMClient
@@ -132,7 +132,6 @@ def get_agent(
     return Agent(
         llm_client=llm_client,
         tool_registry=tool_registry,
-        system_prompt=SYSTEM_PROMPT,
     )
 
 
