@@ -1,5 +1,6 @@
 """Chat request/response schemas."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -26,7 +27,7 @@ class ChatResponse(BaseModel):
 
 
 class RestoredMessage(BaseModel):
-    role: str
+    role: Literal["user", "assistant"]
     content: str
 
 

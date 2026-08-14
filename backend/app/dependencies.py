@@ -49,8 +49,10 @@ def get_package_repository() -> PackageRepository:
     return PackageRepository()
 
 
-def get_chat_session_repository() -> ChatSessionRepository:
-    return ChatSessionRepository()
+def get_chat_session_repository(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> ChatSessionRepository:
+    return ChatSessionRepository(settings=settings)
 
 
 def get_customer_repository() -> CustomerRepository:
@@ -115,12 +117,14 @@ def get_tool_registry(
         escalate_to_human_tool,
     ]:
         name, schema, requires_verification = get_tool_metadata(type(tool_instance))
-        registry.register(ToolSpec(
-            name=name,
-            schema=schema,
-            handler=tool_instance,
-            requires_verification=requires_verification,
-        ))
+        registry.register(
+            ToolSpec(
+                name=name,
+                schema=schema,
+                handler=tool_instance,
+                requires_verification=requires_verification,
+            )
+        )
     return registry
 
 

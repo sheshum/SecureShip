@@ -50,29 +50,29 @@ class Agent:
         """
         if session_state == ChatSessionState.ANONYMOUS:
             return [
-                self.tool_registry.get(ToolName.REQUEST_IDENTITY_INFO).schema,
-                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
+                self.tool_registry.require(ToolName.REQUEST_IDENTITY_INFO).schema,
+                self.tool_registry.require(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state == ChatSessionState.COLLECTING_IDENTITY:
             return [
-                self.tool_registry.get(ToolName.START_IDENTITY_VERIFICATION).schema,
-                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
+                self.tool_registry.require(ToolName.START_IDENTITY_VERIFICATION).schema,
+                self.tool_registry.require(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state in {
             ChatSessionState.CODE_SENT,
             ChatSessionState.AWAITING_CODE,
         }:
             # Waiting on the OTP UI; nothing useful the model can do except escalate.
-            return [self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema]
+            return [self.tool_registry.require(ToolName.ESCALATE_TO_HUMAN).schema]
         if session_state == ChatSessionState.CODE_EXPIRED:
             return [
-                self.tool_registry.get(ToolName.REQUEST_IDENTITY_INFO).schema,
-                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
+                self.tool_registry.require(ToolName.REQUEST_IDENTITY_INFO).schema,
+                self.tool_registry.require(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         if session_state == ChatSessionState.VERIFIED:
             return [
-                self.tool_registry.get(ToolName.LOOKUP_SHIPMENTS).schema,
-                self.tool_registry.get(ToolName.ESCALATE_TO_HUMAN).schema,
+                self.tool_registry.require(ToolName.LOOKUP_SHIPMENTS).schema,
+                self.tool_registry.require(ToolName.ESCALATE_TO_HUMAN).schema,
             ]
         # ESCALATED_TO_HUMAN and any future terminal states.
         return []

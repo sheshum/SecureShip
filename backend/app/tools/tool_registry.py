@@ -85,7 +85,7 @@ def tool(
 
 
 class ToolRegistry:
-    """Per-request registry of tool specs. Immutable after construction."""
+    """Per-request tool registry. Treat as immutable after the build phase in get_tool_registry."""
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
@@ -93,7 +93,7 @@ class ToolRegistry:
     def register(self, spec: ToolSpec) -> None:
         self._tools[spec.name] = spec
 
-    def get(self, name: ToolName) -> ToolSpec:
+    def require(self, name: ToolName) -> ToolSpec:
         """Typed accessor — raises KeyError with diagnostics if the tool is missing."""
         spec = self._tools.get(str(name))
         if spec is None:

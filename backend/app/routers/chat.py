@@ -24,14 +24,12 @@ def ensure_session(
     """Get an existing session or create a new one.
 
     Raises:
-        HTTPException 404: session_id given but not found
-        HTTPException 410: session exists but has expired
+        HTTPException 410: session_id given but session not found or has expired
     """
     if session_id:
         chat_session = session_repo.get_session(session_id)
         if chat_session is None:
-            # Distinguish expired (ended_at set by lazy-expiry) from never existed
-            # by attempting a raw lookup; keep the response surface simple with 410.
+            # Both expired and never-existed sessions map to 410 Gone.
             raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
         return chat_session
 
@@ -54,7 +52,7 @@ async def chat(
         session_id=chat_session.id,
         customer_id=chat_session.customer_id,
         state=chat_session.state,
-        history=session_repo.get_conversation_messages(chat_session.id),
+        history=session_repo.get_conversation_messages(chat_session.id, preloaded=chat_session),
     )
 
     # 3. Execute agent turn (pure orchestration, no DB)
@@ -117,7 +115,7 @@ def restore_session(
     if chat_session is None:
         raise HTTPException(status_code=410, detail="Session has expired or no longer exists")
 
-    raw = session_repo.get_conversation_messages(session_id)
+    raw = session_repo.get_conversation_messages(session_id, preloaded=chat_session)
     messages = [
         RestoredMessage(role=m["role"], content=m["content"] or "")
         for m in raw

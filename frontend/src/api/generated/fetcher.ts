@@ -4,6 +4,15 @@ import { getAccessToken } from '../authToken'
 // keyed by request url so in-flight requests can be cancelled from outside the fetcher
 const pendingRequests = new Map<string, AbortController>()
 
+export class HttpError extends Error {
+  readonly status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'HttpError'
+    this.status = status
+  }
+}
+
 export function cancelRequest(url: string): boolean {
   const controller = pendingRequests.get(url)
   if (!controller) return false
@@ -45,7 +54,7 @@ export async function customFetcher<T>(url: string, options: RequestInit = {}): 
     } catch {
       // response body wasn't JSON; fall back to raw text
     }
-    throw new Error(message)
+    throw new HttpError(message, response.status)
   }
 
   const data = response.status === 204 ? undefined : await response.json()

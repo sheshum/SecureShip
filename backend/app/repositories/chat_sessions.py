@@ -58,20 +58,26 @@ class ChatSessionRepository:
             return chat_session
 
     def get_session(self, session_id: UUID) -> ChatSession | None:
+        """Return the active session, or None if not found or expired.
+
+        Side-effect: sets ended_at when the session has passed its TTL.
+        """
         with self._session_factory() as session:
             chat_session = session.get(ChatSession, session_id)
             if chat_session is None:
                 return None
-            # Lazy expiry: mark ended_at and treat as not found
             if (
                 chat_session.expires_at
                 and datetime.now(UTC) >= chat_session.expires_at
                 and chat_session.ended_at is None
             ):
-                chat_session.ended_at = datetime.now(UTC)
-                session.commit()
+                self._mark_expired(chat_session, session)
                 return None
             return chat_session
+
+    def _mark_expired(self, chat_session: ChatSession, db_session: Session) -> None:
+        chat_session.ended_at = datetime.now(UTC)
+        db_session.commit()
 
     def delete_session(self, session_id: UUID, now: datetime) -> ChatSession | None:
         with self._session_factory() as session:
@@ -197,14 +203,17 @@ class ChatSessionRepository:
             session.refresh(chat_session)
             return chat_session
 
-    def get_conversation_messages(self, session_id: UUID) -> list[dict[str, Any]]:
+    def get_conversation_messages(
+        self, session_id: UUID, *, preloaded: ChatSession | None = None
+    ) -> list[dict[str, Any]]:
         """Get conversation history for LLM context.
 
+        Pass `preloaded` to skip the DB lookup when the session is already in hand.
         Returns user, assistant, tool, and system messages with their full shape
         (including `tool_calls` on assistant messages and `tool_call_id` on tool
         results) so the LLM sees a coherent tool-call thread across turns.
         """
-        chat_session = self.get_session(session_id)
+        chat_session = preloaded if preloaded is not None else self.get_session(session_id)
         if chat_session is None:
             return []
 
