@@ -5,17 +5,13 @@ import { ChatPanel } from '../components/Chat/ChatPanel'
 import { ChatCloseModal } from '../components/Chat/ChatCloseModal'
 import { OtpVerificationModal } from '../components/Chat/OtpVerificationModal'
 import { Toast } from '../components/Toast'
-import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl } from '../api/generated/client'
-import type { ChatSessionState } from '../api/generated/schemas/chatSessionState'
-import { resolveApiUrl } from '../api/url'
-import { cancelRequest } from '../api/generated/fetcher'
+import { useChatApiChatPost, useVerifyCodeApiAuthVerifyCodePost, getChatApiChatPostUrl, useUpdateSessionApiSessionsSessionIdPatch } from '../api/generated/client'
+import { cancelRequest, HttpError } from '../api/generated/fetcher'
+import { useSessionPersistence } from '../hooks/useSessionPersistence'
+import type { DisplayMessage } from '../hooks/useSessionPersistence'
 
-function createMessage(role: 'user' | 'assistant', content: string) {
-  return {
-    id: crypto.randomUUID(),
-    role,
-    content,
-  }
+function createMessage(role: 'user' | 'assistant', content: string): DisplayMessage {
+  return { id: crypto.randomUUID(), role, content }
 }
 
 const handleStopRequest = () => {
@@ -25,10 +21,8 @@ const handleStopRequest = () => {
 export function ChatPage() {
   const navigate = useNavigate()
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<Array<{ id: string; role: 'user' | 'assistant'; content: string }>>([])
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [sessionState, setSessionState] = useState<ChatSessionState>('anonymous')
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false)
+  const [otpModalDismissed, setOtpModalDismissed] = useState(false)
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false)
   const [otpError, setOtpError] = useState<string | null>(null)
   const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null)
@@ -37,53 +31,57 @@ export function ChatPage() {
   const [isClosingSession, setIsClosingSession] = useState(false)
   const chatMutation = useChatApiChatPost()
   const verifyCodeMutation = useVerifyCodeApiAuthVerifyCodePost()
+  const closeSessionMutation = useUpdateSessionApiSessionsSessionIdPatch()
+  const session = useSessionPersistence()
+  const shouldShowOtpModal = isOtpModalOpen || (session.verificationRequired && !otpModalDismissed)
 
   const handleSubmit = async (message?: string) => {
     const trimmedMessage = (message ?? draft).trim()
     if (!trimmedMessage || chatMutation.isPending) return
 
-    // Add user message to display
-    setMessages((prev) => [...prev, createMessage('user', trimmedMessage)])
+    session.appendLocalMessage(createMessage('user', trimmedMessage))
     setDraft('')
 
     try {
       const response = await chatMutation.mutateAsync({
         data: {
           prompt: trimmedMessage,
-          session_id: sessionId || undefined,
-        }
+        },
       })
 
       if (response.status === 200) {
-        setMessages((prev) => [...prev, createMessage('assistant', response.data.reply)])
-        setSessionId(response.data.session_id)
-        setSessionState(response.data.state)
+        session.appendLocalMessage(createMessage('assistant', response.data.reply))
+        session.onChatResponse(response.data.session_id, response.data.state)
 
         if (response.data.verification_required) {
           setIsOtpModalOpen(true)
+          setOtpModalDismissed(false)
           setOtpError(null)
           setAttemptsRemaining(null)
         }
       }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (error instanceof HttpError && error.status === 410) {
+        session.onSessionExpired()
+        setToastMessage('Your session has expired. Please start a new conversation.')
+        return
+      }
       console.error('Chat request failed:', error)
-      setMessages((prev) => [
-        ...prev,
+      session.appendLocalMessage(
         createMessage('assistant', 'Sorry, I encountered an error. Please try again.'),
-      ])
+      )
     }
   }
 
   const handleVerifyCode = async (code: string) => {
-    if (!sessionId) return
+    if (!session.sessionId) return
 
     setOtpError(null)
 
     try {
       const response = await verifyCodeMutation.mutateAsync({
         data: {
-          session_id: sessionId,
           code: code,
         }
       })
@@ -93,7 +91,8 @@ export function ChatPage() {
 
         if (result === 'verified') {
           setIsOtpModalOpen(false)
-          setSessionState('verified')
+          setOtpModalDismissed(false)
+          session.onVerified()
           setOtpError(null)
           setAttemptsRemaining(null)
           setToastMessage('Verification successful! You now have access to your shipment information.')
@@ -113,12 +112,13 @@ export function ChatPage() {
 
   const handleCloseOtpModal = () => {
     setIsOtpModalOpen(false)
+    setOtpModalDismissed(true)
     setOtpError(null)
     setAttemptsRemaining(null)
   }
 
   const handleCloseSession = async () => {
-    if (!sessionId) {
+    if (!session.sessionId) {
       void navigate(AppRoutes.Home)
       return
     }
@@ -127,18 +127,12 @@ export function ChatPage() {
     setIsClosingSession(true)
 
     try {
-      const url = resolveApiUrl(`/api/sessions/${sessionId}`)
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ended_at: new Date().toISOString() }),
+      await closeSessionMutation.mutateAsync({
+        sessionId: session.sessionId,
+        data: { ended_at: new Date().toISOString() },
       })
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }))
-        throw new Error(errorData.detail || 'Failed to close session')
-      }
-
+      session.onSessionClosed()
       void navigate(AppRoutes.Home)
     } catch (error) {
       console.error('Failed to close session:', error)
@@ -155,9 +149,9 @@ export function ChatPage() {
       <div className="relative mx-auto flex h-[calc(100svh-1.5rem)] w-full max-w-6xl flex-col gap-4 rounded-[2rem] border border-white/35 bg-slate-100/72 p-3 shadow-[0_30px_90px_rgba(15,23,42,0.34)] backdrop-blur-2xl sm:h-[calc(100svh-2rem)] sm:gap-5 sm:p-5">
         <ChatPanel
           draft={draft}
-          messages={messages}
+          messages={session.displayMessages}
           isLoading={chatMutation.isPending}
-          sessionState={sessionState}
+          sessionState={session.sessionState}
           onDraftChange={setDraft}
           onSubmit={handleSubmit}
           onStopRequest={handleStopRequest}
@@ -177,7 +171,7 @@ export function ChatPage() {
         />
       )}
 
-      {isOtpModalOpen && (
+      {shouldShowOtpModal && (
         <OtpVerificationModal
           isSubmitting={verifyCodeMutation.isPending}
           errorMessage={otpError}
@@ -198,4 +192,5 @@ export function ChatPage() {
     </main>
   )
 }
+
 

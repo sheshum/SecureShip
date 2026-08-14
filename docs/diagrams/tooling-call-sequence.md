@@ -16,7 +16,7 @@ sequenceDiagram
     participant DB as Database
 
     User->>FE: "Where's my package?"
-    FE->>BE: POST /chat {message, session_id}
+    FE->>BE: POST /api/chat {message, session_id}
     BE->>Session: get session state
     Session-->>BE: state = "Anonymous"
     BE->>LLM: prompt + tool defs + state context
@@ -25,10 +25,10 @@ sequenceDiagram
     FE->>User: shows message
 
     User->>FE: provides name, address, phone
-    FE->>BE: POST /chat {message, session_id}
+    FE->>BE: POST /api/chat {message, session_id}
     BE->>LLM: prompt with collected fields
-    LLM-->>BE: tool_call: verify_identity(fields)
-    BE->>Tools: verify_identity(fields)
+    LLM-->>BE: tool_call: start_identity_verification(fields)
+    BE->>Tools: start_identity_verification(fields)
     Tools->>DB: match against Customer table
     DB-->>Tools: match found: customer_id=123
     Tools->>Session: set pending_customer_id=123, state="CodeSent"
@@ -37,7 +37,7 @@ sequenceDiagram
     FE->>User: shows 6-digit code modal
 
     User->>FE: enters code
-    FE->>BE: POST /verify-code {code, session_id}
+    FE->>BE: POST /api/auth/verify-code {code, session_id}
     BE->>Tools: check_verification_code(code, session_id)
     Tools->>Session: compare code, check expiry/attempts
     Session-->>Tools: match, not expired
@@ -50,8 +50,8 @@ sequenceDiagram
     BE->>Session: get session state
     Session-->>BE: state="Verified", customer_id=123
     BE->>LLM: prompt + tool defs + verified context
-    LLM-->>BE: tool_call: lookup_shipments(customer_id=123)
-    BE->>Tools: lookup_shipments(customer_id=123)
+    LLM-->>BE: tool_call: lookup_shipments()
+    BE->>Tools: lookup_shipments()
     Note over Tools: Enforcement point:<br/>Tools layer ALWAYS uses<br/>session.customer_id, never<br/>a customer_id argument<br/>supplied by the model/user
     Tools->>DB: SELECT * FROM shipments WHERE customer_id=123
     DB-->>Tools: shipment rows
@@ -93,8 +93,8 @@ sequenceDiagram
     User->>FE: provides name, address, phone
     FE->>WS: emit "message" {text}
     WS->>LLM: prompt with collected fields
-    LLM-->>WS: tool_call: verify_identity(fields)
-    WS->>Tools: verify_identity(fields)
+    LLM-->>WS: tool_call: start_identity_verification(fields)
+    WS->>Tools: start_identity_verification(fields)
     Tools->>DB: match against Customer table
     DB-->>Tools: match found: customer_id=123
     Tools->>Session: set pending_customer_id=123, state="CodeSent"
@@ -115,7 +115,7 @@ sequenceDiagram
 
     User->>FE: "What's the status of my shipment?"
     FE->>WS: emit "message" {text}
-    WS->>Tools: lookup_shipments(customer_id=123)
+    WS->>Tools: lookup_shipments()
     Tools->>DB: SELECT * FROM shipments WHERE customer_id=123
     DB-->>Tools: shipment rows
     Tools-->>WS: shipment data

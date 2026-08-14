@@ -15,6 +15,4 @@ export interface ChatRequest {
      * @minLength 1
      */
   prompt: string;
-  /** Optional session ID to continue an existing conversation */
-  session_id?: string | null;
 }

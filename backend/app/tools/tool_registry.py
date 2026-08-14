@@ -1,15 +1,23 @@
 """Every tool the model can call declares up front, via the @tool decorator.
 
 whether it requires a verified session. The dispatcher reads this at call time
-(via dict lookup) — the registry itself is a plain dict built per-request in
+via ToolRegistry — one instance is built per-request in
 app.dependencies.get_tool_registry, so there is no shared mutable state.
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Protocol, TypeVar
 
 from app.services.auth_context import AuthContext
+
+
+class ToolName(StrEnum):
+    REQUEST_IDENTITY_INFO = "request_identity_info"
+    START_IDENTITY_VERIFICATION = "start_identity_verification"
+    LOOKUP_SHIPMENTS = "lookup_shipments"
+    ESCALATE_TO_HUMAN = "escalate_to_human"
 
 
 class ToolHandler(Protocol):
@@ -74,6 +82,27 @@ def tool(
         return cls
 
     return decorator
+
+
+class ToolRegistry:
+    """Per-request tool registry. Treat as immutable after the build phase in get_tool_registry."""
+
+    def __init__(self) -> None:
+        self._tools: dict[str, ToolSpec] = {}
+
+    def register(self, spec: ToolSpec) -> None:
+        self._tools[spec.name] = spec
+
+    def require(self, name: ToolName) -> ToolSpec:
+        """Typed accessor — raises KeyError with diagnostics if the tool is missing."""
+        spec = self._tools.get(str(name))
+        if spec is None:
+            raise KeyError(f"Tool '{name}' is not registered. Available: {list(self._tools)}")
+        return spec
+
+    def find(self, name: str) -> ToolSpec | None:
+        """Raw-name lookup for dispatch — returns None when the LLM calls an unknown tool."""
+        return self._tools.get(name)
 
 
 def get_tool_metadata(tool_class: type) -> tuple[str, dict[str, Any], bool]:

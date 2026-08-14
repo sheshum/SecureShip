@@ -10,6 +10,7 @@ from typing import Any
 from app.services.auth_context import AuthContext
 from app.services.identity_gate import enforce_gate
 from app.tools.result import ToolResult, ToolStatus
+from app.tools.tool_registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ async def dispatch_tool_call(
     context: AuthContext,
     fn_name: str,
     args: dict[str, Any],
-    tool_registry: dict[str, Any],
+    tool_registry: ToolRegistry,
 ) -> dict[str, Any]:
     """Execute a tool call after enforcing the verification gate.
 
@@ -35,7 +36,7 @@ async def dispatch_tool_call(
     Returns:
         Tool execution result dict (always ToolResult.to_dict() shape).
     """
-    spec = tool_registry.get(fn_name)
+    spec = tool_registry.find(fn_name)
     if spec is None:
         logger.warning(
             "Unknown tool call",

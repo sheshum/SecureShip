@@ -21,9 +21,7 @@ class Base(DeclarativeBase):
 
 class Customer(Base):
     __tablename__ = "customer"
-    __table_args__ = (
-        UniqueConstraint("first_name", "last_name", "phone_number", name="uq_customer_first_last_phone"),
-    )
+    __table_args__ = (UniqueConstraint("first_name", "last_name", "phone_number", name="uq_customer_first_last_phone"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     first_name: Mapped[str] = mapped_column(String(100))
@@ -75,6 +73,7 @@ class ChatSession(Base):
     state: Mapped[str] = mapped_column(String(50))
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     transcript: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     customer: Mapped[Customer | None] = relationship(back_populates="chat_sessions")

@@ -1,7 +1,6 @@
 """Schemas for verification endpoints."""
 
 from typing import Literal
-from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +8,6 @@ from pydantic import BaseModel, Field
 class VerifyCodeRequest(BaseModel):
     """Request to verify an OTP code."""
 
-    session_id: UUID = Field(..., description="The chat session ID")
     code: str = Field(..., min_length=6, max_length=6, description="The 6-digit OTP code")
 
 

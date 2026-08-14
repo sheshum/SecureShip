@@ -1,5 +1,6 @@
 """Chat request/response schemas."""
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -11,7 +12,6 @@ class ChatRequest(BaseModel):
     """A single chat request with a user prompt."""
 
     prompt: str = Field(..., min_length=1, description="User's message to the assistant")
-    session_id: UUID | None = Field(None, description="Optional session ID to continue an existing conversation")
 
 
 class ChatResponse(BaseModel):
@@ -23,3 +23,19 @@ class ChatResponse(BaseModel):
     verification_required: bool | None = Field(
         None, description="Whether user verification is required (true when state is CODE_SENT)"
     )
+
+
+class RestoredMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class SessionRestoreResponse(BaseModel):
+    """Payload returned when restoring a session on page load."""
+
+    session_id: UUID
+    state: ChatSessionState
+    verification_required: bool = Field(
+        ..., description="Whether OTP verification is required (true when state is CODE_SENT)"
+    )
+    messages: list[RestoredMessage]
